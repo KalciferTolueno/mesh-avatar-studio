@@ -7,10 +7,22 @@ import { CameraCapture, MicrophoneCapture, type CameraState, type MicState, type
 import { liveText } from './i18n';
 import { createLiveSender } from './relay';
 
+const OPTIONS_KEY = 'mesh-avatar-live-tracking';
+const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1 };
+// Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
+function loadTrackingOptions(): Required<TrackingOptions> {
+  try {
+    const saved = JSON.parse(localStorage.getItem(OPTIONS_KEY) ?? '{}');
+    return Object.fromEntries(Object.entries(DEFAULT_OPTIONS).map(([key, value]) =>
+      [key, typeof saved[key] === typeof value && (typeof value !== 'number' || Number.isFinite(saved[key])) ? saved[key] : value])) as Required<TrackingOptions>;
+  } catch { return { ...DEFAULT_OPTIONS }; }
+}
+
 export function LiveApp() {
   const { language, setLanguage } = useI18n(), t = liveText[language];
   const [settings, setSettings] = useState(() => viewSettings(location.search));
-  const [options, setOptions] = useState<TrackingOptions>({ mirror: true, sensitivity: 1, smoothing: 0.35 });
+  const [options, setOptions] = useState<TrackingOptions>(loadTrackingOptions);
+  useEffect(() => { try { localStorage.setItem(OPTIONS_KEY, JSON.stringify(options)); } catch { /* storage unavailable */ } }, [options]);
   const [cameraState, setCameraState] = useState<CameraState>('stopped');
   const [micState, setMicState] = useState<MicState>('micOff');
   const [tracking, setTracking] = useState(false), [showCamera, setShowCamera] = useState(true);
@@ -77,6 +89,9 @@ export function LiveApp() {
         <small>{calibrated ? t.calibrated : t.calibrateHint}</small>
         <label className="live-check"><input type="checkbox" checked={options.mirror} onChange={event => setOptions(current => ({ ...current, mirror: event.target.checked }))} />{t.mirror}</label>
         <label>{t.sensitivity}<input type="range" min="0.25" max="2" step="0.05" value={options.sensitivity} onChange={event => setOptions(current => ({ ...current, sensitivity: Number(event.target.value) }))} /></label>
+        <label>{t.mouthSensitivity}<input type="range" min="0.5" max="3" step="0.05" value={options.mouthSensitivity} onChange={event => setOptions(current => ({ ...current, mouthSensitivity: Number(event.target.value) }))} /></label>
+        <label>{t.bodySensitivity}<input type="range" min="0" max="3" step="0.05" value={options.bodySensitivity} onChange={event => setOptions(current => ({ ...current, bodySensitivity: Number(event.target.value) }))} /></label>
+        <label className="live-check"><input type="checkbox" checked={options.linkEyes} onChange={event => setOptions(current => ({ ...current, linkEyes: event.target.checked }))} />{t.linkEyes}</label>
         <label>{t.smoothing}<input type="range" min="0" max="1" step="0.05" value={options.smoothing} onChange={event => setOptions(current => ({ ...current, smoothing: Number(event.target.value) }))} /></label>
         <label className="live-check"><input type="checkbox" checked={showCamera} onChange={event => setShowCamera(event.target.checked)} />{t.cameraPreview}</label>
         <video ref={video} autoPlay muted playsInline className={showCamera ? 'camera-preview' : 'camera-preview camera-hidden'} style={{ transform: options.mirror ? 'scaleX(-1)' : undefined }} aria-label={t.cameraPreview} />

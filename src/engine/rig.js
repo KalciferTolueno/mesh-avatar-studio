@@ -4,6 +4,7 @@ export const PARAMS = [
   { id: 'angleZ', label: 'Face roll', min: -30, max: 30, def: 0, group: 'Head and body' },
   { id: 'bodyAngleX', label: 'Body angle X', min: -10, max: 10, def: 0, group: 'Head and body' },
   { id: 'bodyAngleZ', label: 'Body roll', min: -10, max: 10, def: 0, group: 'Head and body' },
+  { id: 'positionX', label: 'Position X', min: -1, max: 1, def: 0, group: 'Head and body' },
   { id: 'breath', label: 'Breath', min: 0, max: 1, def: 0, group: 'Head and body' },
   { id: 'eyeLOpen', label: 'Left eye open', min: 0, max: 1.25, def: 1, group: 'Eyes and brows' },
   { id: 'eyeROpen', label: 'Right eye open', min: 0, max: 1.25, def: 1, group: 'Eyes and brows' },
@@ -25,6 +26,9 @@ export const PARAMS = [
 /** @param {import('../rig/types').Rig} rig */
 export function createRig(rig) {
   const IMG = { w: rig.image.width, h: rig.image.height };
+  // breathing and body sway distances were tuned in pixels on the 1254 px reference image;
+  // scale them so larger or smaller illustrations move by the same share of their size
+  const BODY_PX = IMG.w / 1254;
   const gaussian = (x, y, a) => a ? Math.exp(-(((x - a.cx) / a.rx) ** 2 + ((y - a.cy) / a.ry) ** 2)) : 0;
   // ---- face features ----
   // Eye openings come from layers.json ("eyes", written when the layers were cut): the top / bottom edge of
@@ -190,9 +194,9 @@ export function createRig(rig) {
   function applyBody(p, restY, P, chest = 0, breathW = 1, shoulder = 0) {
     const b = P.breath;
     // inhale: everything above the cut-off rises, shoulders lift more, the chest widens a little
-    p[1] -= b * (5 * breathW + 4 * shoulder);
+    p[1] -= b * (5 * breathW + 4 * shoulder) * BODY_PX;
     p[0] += (p[0] - BODY.chest.cx) * 0.012 * b * chest;
-    p[0] += P.bodyAngleX / 10 * (7 + 9 * chest);
+    p[0] += P.bodyAngleX / 10 * (7 + 9 * chest) * BODY_PX;
     // bottom rows stay put so no gap opens at the cut-off edge of the image
     rotateAround(p, BODY.pivotX, BODY.pivotY, -P.bodyAngleZ / 10 * BODY.maxRoll * (1 - sstep(...BODY.rollBand, restY)));
   }

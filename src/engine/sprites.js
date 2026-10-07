@@ -96,6 +96,9 @@ export function createSpriteModule(engine, rig) {
     const tmp = [0, 0];
     let lastShape = null;
     const eyeState = [0, 1].map(() => ({ cur: 'open', prev: 'open', t: 1 }));
+    // an eye is switched to drawn frames only when its half-closed and closed drawings both
+    // exist; otherwise the layered eye keeps blinking by itself (e.g. a mouth-only variant set)
+    const eyeDrawn = [0, 1].map(i => Boolean(items[`eyes_half_${i}`] && items[`eyes_closed_${i}`]));
 
     function place(item, P, phys, squash, width = 1) {
       const r = item.mesh.rest, o = item.mesh.pos;
@@ -114,6 +117,7 @@ export function createSpriteModule(engine, rig) {
     }
 
     return {
+      eyeDrawn,
       /**
        * Show / hide and deform the sprites for this frame.
        * Returns which eyes are covered by a sprite, so the layered eye parts can be hidden.
@@ -128,8 +132,10 @@ export function createSpriteModule(engine, rig) {
         // the frame is picked by openness; when it changes, the new drawing fades in over
         // EYE_FADE_SEC (a time-based cross-fade, so no double image is ever held)
         eyes.forEach(([open, smile], i) => {
+          if (!eyeDrawn[i]) return;
           const st = eyeState[i];
-          const want = eyeSprite(open, smile) ?? 'open';
+          let want = eyeSprite(open, smile) ?? 'open';
+          if (want === 'eyes_smile' && !items[`eyes_smile_${i}`]) want = 'eyes_closed';
           if (want !== st.cur) { st.prev = st.cur; st.cur = want; st.t = 0; }
           st.t = Math.min(1, st.t + dt / EYE_FADE_SEC);
           const k = sstep(0, 1, st.t);

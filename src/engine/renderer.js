@@ -279,6 +279,8 @@ export function createRenderer(engine, _rig) {
     draw(state) {
       const gl = this.gl;
       this.resize();
+      // whole-avatar sideways shift (share of the image width), e.g. following the viewer's position
+      this.offset[0] += 2 * (state.shiftX ?? 0) * IMG.w * this.pxScale / this.canvas.width;
       gl.viewport(0, 0, this.canvas.width, this.canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
