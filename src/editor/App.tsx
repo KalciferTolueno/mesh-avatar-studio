@@ -395,7 +395,7 @@ function Workspace() {
         </div>
       </section>
       <div className="right-column">
-        <Preview rig={rig} assets={assets} hasMouthSprites={mouthSprites} onDrawMouth={() => setMouthRequest(value => value + 1)} />
+        <Preview key={localProject?.name ?? (pickedName || 'sample-miko-qipao')} projectKey={localProject?.name ?? (pickedName || 'sample-miko-qipao')} rig={rig} assets={assets} hasMouthSprites={mouthSprites} onDrawMouth={() => setMouthRequest(value => value + 1)} />
         <VariantsPanel project={localProject} projectPath={localProject?.relativePath ?? (pickedName ? `<${pickedName}>` : 'samples/miko-qipao')} assets={assets} rootPath={rootPath} busy={job !== null || saving} stale={changed.length > 0} onRun={runJob} mouthRequest={mouthRequest} onMouthPresence={setMouthSprites} />
         {!localProject && !pickedName && <details className="panel new-illustration"><summary>{t.newIllustration}</summary><AskAgent newProject rootPath={rootPath} /></details>}
         <aside className="panel inspector" inert={job !== null || opening}>

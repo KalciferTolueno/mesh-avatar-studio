@@ -110,7 +110,8 @@ main:has(.project-location):has(.stale) .editor-panel { height: calc(100dvh - 21
 .sweep-button { width: 100%; font-size: 12px; padding: 6px 12px; }
 .lip-sync { padding: 8px 16px; }
 .preview-tabs { display: flex; padding: 4px 12px; gap: 4px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.preview-tabs button { flex: 1; border: 0; font-size: 12px; padding: 6px; }
+.preview-tabs button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; font-size: 12px; padding: 6px; }
+.preview-tabs button svg { width: 16px; height: 16px; }
 .preview-tabs button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
 .vowel-buttons { display: flex; gap: 6px; margin: 10px 0 8px; }
 .vowel-buttons button { padding: 5px 8px; flex: 1; }
@@ -173,6 +174,7 @@ main:has(.stale) .editor-panel, main:has(.stale) .parts-panel { height: calc(100
 .variants-panel > summary, .new-illustration > summary { display: flex; align-items: center; justify-content: flex-start; cursor: pointer; padding: 12px 16px; font-weight: 600; }
 .variants-panel > summary::before, .new-illustration > summary::before { content: '▸'; margin-right: 8px; }
 .variants-panel[open] > summary::before, .new-illustration[open] > summary::before { content: '▾'; }
+.variants-panel > summary svg { margin-right: 8px; }
 .variants-panel > summary span { margin-left: auto; font-weight: 400; color: var(--muted); }
 .variants-content { padding: 0 16px 12px; font-size: 12px; }
 .variants-content > p { color: var(--muted); }

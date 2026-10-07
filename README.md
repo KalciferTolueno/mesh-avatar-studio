@@ -109,6 +109,10 @@ directly in OBS. For other capture software, choose green and apply a chroma key
 Both pages use the local development server (`npm run dev`). The stream view shows idle
 motion when the Live page stops sending updates.
 
+Optional **Lighting** adds shading that follows a light you drag over the avatar. It is off
+by default; open its section near the bottom of the Live page, or below the preview in the
+editor. The OBS URL includes the lighting settings. See [Lighting](docs/reference.md#lighting).
+
 Keep the Live page open in its own window. Open the OBS URL inside OBS or in another
 tab; do not paste it into the tab running Live. If the page reports that tracking has
 stopped or slowed while hidden, bring its window to the front.

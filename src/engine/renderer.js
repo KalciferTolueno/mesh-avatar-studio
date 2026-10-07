@@ -1,6 +1,11 @@
+import { layerNormals } from '../lighting/normals';
+import { DEFAULT_LIGHTING, parseLighting } from '../lighting/settings';
+import { TERMINATOR, DETAIL_SCALE, SHADOW_SATURATION, MAX_IRRADIANCE, headRotation } from '../lighting/shading';
+import { DropShadow } from '../lighting/shadow';
+
 /** @param {ReturnType<import('./rig.js').createRig>} engine
  * @param {import('../rig/types').Rig} rig */
-export function createRenderer(engine, _rig) {
+export function createRenderer(engine, rig) {
   const { IMG, EYES, MOUTH, CHEEKS } = engine;
   // WebGL2 renderer: textured grid meshes whose vertices are deformed on the CPU,
   // plus a fragment-shader pass for eyelids, eye balls, mouth and blush on the base layer.
@@ -122,6 +127,50 @@ export function createRenderer(engine, _rig) {
     outColor = c * uAlpha;
   }`;
 
+  // Compile only when lighting is first enabled. The original off program is untouched.
+  const LIGHT_VS = VS.replace('out vec2 vUv;', 'in float aHeadWeight; out float vHeadWeight; out vec2 vScreen; out vec2 vUv;')
+    .replace('vUv = aUv;', 'vHeadWeight = aHeadWeight; vScreen = vec2((aPos.x * uScale.x + uOffset.x + 1.0) * 0.5, (1.0 - aPos.y * uScale.y - uOffset.y) * 0.5); vUv = aUv;');
+  const LIGHT_FS = FS.replace('uniform sampler2D uTex;', `uniform sampler2D uTex;
+    uniform sampler2D uNormal; in float vHeadWeight; in vec2 vScreen;
+    uniform mat3 uHeadRotation; uniform vec3 uLight; uniform vec3 uLightColor; uniform vec3 uAmbientColor;
+    uniform vec4 uLighting; uniform vec4 uSurface; uniform float uAspect; uniform int uCel;`)
+    .replace('outColor = c * uAlpha;', `
+      // RG hold the smooth surface normal, BA the painting's relief (see lighting/normals.ts).
+      vec4 encoded = texture(uNormal, vUv);
+      vec2 base = encoded.rg * 2.0 - 1.0;
+      vec3 n = vec3(base, sqrt(max(0.0, 1.0 - dot(base, base))));
+      n = normalize(n + vec3((encoded.ba * 2.0 - 1.0) * uSurface.w * ${DETAIL_SCALE.toFixed(3)}, 0.0));
+      n = normalize(mix(n, uHeadRotation * n, vHeadWeight));
+      vec2 toLight = (uLight.xy - vScreen) * vec2(uAspect, 1.0);
+      vec3 light = normalize(vec3(toLight, uLight.z));
+      float ndl = dot(n, light);
+      float diffuse;
+      if (uCel == 1) {
+        float w = 0.01 + uSurface.x * 0.08;
+        diffuse = 0.2 + 0.45 * smoothstep(${TERMINATOR.toFixed(3)} - w, ${TERMINATOR.toFixed(3)} + w, ndl) + 0.35 * smoothstep(0.55 - w, 0.55 + w, ndl);
+      } else {
+        float s = 0.05 + uSurface.x * 0.5;
+        diffuse = smoothstep(${TERMINATOR.toFixed(3)} - s, ${TERMINATOR.toFixed(3)} + s, ndl) * (0.35 + 0.65 * max(0.0, ndl));
+      }
+      float reach = dot(toLight, toLight) / (uLighting.w * uLighting.w);
+      float attenuation = 1.0 / (1.0 + reach);
+      vec3 radiance = uLightColor * uLighting.y * attenuation;
+      // A light close to the surface may brighten a little, but must not bleach painted colours.
+      vec3 irradiance = min(uAmbientColor * uLighting.z + radiance * diffuse, vec3(${MAX_IRRADIANCE.toFixed(3)}));
+      // Painted shadows are deeper versions of the base colour, not grey: multiply by the colour
+      // itself as the surface turns away from the light.
+      vec3 albedo = c.rgb / max(c.a, 1e-4);
+      float dark = 1.0 - clamp(dot(irradiance, vec3(0.3333)), 0.0, 1.0);
+      vec3 shaded = c.rgb * mix(vec3(1.0), albedo, dark * ${SHADOW_SATURATION.toFixed(3)}) * irradiance;
+      float specular = pow(max(dot(n, normalize(light + vec3(0.0, 0.0, 1.0))), 0.0), 60.0) * uSurface.y;
+      if (uCel == 1) specular = smoothstep(0.3, 0.35, specular) * uSurface.y;
+      vec2 side = length(n.xy) > 0.001 ? normalize(n.xy) : vec2(0.0);
+      float rim = pow(1.0 - max(n.z, 0.0), 4.0) * smoothstep(-0.2, 0.7, dot(side, normalize(toLight + vec2(1e-4)))) * uSurface.z;
+      shaded += radiance * (specular * max(0.0, ndl) + rim) * c.a;
+      // Strength blends between the original painting and the relit result; alpha is unchanged.
+      c.rgb = clamp(mix(c.rgb, shaded, uLighting.x), vec3(0.0), vec3(c.a));
+      outColor = c * uAlpha;`);
+
   const LINE_VS = `#version 300 es
   in vec2 aPos; uniform vec2 uScale; uniform vec2 uOffset;
   void main() { gl_Position = vec4(aPos * uScale + uOffset, 0.0, 1.0); gl_PointSize = 7.0; }`;
@@ -137,6 +186,7 @@ export function createRenderer(engine, _rig) {
       gl.attachShader(prog, sh);
       gl.deleteShader(sh);
     }
+    gl.bindAttribLocation(prog, 0, 'aPos'); gl.bindAttribLocation(prog, 1, 'aUv'); gl.bindAttribLocation(prog, 2, 'aHeadWeight');
     gl.linkProgram(prog);
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
     const u = {};
@@ -207,6 +257,8 @@ export function createRenderer(engine, _rig) {
       this.main = compile(gl, VS, FS);
       this.line = compile(gl, LINE_VS, LINE_FS);
       this.layers = [];
+      this.lighting = DEFAULT_LIGHTING;
+      this.lightingStats = { normalMs: 0, computedLayers: 0, cachedLayers: 0 };
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     }
@@ -247,7 +299,7 @@ export function createRenderer(engine, _rig) {
       const lineBuf = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineBuf);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.lines, gl.STATIC_DRAW);
-      const layer = { name, mesh, tex: this.texture(img), vao, posBuf, uvBuf, triBuf, lineBuf, visible: true, face: !!opts.face, eyeBall: opts.eyeBall, color: opts.color || [1, 1, 1, 1] };
+      const layer = { name, image: img, mesh, tex: this.texture(img), vao, posBuf, uvBuf, triBuf, lineBuf, visible: true, face: !!opts.face, eyeBall: opts.eyeBall, color: opts.color || [1, 1, 1, 1] };
       this.layers.push(layer);
       return layer;
     }
@@ -256,12 +308,45 @@ export function createRenderer(engine, _rig) {
       const gl = this.gl;
       for (const layer of this.layers) {
         gl.deleteTexture(layer.tex);
+        if (layer.normal) gl.deleteTexture(layer.normal);
+        if (layer.headBuf) gl.deleteBuffer(layer.headBuf);
         gl.deleteVertexArray(layer.vao);
         for (const buffer of [layer.posBuf, layer.uvBuf, layer.triBuf, layer.lineBuf]) gl.deleteBuffer(buffer);
       }
       gl.deleteProgram(this.main.prog);
       gl.deleteProgram(this.line.prog);
+      if (this.lit) gl.deleteProgram(this.lit.prog);
+      this.shadow?.destroy();
       this.layers.length = 0;
+    }
+
+    setLighting(value) {
+      this.lighting = parseLighting({ ...DEFAULT_LIGHTING, ...value }) ?? DEFAULT_LIGHTING;
+      if (!this.lighting.enabled) return;
+      const gl = this.gl;
+      if (!this.lit) this.lit = compile(gl, LIGHT_VS, LIGHT_FS);
+      for (const layer of this.layers) {
+        if (layer.normal || layer.overlay) continue;
+        const data = layerNormals(layer.image, layer.mesh.rect, rig, !/^(eye|mouth)/.test(layer.name));
+        this.lightingStats.normalMs += data.ms;
+        this.lightingStats[data.computed ? 'computedLayers' : 'cachedLayers']++;
+        layer.normal = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, layer.normal);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, data.width, data.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data.data);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        const weights = new Float32Array(layer.mesh.rest.length / 2);
+        for (let i = 0; i < weights.length; i++) weights[i] = engine.headWeight(layer.mesh.rest[i * 2], layer.mesh.rest[i * 2 + 1]);
+        layer.headBuf = gl.createBuffer(); gl.bindVertexArray(layer.vao);
+        gl.bindBuffer(gl.ARRAY_BUFFER, layer.headBuf); gl.bufferData(gl.ARRAY_BUFFER, weights, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 0, 0);
+      }
+      gl.bindVertexArray(null);
+      if (this.lighting.shadow && !this.shadow) this.shadow = new DropShadow(gl, compile);
     }
 
     resize() {
@@ -284,8 +369,23 @@ export function createRenderer(engine, _rig) {
       gl.viewport(0, 0, this.canvas.width, this.canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      const m = this.main;
+      const lit = this.lighting.enabled, shadow = lit && this.lighting.shadow;
+      if (shadow) this.shadow.begin(this.canvas.width, this.canvas.height);
+      const m = lit ? this.lit : this.main;
+      this.current = m;
       gl.useProgram(m.prog);
+      if (lit) {
+        const light = this.lighting;
+        gl.uniform1i(m.u.uNormal, 1);
+        gl.uniform3f(m.u.uLight, light.x, light.y, light.z);
+        gl.uniform3f(m.u.uLightColor, ((light.color >> 16) & 255) / 255, ((light.color >> 8) & 255) / 255, (light.color & 255) / 255);
+        gl.uniform3f(m.u.uAmbientColor, ((light.ambientColor >> 16) & 255) / 255, ((light.ambientColor >> 8) & 255) / 255, (light.ambientColor & 255) / 255);
+        gl.uniform4f(m.u.uLighting, light.strength, light.intensity, light.ambient, light.reach);
+        gl.uniform4f(m.u.uSurface, light.softness, light.specular, light.rim, light.detail);
+        gl.uniform1f(m.u.uAspect, this.canvas.width / this.canvas.height);
+        gl.uniform1i(m.u.uCel, light.mode === 'cel' ? 1 : 0);
+        gl.uniformMatrix3fv(m.u.uHeadRotation, false, headRotation(state.angleX ?? 0, state.angleY ?? 0, state.angleZ ?? 0, rig.head.maxRoll));
+      }
       gl.uniform2fv(m.u.uScale, this.scale); gl.uniform2fv(m.u.uOffset, this.offset);
       gl.uniform1i(m.u.uTex, 0);
       gl.uniform4fv(m.u.uEyeBox, EYES.flatMap(e => [e.x0, e.x1, 0, 0]));
@@ -303,6 +403,8 @@ export function createRenderer(engine, _rig) {
         this.drawLayer(L, L.alpha ?? 1);
       }
       if (this.original && state.originalAlpha > 0) this.drawLayer(this.original, state.originalAlpha);
+
+      if (shadow) this.shadow.composite(this.lighting);
 
       if (state.showMesh) {
         const l = this.line;
@@ -322,11 +424,12 @@ export function createRenderer(engine, _rig) {
     }
 
     drawLayer(L, alpha) {
-      const gl = this.gl, m = this.main;
+      const gl = this.gl, m = this.current;
       gl.useProgram(m.prog);
       gl.bindVertexArray(L.vao);
       gl.bindBuffer(gl.ARRAY_BUFFER, L.posBuf);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, L.mesh.pos);
+      if (this.lighting.enabled) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, L.normal); gl.activeTexture(gl.TEXTURE0); }
       gl.bindTexture(gl.TEXTURE_2D, L.tex);
       gl.uniform4fv(m.u.uRect, L.mesh.rect);
       gl.uniform1i(m.u.uFace, L.eyeBall !== undefined ? 2 + L.eyeBall : L.face ? 1 : 0);

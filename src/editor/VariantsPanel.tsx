@@ -4,6 +4,7 @@ import { variantNames, projectVariantRequests, ProjectJobError, type LocalProjec
 import { AskAgent } from './AskAgent';
 import { JobFeedback } from './JobFeedback';
 import { CopyButton } from './CopyButton';
+import { Icon } from './Icon';
 
 const labels = ['eyesClosed', 'eyesHalf', 'eyesSmile', 'mouthA', 'mouthAHalf', 'mouthI', 'mouthO'] as const;
 export function VariantsPanel({ project, projectPath, assets, rootPath, busy, stale, onRun, mouthRequest, onMouthPresence }: {
@@ -54,7 +55,7 @@ export function VariantsPanel({ project, projectPath, assets, rootPath, busy, st
     return value ? t.variantCount.replace('COUNT', String(value)).replace('TOTAL', String(total)) : t.variantMissing;
   };
   return <details ref={panel} className="panel variants-panel" data-testid="variants-panel" open>
-    <summary>{t.variantsTitle}</summary>
+    <summary><Icon name="brush" />{t.variantsTitle}</summary>
     <div className="variants-content"><p>{t.variantsHelp}</p>
       <div className="variant-choices">
         <label><input type="checkbox" checked={eyes} onChange={event => setEyes(event.target.checked)} aria-label={t.targetEyes} /><span>{t.targetEyes}<small>{t.eyesKinds}</small></span><span className="variant-count">{count('eyes_', 3)}</span></label>

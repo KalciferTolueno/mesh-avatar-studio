@@ -11,6 +11,10 @@ const paths = {
   copy: 'M8 8h13v13H8V8Z M16 8V3H3v13h5',
   live: 'M3 7h12v10H3V7Z M15 10l6-3v10l-6-3',
   external: 'M14 4h6v6 M20 4l-9 9 M18 14v6H4V6h6',
+  pose: 'M12 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z M5 9l7 1 7-1 M12 10v5 M8 21l4-6 4 6',
+  mouth: 'M3 12c3-4 6-4 9-2 3-2 6-2 9 2-3 5-15 5-18 0Z M3 12h18',
+  brush: 'M4 20h4L19 9l-4-4L4 16v4Z M13 7l4 4',
+  light: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z M12 2v2 M12 20v2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M2 12h2 M20 12h2 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4',
 };
 export function Icon({ name }: { name: keyof typeof paths }) {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"

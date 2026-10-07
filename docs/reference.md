@@ -120,6 +120,35 @@ need a writable project from the development server. The app keeps images local;
 Codex card discloses the image-generation upload before you copy its request; other
 external services are excluded from that request.
 
+## Lighting
+
+**Lighting** is optional and off by default. Open the collapsed **Lighting** section below the
+**Pose test** and **Lip sync** tabs, or near the bottom of the Live page, and choose **Enable lighting**.
+While the section is open, a light handle appears over the preview; drag it, or focus it and
+use the arrow keys (Shift moves further). The section title shows **ON** while lighting is enabled.
+
+The shape used for shading is inferred from the single image: each layer's silhouette is
+rounded, the head is treated as an ellipsoid, and dark painted strokes add shallow relief.
+It is computed once per layer when lighting is first enabled. Painted shadows in the artwork
+are kept; the light deepens colours on the far side and keeps the painted colour on the lit side.
+
+| Control | Effect |
+|---|---|
+| Light height | Low values light from the side; high values light from the front |
+| Light spread | How far the light reaches before it fades |
+| Intensity / Ambient light | Direct light and the even base light |
+| Light color / Ambient color | Colours of the direct and ambient light |
+| Strength | Blend between the original artwork and the lit result |
+| Shading smoothness | Width of the transition between lit and shaded areas |
+| Gloss / Rim light | Small highlights, and light along edges facing the light |
+| Stroke relief | Relief taken from painted strokes such as hair lines |
+| Shading | **Soft** or **Cel** (stepped, anime style) |
+| Drop shadow | A soft silhouette shadow behind the avatar, opposite the light |
+
+**Reset lighting** restores the defaults. Settings are presentation only: they are not saved
+in `rig.json`, but each project remembers them in this browser. With lighting off, the avatar
+renders exactly as without the feature.
+
 ## Live and streaming
 
 Two pages served by the development server (`npm run dev`):
@@ -136,8 +165,20 @@ Two pages served by the development server (`npm run dev`):
 | `bg` | `transparent`, `green`, `blue` or a hex colour such as `#336699` | `transparent` |
 | `fit` | `contain` (whole avatar) or `cover` (fill the frame) | `contain` |
 | `idle` | `1` (idle motion, blinking, breathing, hair sway) or `0` | `1` |
+| `light` | `1` enables [lighting](#lighting); omit it for no lighting | off |
+| `lx`, `ly` | Light position across and down the frame, `0`–`1` | `0.2`, `0.2` |
+| `lz` | Light height, `0.1`–`2` | `0.45` |
+| `lr` | Light spread, `0.2`–`3` | `1.2` |
+| `li`, `la` | Intensity `0`–`2`, ambient light `0`–`1` | `0.8`, `0.4` |
+| `lc`, `lac` | Light and ambient colours as six hex digits without `#` | `ffffff`, `eef0f8` |
+| `ls`, `lf` | Strength and shading smoothness, `0`–`1` | `0.8`, `0.45` |
+| `lsp`, `lrim`, `ld` | Gloss, rim light and stroke relief, `0`–`1` | `0.12`, `0.3`, `0.4` |
+| `lm` | `soft` or `cel` | `soft` |
+| `shadow` | `1` adds the drop shadow | `0` |
 
-Any other `bg` value falls back to transparent. In OBS, add the URL as a **Browser Source**
+Any other `bg` value falls back to transparent. Out-of-range lighting values are clamped,
+and invalid ones use the default. **Copy OBS URL** and **Open stream view** include the
+Live page's current lighting settings. In OBS, add the URL as a **Browser Source**
 (for example 1080 × 1080); the transparent background needs no chroma key. Use green or blue
 for software without transparency support.
 
@@ -148,6 +189,8 @@ for software without transparency support.
   numeric messages and rebroadcasts them; each stream view applies only messages for its own
   `project`.
 - When updates stop for one second, the stream view eases back to idle motion.
+- Lighting changes on the Live page reach matching stream views the same way. The server
+  accepts only complete settings made of numbers and the listed options.
 - Tracking runs in a Web Worker, so it continues while the Live page is hidden: in another
   tab, minimised, or behind another window. Frames come from `MediaStreamTrackProcessor` where
   available, otherwise from `requestVideoFrameCallback` or a worker timer. If tracking still

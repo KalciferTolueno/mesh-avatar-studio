@@ -1,3 +1,4 @@
+import type { LightingSettings } from '../lighting/settings';
 import type { Rig } from '../rig/types';
 import { parseRig } from '../rig/validate';
 import { createMeshAvatarImpl } from './createMeshAvatar.js';
@@ -14,6 +15,8 @@ export interface MeshAvatarOptions {
 }
 export interface MeshAvatar {
   readonly motions: { id: string; label: string; idle: boolean }[];
+  setLighting(settings: Partial<LightingSettings>): void;
+  getLightingStats(): { normalMs: number; computedLayers: number; cachedLayers: number };
   setParameters(parameters: Record<string, number>, weight?: number): void;
   getParameters(): Record<string, number>;
   setVoiceLevel(value: number): void;

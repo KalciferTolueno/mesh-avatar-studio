@@ -1,3 +1,5 @@
+import { LIGHTING_EVENT, lightingWire, lightingMessage, lightingValue } from '../lighting/protocol';
+import type { LightingSettings } from '../lighting/settings';
 import { LIVE_EVENT, liveMessage } from './protocol';
 
 export function createLiveSender(project: string) {
@@ -11,4 +13,14 @@ export function createLiveSender(project: string) {
 export function receiveLiveParameters(callback: (data: unknown) => void) {
   import.meta.hot?.on(LIVE_EVENT, callback);
   return () => import.meta.hot?.off(LIVE_EVENT, callback);
+}
+
+export function sendLighting(project: string, value: LightingSettings) {
+  const message = lightingMessage(lightingWire(project, value));
+  if (message) import.meta.hot?.send(LIGHTING_EVENT, message);
+}
+export function receiveLighting(project: string, callback: (value: LightingSettings) => void) {
+  const receive = (data: unknown) => { const message = lightingMessage(data); if (message?.project === project) callback(lightingValue(message)); };
+  import.meta.hot?.on(LIGHTING_EVENT, receive);
+  return () => import.meta.hot?.off(LIGHTING_EVENT, receive);
 }

@@ -1,3 +1,6 @@
+import { LightingControls, LightHandle, lightingText } from '../lighting/Controls';
+import { loadLighting, saveLighting } from '../lighting/settings';
+import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../editor/i18n';
 import { createAvatarView } from './avatar-view';
@@ -5,7 +8,8 @@ import { viewSettings, streamUrl, backgroundColor } from './settings';
 import { FacePose, type TrackingOptions } from './tracking';
 import { CameraCapture, MicrophoneCapture, type CameraState, type MicState, type BackgroundTracking } from './media';
 import { liveText } from './i18n';
-import { createLiveSender } from './relay';
+import { Icon } from '../editor/Icon';
+import { createLiveSender, sendLighting } from './relay';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
 const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1 };
@@ -20,7 +24,8 @@ function loadTrackingOptions(): Required<TrackingOptions> {
 
 export function LiveApp() {
   const { language, setLanguage } = useI18n(), t = liveText[language];
-  const [settings, setSettings] = useState(() => viewSettings(location.search));
+  const [settings, setSettings] = useState(() => { const view = viewSettings(location.search); return { ...view, lighting: view.lighting ?? loadLighting(view.project) }; });
+  const [lightingOpen, setLightingOpen] = useState(false);
   const [options, setOptions] = useState<TrackingOptions>(loadTrackingOptions);
   useEffect(() => { try { localStorage.setItem(OPTIONS_KEY, JSON.stringify(options)); } catch { /* storage unavailable */ } }, [options]);
   const [cameraState, setCameraState] = useState<CameraState>('stopped');
@@ -33,6 +38,8 @@ export function LiveApp() {
   const [backgroundStatus, setBackgroundStatus] = useState<BackgroundTracking>(null);
   const canvas = useRef<HTMLCanvasElement>(null), video = useRef<HTMLVideoElement>(null);
   const camera = useRef<CameraCapture | null>(null), microphone = useRef<MicrophoneCapture | null>(null);
+  const avatarRef = useRef<MeshAvatar | null>(null);
+  const lightRef = useRef(settings.lighting); lightRef.current = settings.lighting;
   const pose = useRef(new FacePose());
   const controls = useRef({ options, gain, micState, cameraState }); controls.current = { options, gain, micState, cameraState };
   const refreshDevices = () => { void navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(() => undefined); };
@@ -64,9 +71,23 @@ export function LiveApp() {
       avatar.setSpeaking(micOn); avatar.setVoiceLevel(micOn ? microphone.current?.level(control.gain) ?? 0 : 0);
     }, (avatar, now) => {
       if (controls.current.cameraState === 'running' || controls.current.micState === 'micOn') send(avatar.getParameters(), now);
-    }).then(value => { if (cancelled) value.destroy(); else { view = value; setViewState('ready'); } }).catch(() => { if (!cancelled) setViewState('projectError'); });
-    return () => { cancelled = true; clock.terminate(); view?.destroy(); };
+    }).then(value => { if (cancelled) value.destroy(); else { view = value; avatarRef.current = value.avatar; value.avatar.setLighting(lightRef.current); setViewState('ready'); } }).catch(() => { if (!cancelled) setViewState('projectError'); });
+    return () => { cancelled = true; clock.terminate(); view?.destroy(); avatarRef.current = null; };
   }, [settings.project, settings.fit]);
+  useEffect(() => {
+    saveLighting(settings.project, settings.lighting);
+    avatarRef.current?.setLighting(settings.lighting);
+  }, [settings.project, settings.lighting]);
+  useEffect(() => {
+    let sent: typeof settings.lighting | undefined;
+    // Throttle continuous drags and deliver the final position even after dragging stops.
+    const timer = setInterval(() => {
+      if (sent === lightRef.current) return;
+      sent = lightRef.current; sendLighting(settings.project, sent);
+    }, 34);
+    return () => clearInterval(timer);
+  }, [settings.project]);
+  const changeLighting = (lighting: typeof settings.lighting) => setSettings(current => ({ ...current, lighting }));
   const cameraActive = cameraState === 'starting' || cameraState === 'running';
   const micActive = micState === 'micStarting' || micState === 'micOn';
   const url = streamUrl(settings, location.origin);
@@ -75,8 +96,9 @@ export function LiveApp() {
     <header className="live-header"><div><a href="/">{t.back}</a><h1>Mesh Avatar Studio <span>{t.title}</span></h1></div>
       <div className="live-languages">{(['en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div>
     </header>
-    <div className="live-layout"><section className="live-view"><div className="live-preview checkerboard" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
+    <div className="live-layout"><section className="live-view"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
       <canvas ref={canvas} data-testid="live-avatar" />
+      {lightingOpen && <LightHandle value={settings.lighting} onChange={changeLighting} language={language} />}
     </div><p role="status" className={viewState === 'projectError' ? 'live-error' : ''}>{t[viewState]} · {settings.project}</p></section>
     <aside className="live-controls">
       <section><h2>{t.camera}</h2><label>{t.device}<select aria-label={t.camera} value={cameraId} disabled={cameraActive} onChange={event => setCameraId(event.target.value)}><option value="">{t.defaultDevice}</option>{devices.filter(device => device.kind === 'videoinput' && device.deviceId).map((device, i) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${t.camera} ${i + 1}`}</option>)}</select></label>
@@ -107,7 +129,12 @@ export function LiveApp() {
         <div className="live-buttons"><button className="live-primary" onClick={() => { void navigator.clipboard.writeText(url).then(() => setCopyState('copied')).catch(() => setCopyState('copyError')); }}>{t.obs}</button>
         <a className="live-open" href={url} target="_blank" rel="noreferrer">{t.openStream}</a></div>
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
-      </section><p className="live-privacy">{t.privacy}</p>
+      </section>
+      <details className="live-lighting" data-testid="lighting-section" onToggle={event => setLightingOpen(event.currentTarget.open)}>
+        <summary><Icon name="light" />{lightingText[language].title}{settings.lighting.enabled && <span className="lighting-on">ON</span>}</summary>
+        <LightingControls value={settings.lighting} onChange={changeLighting} language={language} />
+      </details>
+      <p className="live-privacy">{t.privacy}</p>
     </aside></div>
   </main>;
 }
