@@ -37,3 +37,21 @@ test('missing optional parts and variable strand lengths stay finite', () => {
   expect(out.every(Number.isFinite)).toBe(true);
   expect(physics.chains).toHaveLength(0);
 });
+test('head depth turns the face as a dome: nose leads, ears trail and the rim stays put', () => {
+  const at = (depth: Record<string, number> | undefined, x: number, y: number, angleX: number) => {
+    const rig = parseRig(fixture);
+    if (depth) rig.head.depth = depth;
+    const engine = createRig(rig);
+    const physics = new (createPhysics(engine, rig).Physics)();
+    const P = { ...Object.fromEntries(PARAMS.map(p => [p.id, p.def])), angleX };
+    return engine.deformBase(x, y, engine.baseWeights(x, y), P, physics.step(P, 1 / 60), [0, 0])[0] - x;
+  };
+  const depth = { round: 1, nose: 0.8, ears: -0.6 };
+  const { nose, earR, eyeA } = fixture.face;
+  const shift = (x: number, y: number) => at(depth, x, y, 30) - at(depth, x, y, 0);
+  expect(shift(nose.cx, nose.cy)).toBeGreaterThan(shift(eyeA.cx, eyeA.cy));
+  expect(shift(earR.cx, earR.cy)).toBeLessThan(shift(eyeA.cx, eyeA.cy));
+  // the dome's rim stays put: a point just inside the head ellipse barely moves
+  const { head } = fixture;
+  expect(Math.abs(shift(head.cx, head.cy - head.ry * 0.98))).toBeLessThan(2);
+});

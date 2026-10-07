@@ -53,3 +53,11 @@ test('rejects fractional and out-of-image accessory boxes and fractional mesh va
   const rig = parseRig(fixture); rig.mesh.fine.x0 = 340.2; rig.mesh.fine.cell = 7.2;
   expect(validateRig(rig).join()).toContain('rig.mesh.fine.x0'); expect(validateRig(rig).join()).toContain('rig.mesh.fine.cell');
 });
+test('optional head depth accepts partial settings and rejects out-of-range values', () => {
+  const rig = parseRig(fixture);
+  rig.head.depth = { round: 1, nose: 0.7, ears: -0.6 };
+  expect(validateRig(rig)).toEqual([]);
+  rig.head.depth = { round: 1.5, nose: 3 };
+  expect(validateRig(rig)).toEqual(expect.arrayContaining([
+    'rig.head.depth.round: must be between 0 and 1', 'rig.head.depth.nose: must be between -2 and 2']));
+});

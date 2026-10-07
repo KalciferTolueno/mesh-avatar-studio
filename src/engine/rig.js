@@ -29,6 +29,8 @@ export function createRig(rig) {
   // breathing and body sway distances were tuned in pixels on the 1254 px reference image;
   // scale them so larger or smaller illustrations move by the same share of their size
   const BODY_PX = IMG.w / 1254;
+  // optional 3D head turn (rig.head.depth); absent keeps the original flat-disk turn
+  const DEPTH = rig.head.depth ? { round: 1, nose: 0, mouth: 0, eyes: 0, ears: 0, ...rig.head.depth } : null;
   const gaussian = (x, y, a) => a ? Math.exp(-(((x - a.cx) / a.rx) ** 2 + ((y - a.cy) / a.ry) ** 2)) : 0;
   // ---- face features ----
   // Eye openings come from layers.json ("eyes", written when the layers were cut): the top / bottom edge of
@@ -173,8 +175,12 @@ export function createRig(rig) {
     const t = 1 - nx * nx - ny * ny;
     if (t <= 0) return [0, 0];
     // flat top over eyes/nose/mouth (r < ~0.4) so they move as one piece; all the
-    // stretching needed for parallax happens on the cheeks, contour and hair
-    const d = sstep(0, 0.84, t);
+    // stretching needed for parallax happens on the cheeks, contour and hair.
+    // With head.depth.round the profile becomes a rounded dome (linear in t, so its slope
+    // stays finite at the rim): the far side foreshortens and the near side widens across the
+    // whole face instead of the face sliding as a flat disk.
+    const flat = sstep(0, 0.84, t);
+    const d = DEPTH ? flat + (t - flat) * DEPTH.round : flat;
     return [ax * HEAD.shiftX * d, -ay * HEAD.shiftY * d];
   }
 
@@ -225,9 +231,18 @@ export function createRig(rig) {
     // head turn, per part: nose and mouth travel further than the eyes, the far eye
     // narrows and the near eye widens, the ears and buns slide the other way
     const ax = P.angleX / 30, ay = P.angleY / 30;
-    p[0] += ax * (8 * w.nose + 5 * w.mouth) + (x - rig.face.eyeA.cx) * 0.12 * ax * w.eyeA - (x - rig.face.eyeB.cx) * 0.12 * ax * w.eyeB
-      - ax * 9 * w.earR + ax * 4 * w.earL - ax * 10 * (w.bunL + w.bunR);
-    p[1] -= ay * (6 * w.nose + 3 * w.mouth);
+    if (DEPTH) {
+      // depth relative to the head's own turn travel: features standing out in front of the
+      // dome travel further, ears and buns behind it slide the other way (parallax)
+      const front = DEPTH.nose * w.nose + DEPTH.mouth * w.mouth + DEPTH.eyes * (w.eyeA + w.eyeB);
+      const back = DEPTH.ears * (w.earL + w.earR + w.bunL + w.bunR);
+      p[0] += ax * HEAD.shiftX * (front + back);
+      p[1] -= ay * HEAD.shiftY * (front + back);
+    } else {
+      p[0] += ax * (8 * w.nose + 5 * w.mouth) + (x - rig.face.eyeA.cx) * 0.12 * ax * w.eyeA - (x - rig.face.eyeB.cx) * 0.12 * ax * w.eyeB
+        - ax * 9 * w.earR + ax * 4 * w.earL - ax * 10 * (w.bunL + w.bunR);
+      p[1] -= ay * (6 * w.nose + 3 * w.mouth);
+    }
     p[1] += (y - rig.face.eyeA.cy) * -0.06 * Math.abs(ay) * w.eyeA + (y - rig.face.eyeB.cy) * -0.06 * Math.abs(ay) * w.eyeB;
     applyHead(p, w.head, P, w.turn);
     applyBody(p, y, P, w.chest, w.breath, w.shoulder);

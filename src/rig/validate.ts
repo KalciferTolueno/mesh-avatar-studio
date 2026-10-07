@@ -45,11 +45,16 @@ const unit: Check = (v, p, e) => {
   number(v, p, e);
   if (typeof v === 'number' && (v < 0 || v > 1)) e.push(`${p}: must be between 0 and 1`);
 };
+const depth: Check = (v, p, e) => {
+  number(v, p, e);
+  if (typeof v === 'number' && (v < -2 || v > 2)) e.push(`${p}: must be between -2 and 2`);
+};
 const schema = (draft: boolean) => object({
   version: (v, p, e) => { if (v !== 1) e.push(`${p}: only version 1 is supported`); },
   image: object({ width: integer, height: integer }),
   head: object({ ...ellipseFields, shiftX: number, shiftY: number, pivotX: number,
-    pivotY: number, maxRoll: number, weightBand: band, turnBand: band }),
+    pivotY: number, maxRoll: number, weightBand: band, turnBand: band,
+    depth: object({ round: unit, nose: depth, mouth: depth, eyes: depth, ears: depth }, ['round', 'nose', 'mouth', 'eyes', 'ears']) }, ['depth']),
   body: object({ pivotX: number, pivotY: number, maxRoll: number, breathBand: band,
     rollBand: band, chest: ellipse, shoulders: array(ellipse) }),
   face: object({ nose: ellipse, mouth: ellipse, eyeA: ellipse, eyeB: ellipse,

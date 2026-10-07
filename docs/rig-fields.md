@@ -7,7 +7,7 @@ radii and mesh cell sizes must be positive. Mesh cell sizes and fine-mesh rectan
 coordinates must be integers. Accessory boxes must be integer rectangles inside the image. A band is `[start, end]` with `start < end`.
 Ellipses are smooth influence regions, not hard cut-out boundaries.
 
-Only `buns`, `strands`, `accessories`, `hand` and `view.gazeCenter` are optional. Omit absent
+Only `head.depth`, `buns`, `strands`, `accessories`, `hand` and `view.gazeCenter` are optional. Omit absent
 optional groups. Required regions must still be placed even if their animation will be small.
 The initial draft has empty eye polygons and is intentionally invalid until they are traced.
 See [agent-guide.md](agent-guide.md) for the process and [rig-mapping.md](rig-mapping.md) for
@@ -29,6 +29,11 @@ the engine mapping. Do not copy the example illustration's coordinates into a ne
 | `head.maxRoll` | Roll magnitude at a ±30° head pose, radians; start near `0.15`. |
 | `head.weightBand` | Y range, px, where head influence fades from full to zero; below chin to collarbone. |
 | `head.turnBand` | Y range, px, where face-turn displacement fades; below chin into upper chest. |
+| `head.depth.round` | Optional 3D head turn, 0–1; `0` keeps the flat-disk turn, `1` turns the head as a rounded dome (far side foreshortens, near side widens). |
+| `head.depth.nose` | Optional nose depth, -2–2, as a share of the head's turn travel; snouts and muzzles start near `0.7`. |
+| `head.depth.mouth` | Optional mouth depth, -2–2; start near `0.5` for a muzzle, lower for a flat face. |
+| `head.depth.eyes` | Optional eye depth, -2–2; start near `0.15`. |
+| `head.depth.ears` | Optional ear and bun depth, -2–2; negative values slide them the other way, behind the head; start near `-0.6`. |
 | `body.pivotX` | Body roll pivot x, px; middle of the lower torso. |
 | `body.pivotY` | Body roll pivot y, px; near the bottom of the image. |
 | `body.maxRoll` | Body rotation at a ±10° body pose, radians; start near `0.035`. |
