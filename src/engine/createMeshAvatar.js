@@ -97,14 +97,26 @@ export async function createMeshAvatarImpl(canvas, options) {
   const R = new Renderer(canvas, { padTop: options.padTop ?? rig.view.padTop, padSide: options.padSide ?? rig.view.padSide, fit: options.fit });
   const rects = { base: [0, 0, IMG.w, IMG.h], ...meta.layers };
 
-  // base layer, denser where hair strands bend and the face parts shift
-  const baseMesh = buildGrid(rects.base, rig.mesh.baseCell, alphaOf(imgs.base), imgs.base.width, rig.mesh.fine);
-  const baseW = [];
-  for (let i = 0; i < baseMesh.rest.length / 2; i++) {
-    const x = baseMesh.rest[i * 2], y = baseMesh.rest[i * 2 + 1];
-    baseW.push(baseWeights(x, y, hairAt(x, y)));
+  // base layer, denser where hair strands bend and the face parts shift. A project with
+  // separated parts (tools/build-parts.py) draws those pieces instead, back to front: ears,
+  // body, head, front hair. The body ignores the head; head pieces follow it completely.
+  const pieces = [];
+  const addPiece = (name, img, rect, role, { face = false, hair = false } = {}) => {
+    const mesh = buildGrid(rect, rig.mesh.baseCell, alphaOf(img), img.width, rig.mesh.fine);
+    const W = [];
+    for (let i = 0; i < mesh.rest.length / 2; i++) {
+      const x = mesh.rest[i * 2], y = mesh.rest[i * 2 + 1];
+      W.push(baseWeights(x, y, role === 'body' ? 0 : hair ? 1 : hairAt(x, y), role));
+    }
+    R.addLayer(name, img, mesh, { face });
+    pieces.push({ mesh, W });
+  };
+  if (Array.isArray(meta.parts) && meta.parts.length) {
+    const partImgs = await Promise.all(meta.parts.map(p => loadImage(asset(p.file, meta.build))));
+    meta.parts.forEach((p, i) => addPiece(p.name, partImgs[i], p.rect, p.role === 'body' ? 'body' : 'head', { face: p.name === 'head', hair: !!p.hair }));
+  } else {
+    addPiece('base', imgs.base, rects.base, 'all', { face: true });
   }
-  R.addLayer('base', imgs.base, baseMesh, { face: true });
 
   // eyes: white+iris clipped by the lids, then the line layers on top
   const eyeParts = [];
@@ -164,10 +176,12 @@ export async function createMeshAvatarImpl(canvas, options) {
     const P = updateParameters(dt);
     const phys = physics.step(P, dt);
 
-    const bp = baseMesh.pos, br = baseMesh.rest;
-    for (let i = 0; i < baseW.length; i++) {
-      deformBase(br[i * 2], br[i * 2 + 1], baseW[i], P, phys, tmp);
-      bp[i * 2] = tmp[0]; bp[i * 2 + 1] = tmp[1];
+    for (const { mesh, W } of pieces) {
+      const bp = mesh.pos, br = mesh.rest;
+      for (let i = 0; i < W.length; i++) {
+        deformBase(br[i * 2], br[i * 2 + 1], W[i], P, phys, tmp);
+        bp[i * 2] = tmp[0]; bp[i * 2 + 1] = tmp[1];
+      }
     }
     // with drawn eye sprites the layered eye is only ever shown exactly as drawn: moving the
     // cut-out lash leaves seams at its edges

@@ -49,6 +49,9 @@ const depth: Check = (v, p, e) => {
   number(v, p, e);
   if (typeof v === 'number' && (v < -2 || v > 2)) e.push(`${p}: must be between -2 and 2`);
 };
+const partName: Check = (v, p, e) => {
+  if (typeof v !== 'string' || !/^[A-Za-z0-9_-]+$/.test(v) || ['body', 'head', 'front'].includes(v)) e.push(`${p}: expected a file-safe name other than body, head or front`);
+};
 const schema = (draft: boolean) => object({
   version: (v, p, e) => { if (v !== 1) e.push(`${p}: only version 1 is supported`); },
   image: object({ width: integer, height: integer }),
@@ -77,7 +80,14 @@ const schema = (draft: boolean) => object({
     y0: wholeNumber, y1: wholeNumber, cell: integer }), handCell: integer,
     tasselCell: integer, eyeBallCell: integer, eyeCell: integer, spriteCell: integer }),
   view: object({ padTop: number, padSide: number, gazeCenter: point }, ['gazeCenter']),
-}, ['buns', 'strands', 'accessories', 'hand']);
+  // cuts for tools/build-parts.py; the engine reads the built parts from layers.json
+  parts: object({
+    jaw: line,
+    ears: array(object({ name: partName, outline: polygon }), 0, 4),
+    front: object({ outline: polygon, hairline: number }, ['hairline']),
+    fill: object({ body: positive, collar: positive, front: positive, ears: positive }, ['body', 'collar', 'front', 'ears']),
+  }, ['ears', 'front', 'fill']),
+}, ['buns', 'strands', 'accessories', 'hand', 'parts']);
 
 export function validateRig(value: unknown, options: { draft?: boolean } = {}): string[] {
   const errors: string[] = [];

@@ -107,7 +107,9 @@ export async function openLocalProject(project: LocalProject): Promise<ProjectAs
   const rig = parseRig(raw);
   const assets: Record<string, string> = {};
   const depth = typeof metadata.depth === 'string' && /^[\w-]+\.png$/.test(metadata.depth) ? [metadata.depth] : [];
-  for (const name of ['layers.json', 'base.png', 'hairmask.png', ...depth, ...Object.keys(metadata.layers).map(name => `${name}.png`)]) assets[name] = `${base}built/${name}${version}`;
+  // separated parts from tools/build-parts.py live in built/parts/
+  const parts = Array.isArray(metadata.parts) ? metadata.parts.map((part: { file?: unknown }) => part.file).filter((file: unknown): file is string => typeof file === 'string' && /^parts\/[\w-]+\.png$/.test(file)) : [];
+  for (const name of ['layers.json', 'base.png', 'hairmask.png', ...depth, ...parts, ...Object.keys(metadata.layers).map(name => `${name}.png`)]) assets[name] = `${base}built/${name}${version}`;
   if (project.hasSprites) {
     const sprites = await jsonFile(`${base}built/sprites/sprites.json`);
     assets['sprites/sprites.json'] = `${base}built/sprites/sprites.json${version}`;

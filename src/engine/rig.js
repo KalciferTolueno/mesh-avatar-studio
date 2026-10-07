@@ -149,7 +149,20 @@ export function createRig(rig, extra = {}) {
 
   // Per-vertex weights of the base layer, computed once from the rest position.
   // hair: 0..1 from hairmask.png, so strands only move actual hair.
-  function baseWeights(x, y, hair = 1) {
+  // role: 'all' for the single base image; with separated parts (built/parts) the body part
+  // ignores the head entirely and head parts follow the head fully, as cut-out pieces would.
+  function baseWeights(x, y, hair = 1, role = 'all') {
+    const w = allWeights(x, y, hair);
+    if (role === 'body') {
+      w.head = 0; w.turn = 0; w.strands = [];
+      w.bunL = w.bunR = w.brow = w.jaw = w.nose = w.mouth = w.eyeA = w.eyeB = w.earR = w.earL = w.depth = 0;
+    } else if (role === 'head') {
+      w.head = 1; w.turn = 1;
+      w.chest = 0; w.shoulder = 0;
+    }
+    return w;
+  }
+  function allWeights(x, y, hair) {
     return {
       head: headWeight(x, y),
       turn: turnWeight(x, y),

@@ -70,3 +70,21 @@ test('a relief map makes nearer pixels travel further and is ignored without hea
   expect(travel(1, true)).toBeGreaterThan(travel(1, false) + 5);
   expect(travel(undefined, true)).toBe(travel(undefined, false));
 });
+test('separated parts: the body ignores head turns while head pieces follow them fully', () => {
+  const rig = parseRig(fixture);
+  const engine = createRig(rig);
+  const physics = new (createPhysics(engine, rig).Physics)();
+  const move = (x: number, y: number, role: string) => {
+    const at = (angleX: number) => {
+      const P = { ...Object.fromEntries(PARAMS.map(p => [p.id, p.def])), angleX };
+      return engine.deformBase(x, y, engine.baseWeights(x, y, 0, role), P, physics.step(P, 1 / 60), [0, 0])[0];
+    };
+    return at(30) - at(0);
+  };
+  const { head } = fixture;
+  // a point beside the jaw, inside the turn band, where the single base image is dragged along
+  const x = head.cx, y = head.weightBand[0] - 5;
+  expect(Math.abs(move(x, y, 'all'))).toBeGreaterThan(1);
+  expect(move(x, y, 'body')).toBe(0);
+  expect(move(x, y, 'head')).toBeGreaterThanOrEqual(move(x, y, 'all'));
+});

@@ -75,4 +75,11 @@ export interface Rig {
     eyeCell: number; spriteCell: number;
   };
   view: { padTop: number; padSide: number; gazeCenter?: Point };
+  /** Optional cuts for tools/build-parts.py (head above the jaw line, ears, front hair). */
+  parts?: {
+    jaw: Point[];
+    ears?: { name: string; outline: Point[] }[];
+    front?: { outline: Point[]; hairline?: number };
+    fill?: Partial<Record<'body' | 'collar' | 'front' | 'ears', number>>;
+  };
 }

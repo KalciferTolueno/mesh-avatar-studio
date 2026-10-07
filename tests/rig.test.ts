@@ -61,3 +61,11 @@ test('optional head depth accepts partial settings and rejects out-of-range valu
   expect(validateRig(rig)).toEqual(expect.arrayContaining([
     'rig.head.depth.round: must be between 0 and 1', 'rig.head.depth.nose: must be between -2 and 2']));
 });
+test('optional parts cuts validate their jaw line, ear names and outlines', () => {
+  const rig = parseRig(fixture);
+  rig.parts = { jaw: [[100, 600], [600, 650], [1100, 600]], ears: [{ name: 'ear_l', outline: [[10, 10], [60, 10], [30, 80]] }], front: { outline: [[300, 50], [900, 50], [600, 300]] } };
+  expect(validateRig(rig)).toEqual([]);
+  rig.parts.ears = [{ name: 'head', outline: [[10, 10], [60, 10]] }];
+  expect(validateRig(rig)).toEqual(expect.arrayContaining([
+    'rig.parts.ears[0].name: expected a file-safe name other than body, head or front', 'rig.parts.ears[0].outline: expected 3..Infinity items']));
+});

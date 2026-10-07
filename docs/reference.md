@@ -98,6 +98,29 @@ uploaded. It writes `built/depth.png` and records it in `built/layers.json`; the
 `head.depth.map` (start near `0.8`). Rebuilding the layers rewrites `layers.json`, so run the
 depth tool again afterwards.
 
+### Optional separated parts and a layered PSD
+
+A single image stretches where the head turns over the body. `tools/build-parts.py` cuts it
+into overlapping parts so each one moves as a piece: the body, the head, each ear (behind the
+head) and the front hair (in front of it). The cuts come from `parts` in the rig: a `jaw`
+polyline (head above, body below), ear `outline`s and a `front` hair outline; within them,
+colours and connectivity decide which pixels belong where. What each part covers is filled on
+the part behind it, locally: the neck and collar edge under the head with smooth shading, the
+base of each ear from its own colours, and the forehead under the front hair with LaMa
+(Apache-2.0, about 200 MB, downloaded once into the Hugging Face cache; nothing is uploaded).
+
+```sh
+uv run tools/build-parts.py projects/<name> --preview   # mask overlay in work/parts-overlay.png
+uv run tools/build-parts.py projects/<name>             # writes built/parts/ and layers.json
+uv run tools/export-psd.py projects/<name>              # <project>/<name>.psd
+```
+
+The engine draws the parts when `layers.json` lists them: the body ignores head turns, head
+parts follow the head completely. The PSD holds the parts, the eye layers and the drawn
+variants (hidden) at their source positions, plus the hidden original for reference, for
+retouching in Affinity or Photoshop or as a starting point for Live2D Cubism. Rebuilding the
+layers rewrites `layers.json`, so run the parts and depth tools again afterwards.
+
 ## Editing
 
 - Drag a handle or select an item to edit its numeric fields.

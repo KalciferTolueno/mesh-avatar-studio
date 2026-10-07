@@ -7,7 +7,7 @@ radii and mesh cell sizes must be positive. Mesh cell sizes and fine-mesh rectan
 coordinates must be integers. Accessory boxes must be integer rectangles inside the image. A band is `[start, end]` with `start < end`.
 Ellipses are smooth influence regions, not hard cut-out boundaries.
 
-Only `head.depth`, `buns`, `strands`, `accessories`, `hand` and `view.gazeCenter` are optional. Omit absent
+Only `head.depth`, `parts`, `buns`, `strands`, `accessories`, `hand` and `view.gazeCenter` are optional. Omit absent
 optional groups. Required regions must still be placed even if their animation will be small.
 The initial draft has empty eye polygons and is intentionally invalid until they are traced.
 See [agent-guide.md](agent-guide.md) for the process and [rig-mapping.md](rig-mapping.md) for
@@ -149,6 +149,12 @@ the engine mapping. Do not copy the example illustration's coordinates into a ne
 | `mesh.spriteCell` | Drawn eye/mouth sprite cell spacing, px; example `4`. |
 | `view.padTop` | Top viewport margin as fraction of source height; negative crops crown, must be between -1 and 1. |
 | `view.padSide` | Each side viewport margin as fraction of source width; start at `0`, must exceed -0.5. |
+| `parts.jaw` | Optional polyline `[x,y]`, px, left to right along the jaw outline; head above it, body below. Its end points extend sideways. |
+| `parts.ears[*].name` | File-safe ear part name, e.g. `ear_l`; not `body`, `head` or `front`. |
+| `parts.ears[*].outline` | Polygon `[x,y]`, px, generously around one ear (ring included); fur continuing outside it stays with the head. |
+| `parts.front.outline` | Optional polygon around the front hair locks; hair-mask pixels inside it move in front of the head. |
+| `parts.front.hairline` | Optional y, px, above which everything in the outline is front hair; default `300`. |
+| `parts.fill` | Optional fill reach in px: `body` (neck under the head, `110`), `collar` (`12`), `front` (`45`), `ears` (`35`). |
 | `view.gazeCenter` | Optional pointer-follow origin `[x,y]`, px; between eyes; defaults to head centre. |
 
 Draft validation accepts omitted `x0/x1/top/bot` only as a complete group; supplying some of
