@@ -38,6 +38,7 @@ async function main() {
   await asset('layers.json');
   const layers = JSON.parse(await readFile(resolve(built, 'layers.json'), 'utf8'));
   await Promise.all(['base', 'hairmask', ...Object.keys(layers.layers)].map(name => asset(`${name}.png`)));
+  if (typeof layers.depth === 'string') await asset(layers.depth);
   try {
     await asset('sprites/sprites.json');
   } catch (error) {
