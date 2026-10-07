@@ -62,12 +62,6 @@ function deformTassel(ch, mesh) {
  * @param {import('./index').MeshAvatarOptions} options */
 export async function createMeshAvatarImpl(canvas, options) {
   const rig = options.rig;
-  const engine = createRig(rig);
-  const { IMG, EYES, baseWeights, deformBase, eyePartY, eyePartAlpha,
-    handWeights, handFrame, deformHand, TASSELS } = engine;
-  const { Renderer, buildGrid } = createRenderer(engine, rig);
-  const { Physics } = createPhysics(engine, rig);
-  const { createSprites } = createSpriteModule(engine, rig);
   const base = (options.assetsBase ?? '/miko-qipao/built/').replace(/\/?$/, '/');
   const asset = (name, build) => {
     if (options.assets) {
@@ -77,6 +71,20 @@ export async function createMeshAvatarImpl(canvas, options) {
     return `${base}${name}${build === undefined ? '' : `?b=${build}`}`;
   };
   const meta = await loadJson(asset('layers.json'));
+  // optional relief map from tools/build-depth.py, used by the 3D head turn (rig.head.depth.map)
+  let depthAt;
+  if (meta.depth && rig.head.depth?.map) {
+    const img = await loadImage(asset(meta.depth, meta.build));
+    const depth = channelOf(img, 0), w = img.width, h = img.height;
+    const sx = w / rig.image.width, sy = h / rig.image.height;
+    depthAt = (x, y) => depth[Math.min(h - 1, Math.max(0, Math.round(y * sy))) * w + Math.min(w - 1, Math.max(0, Math.round(x * sx)))] / 255;
+  }
+  const engine = createRig(rig, { depthAt });
+  const { IMG, EYES, baseWeights, deformBase, eyePartY, eyePartAlpha,
+    handWeights, handFrame, deformHand, TASSELS } = engine;
+  const { Renderer, buildGrid } = createRenderer(engine, rig);
+  const { Physics } = createPhysics(engine, rig);
+  const { createSprites } = createSpriteModule(engine, rig);
 
   const names = ['base', ...(rig.hand ? ['hand'] : []), ...TASSELS.map(t => t.name), ...[0, 1].flatMap(i => EYE_PARTS.map(p => `eye${i}_${p}`)), 'hairmask'];
   const imgs = Object.fromEntries(await Promise.all(names.map(async n => [n, await loadImage(asset(`${n}.png`, meta.build))])));

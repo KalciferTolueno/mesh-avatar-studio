@@ -47,8 +47,8 @@ export interface Rig {
   head: Ellipse & {
     shiftX: number; shiftY: number; pivotX: number; pivotY: number;
     maxRoll: number; weightBand: Band; turnBand: Band;
-    /** Optional 3D head turn: dome roundness 0–1 and per-feature depth (-2..2, negative = behind). */
-    depth?: Partial<Record<'round' | 'nose' | 'mouth' | 'eyes' | 'ears', number>>;
+    /** Optional 3D head turn: dome roundness 0–1, per-feature depth and relief-map strength (-2..2, negative = behind). */
+    depth?: Partial<Record<'round' | 'nose' | 'mouth' | 'eyes' | 'ears' | 'map', number>>;
   };
   body: {
     pivotX: number; pivotY: number; maxRoll: number;

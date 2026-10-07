@@ -33,6 +33,7 @@ the engine mapping. Do not copy the example illustration's coordinates into a ne
 | `head.depth.nose` | Optional nose depth, -2–2, as a share of the head's turn travel; snouts and muzzles start near `0.7`. |
 | `head.depth.mouth` | Optional mouth depth, -2–2; start near `0.5` for a muzzle, lower for a flat face. |
 | `head.depth.eyes` | Optional eye depth, -2–2; start near `0.15`. |
+| `head.depth.map` | Optional relief-map strength, -2–2; uses `built/depth.png` from `tools/build-depth.py`, nearer pixels travel further; start near `0.8` and lower the feature depths. |
 | `head.depth.ears` | Optional ear and bun depth, -2–2; negative values slide them the other way, behind the head; start near `-0.6`. |
 | `body.pivotX` | Body roll pivot x, px; middle of the lower torso. |
 | `body.pivotY` | Body roll pivot y, px; near the bottom of the image. |

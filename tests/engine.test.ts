@@ -55,3 +55,16 @@ test('head depth turns the face as a dome: nose leads, ears trail and the rim st
   const { head } = fixture;
   expect(Math.abs(shift(head.cx, head.cy - head.ry * 0.98))).toBeLessThan(2);
 });
+test('a relief map makes nearer pixels travel further and is ignored without head.depth.map', () => {
+  const travel = (map: number | undefined, near: boolean) => {
+    const rig = parseRig(fixture);
+    rig.head.depth = map === undefined ? { round: 1 } : { round: 1, map };
+    const { nose } = fixture.face;
+    const engine = createRig(rig, { depthAt: (x: number) => (near && x === nose.cx ? 1 : 0) });
+    const physics = new (createPhysics(engine, rig).Physics)();
+    const P = { ...Object.fromEntries(PARAMS.map(p => [p.id, p.def])), angleX: 30 };
+    return engine.deformBase(nose.cx, nose.cy, engine.baseWeights(nose.cx, nose.cy), P, physics.step(P, 1 / 60), [0, 0])[0];
+  };
+  expect(travel(1, true)).toBeGreaterThan(travel(1, false) + 5);
+  expect(travel(undefined, true)).toBe(travel(undefined, false));
+});

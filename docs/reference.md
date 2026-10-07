@@ -83,6 +83,21 @@ Accessory colour masks currently use the rig's red-dominance thresholds (`color.
 around the traced regions; fully translucent artwork or unrelated colours inside an eye ROI
 may need manual retouching. Inpainting approximates the artwork hidden behind hands and eyes.
 
+### Optional depth map for a 3D head turn
+
+`head.depth` in the rig turns the head as a rounded dome with per-feature depth (see
+[rig fields](rig-fields.md)). For more relief, estimate a depth map locally:
+
+```sh
+uv run tools/build-depth.py projects/<name>
+```
+
+It runs Depth Anything V2 Small (Apache-2.0) with ONNX Runtime on this machine; the model,
+about 100 MB, is downloaded once into the Hugging Face cache and the illustration is never
+uploaded. It writes `built/depth.png` and records it in `built/layers.json`; then set
+`head.depth.map` (start near `0.8`). Rebuilding the layers rewrites `layers.json`, so run the
+depth tool again afterwards.
+
 ## Editing
 
 - Drag a handle or select an item to edit its numeric fields.

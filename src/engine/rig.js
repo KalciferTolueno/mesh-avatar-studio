@@ -23,14 +23,19 @@ export const PARAMS = [
 
 // Reference algorithms are intentionally retained as JavaScript; the factory's rig input
 // and public TypeScript adapter are typed, with numerical regression covering this port.
-/** @param {import('../rig/types').Rig} rig */
-export function createRig(rig) {
+// extra.depthAt: optional relief map sampler (source px -> 0..1) for the 3D head turn
+/**
+ * @param {import('../rig/types').Rig} rig
+ * @param {{ depthAt?: (x: number, y: number) => number }} [extra]
+ */
+export function createRig(rig, extra = {}) {
+  const { depthAt } = extra;
   const IMG = { w: rig.image.width, h: rig.image.height };
   // breathing and body sway distances were tuned in pixels on the 1254 px reference image;
   // scale them so larger or smaller illustrations move by the same share of their size
   const BODY_PX = IMG.w / 1254;
   // optional 3D head turn (rig.head.depth); absent keeps the original flat-disk turn
-  const DEPTH = rig.head.depth ? { round: 1, nose: 0, mouth: 0, eyes: 0, ears: 0, ...rig.head.depth } : null;
+  const DEPTH = rig.head.depth ? { round: 1, nose: 0, mouth: 0, eyes: 0, ears: 0, map: 0, ...rig.head.depth } : null;
   const gaussian = (x, y, a) => a ? Math.exp(-(((x - a.cx) / a.rx) ** 2 + ((y - a.cy) / a.ry) ** 2)) : 0;
   // ---- face features ----
   // Eye openings come from layers.json ("eyes", written when the layers were cut): the top / bottom edge of
@@ -155,6 +160,7 @@ export function createRig(rig) {
       // chin below the mouth line drops a little when the mouth opens
       jaw: gaussian(x, y, rig.face.jaw) * sstep(...rig.face.jaw.band, y),
       // per-feature depth for head turns (nose sticks out most, ears sit at the back)
+      depth: depthAt ? depthAt(x, y) : 0,
       nose: gaussian(x, y, rig.face.nose),
       mouth: gaussian(x, y, rig.face.mouth),
       eyeA: gaussian(x, y, rig.face.eyeA),
@@ -236,8 +242,12 @@ export function createRig(rig) {
       // dome travel further, ears and buns behind it slide the other way (parallax)
       const front = DEPTH.nose * w.nose + DEPTH.mouth * w.mouth + DEPTH.eyes * (w.eyeA + w.eyeB);
       const back = DEPTH.ears * (w.earL + w.earR + w.bunL + w.bunR);
-      p[0] += ax * HEAD.shiftX * (front + back);
-      p[1] -= ay * HEAD.shiftY * (front + back);
+      // relief map: nearer pixels travel further; faded out at the head outline so the
+      // silhouette and everything outside the head stay where they are
+      const nx = (x - HEAD.cx) / HEAD.rx, ny = (y - HEAD.cy) / HEAD.ry;
+      const relief = DEPTH.map * w.depth * sstep(0, 0.3, 1 - nx * nx - ny * ny);
+      p[0] += ax * HEAD.shiftX * (front + back + relief);
+      p[1] -= ay * HEAD.shiftY * (front + back + relief);
     } else {
       p[0] += ax * (8 * w.nose + 5 * w.mouth) + (x - rig.face.eyeA.cx) * 0.12 * ax * w.eyeA - (x - rig.face.eyeB.cx) * 0.12 * ax * w.eyeB
         - ax * 9 * w.earR + ax * 4 * w.earL - ax * 10 * (w.bunL + w.bunR);

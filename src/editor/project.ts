@@ -106,7 +106,8 @@ export async function openLocalProject(project: LocalProject): Promise<ProjectAs
   if (project.rigFile === 'rig.draft.json' && Array.isArray(metadata.eyes)) raw.eyes = raw.eyes.map((eye: object, index: number) => ({ ...eye, ...metadata.eyes[index] }));
   const rig = parseRig(raw);
   const assets: Record<string, string> = {};
-  for (const name of ['layers.json', 'base.png', 'hairmask.png', ...Object.keys(metadata.layers).map(name => `${name}.png`)]) assets[name] = `${base}built/${name}${version}`;
+  const depth = typeof metadata.depth === 'string' && /^[\w-]+\.png$/.test(metadata.depth) ? [metadata.depth] : [];
+  for (const name of ['layers.json', 'base.png', 'hairmask.png', ...depth, ...Object.keys(metadata.layers).map(name => `${name}.png`)]) assets[name] = `${base}built/${name}${version}`;
   if (project.hasSprites) {
     const sprites = await jsonFile(`${base}built/sprites/sprites.json`);
     assets['sprites/sprites.json'] = `${base}built/sprites/sprites.json${version}`;
