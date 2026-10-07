@@ -30,6 +30,7 @@ the engine mapping. Do not copy the example illustration's coordinates into a ne
 | `head.weightBand` | Y range, px, where head influence fades from full to zero; below chin to collarbone. |
 | `head.turnBand` | Y range, px, where face-turn displacement fades; below chin into upper chest. |
 | `head.depth.round` | Optional 3D head turn, 0–1; `0` keeps the flat-disk turn, `1` turns the head as a rounded dome (far side foreshortens, near side widens). |
+| `head.depth.rigid` | Optional share, 0–1, of the turn applied to the whole head as one piece (outline, ears and hair travel with the face); default `0.6`. `0` keeps the outline fixed. |
 | `head.depth.nose` | Optional nose depth, -2–2, as a share of the head's turn travel; snouts and muzzles start near `0.7`. |
 | `head.depth.mouth` | Optional mouth depth, -2–2; start near `0.5` for a muzzle, lower for a flat face. |
 | `head.depth.eyes` | Optional eye depth, -2–2; start near `0.15`. |

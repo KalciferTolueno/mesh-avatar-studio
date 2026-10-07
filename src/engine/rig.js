@@ -35,7 +35,7 @@ export function createRig(rig, extra = {}) {
   // scale them so larger or smaller illustrations move by the same share of their size
   const BODY_PX = IMG.w / 1254;
   // optional 3D head turn (rig.head.depth); absent keeps the original flat-disk turn
-  const DEPTH = rig.head.depth ? { round: 1, nose: 0, mouth: 0, eyes: 0, ears: 0, map: 0, ...rig.head.depth } : null;
+  const DEPTH = rig.head.depth ? { round: 1, rigid: 0.6, nose: 0, mouth: 0, eyes: 0, ears: 0, map: 0, ...rig.head.depth } : null;
   const gaussian = (x, y, a) => a ? Math.exp(-(((x - a.cx) / a.rx) ** 2 + ((y - a.cy) / a.ry) ** 2)) : 0;
   // ---- face features ----
   // Eye openings come from layers.json ("eyes", written when the layers were cut): the top / bottom edge of
@@ -179,14 +179,25 @@ export function createRig(rig, extra = {}) {
   function turnOffset(x, y, ax, ay) {
     const nx = (x - HEAD.cx) / HEAD.rx, ny = (y - HEAD.cy) / HEAD.ry;
     const t = 1 - nx * nx - ny * ny;
+    if (DEPTH) return depthTurn(nx, ny, t, ax, ay);
     if (t <= 0) return [0, 0];
     // flat top over eyes/nose/mouth (r < ~0.4) so they move as one piece; all the
-    // stretching needed for parallax happens on the cheeks, contour and hair.
-    // With head.depth.round the profile becomes a rounded dome (linear in t, so its slope
-    // stays finite at the rim): the far side foreshortens and the near side widens across the
-    // whole face instead of the face sliding as a flat disk.
-    const flat = sstep(0, 0.84, t);
-    const d = DEPTH ? flat + (t - flat) * DEPTH.round : flat;
+    // stretching needed for parallax happens on the cheeks, contour and hair
+    const d = sstep(0, 0.84, t);
+    return [ax * HEAD.shiftX * d, -ay * HEAD.shiftY * d];
+  }
+
+  // 3D head turn (rig.head.depth). A head turns from the neck, so the whole head (outline,
+  // ears, hair) first travels as one piece ("rigid" share); the rest of the travel is a
+  // rounded dome (linear in t, so its slope stays finite at the rim) that foreshortens the far
+  // side and widens the near side. The rigid region reaches past the ellipse: generously above
+  // (ears, hair tips) and only slightly below, so a collar beside the jaw is not dragged along.
+  function depthTurn(nx, ny, t, ax, ay) {
+    const flat = t > 0 ? sstep(0, 0.84, t) : 0;
+    const dome = t > 0 ? flat + (t - flat) * DEPTH.round : 0;
+    const margin = 0.3 - 0.2 * sstep(-0.2, 0.2, ny);
+    const whole = 1 - sstep(1, 1 + margin, Math.hypot(nx, ny));
+    const d = DEPTH.rigid * whole + (1 - DEPTH.rigid) * dome;
     return [ax * HEAD.shiftX * d, -ay * HEAD.shiftY * d];
   }
 

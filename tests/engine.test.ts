@@ -37,7 +37,7 @@ test('missing optional parts and variable strand lengths stay finite', () => {
   expect(out.every(Number.isFinite)).toBe(true);
   expect(physics.chains).toHaveLength(0);
 });
-test('head depth turns the face as a dome: nose leads, ears trail and the rim stays put', () => {
+test('head depth turns the face as a dome: nose leads, ears trail and the whole head travels', () => {
   const at = (depth: Record<string, number> | undefined, x: number, y: number, angleX: number) => {
     const rig = parseRig(fixture);
     if (depth) rig.head.depth = depth;
@@ -51,9 +51,11 @@ test('head depth turns the face as a dome: nose leads, ears trail and the rim st
   const shift = (x: number, y: number) => at(depth, x, y, 30) - at(depth, x, y, 0);
   expect(shift(nose.cx, nose.cy)).toBeGreaterThan(shift(eyeA.cx, eyeA.cy));
   expect(shift(earR.cx, earR.cy)).toBeLessThan(shift(eyeA.cx, eyeA.cy));
-  // the dome's rim stays put: a point just inside the head ellipse barely moves
+  // the whole head travels: its crown moves with the face, but only rigidly fixed outlines stay put
   const { head } = fixture;
-  expect(Math.abs(shift(head.cx, head.cy - head.ry * 0.98))).toBeLessThan(2);
+  const crown = (rigid: number) => at({ ...depth, rigid }, head.cx, head.cy - head.ry * 0.98, 30) - at({ ...depth, rigid }, head.cx, head.cy - head.ry * 0.98, 0);
+  expect(crown(0.6)).toBeGreaterThan(head.shiftX * 0.5);
+  expect(Math.abs(crown(0))).toBeLessThan(2);
 });
 test('a relief map makes nearer pixels travel further and is ignored without head.depth.map', () => {
   const travel = (map: number | undefined, near: boolean) => {
