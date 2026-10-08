@@ -252,6 +252,9 @@ export function createRenderer(engine, rig) {
     constructor(canvas, { padTop = 0, padSide = 0, fit = 'contain' } = {}) {
       this.pad = { top: padTop, side: padSide };
       this.fit = fit;
+      // fork (see FORK.md): where the user placed the avatar in the frame; x / y in shares of the
+      // canvas width / height, scale about the canvas centre
+      this.frame = { x: 0, y: 0, scale: 1 };
       const gl = canvas.getContext('webgl2', { premultipliedAlpha: true, antialias: true, alpha: true, preserveDrawingBuffer: true });
       if (!gl) throw new Error('WebGL2 is not available');
       this.gl = gl; this.canvas = canvas;
@@ -373,6 +376,11 @@ export function createRenderer(engine, rig) {
         if (zoom === 1) continue;
         this.offset[0] += cx * this.scale[0] * (1 - zoom); this.offset[1] += cy * this.scale[1] * (1 - zoom);
         this.scale = [this.scale[0] * zoom, this.scale[1] * zoom];
+      }
+      const f = this.frame;
+      if (f.scale !== 1 || f.x !== 0 || f.y !== 0) {
+        this.scale = [this.scale[0] * f.scale, this.scale[1] * f.scale];
+        this.offset = [this.offset[0] * f.scale + 2 * f.x, this.offset[1] * f.scale - 2 * f.y];
       }
       gl.viewport(0, 0, this.canvas.width, this.canvas.height);
       gl.clearColor(0, 0, 0, 0);

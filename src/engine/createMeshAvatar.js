@@ -269,6 +269,8 @@ export async function createMeshAvatarImpl(canvas, options) {
     getLipSyncState() { return motion.getLipSyncState(); },
     setAutoIdle(on) { motion.autoIdle = !!on; },
     setLighting(value) { R.setLighting(value); },
+    // fork: avatar position and size in the frame (src/live/frame.ts)
+    setFrame({ x = 0, y = 0, scale = 1 } = {}) { R.frame = { x, y, scale }; },
     getLightingStats() { return { ...R.lightingStats }; },
     setAutoMotion(on) { motion.autoMotion = !!on; },
     /** Hair / tassel sway multiplier (1 = default). */

@@ -34,6 +34,7 @@ export interface MeshAvatar {
   setPhysicsTuning(tuning: { strength?: number; stiffness?: number; wind?: number; groups?: number[] }): void;
   getPhysicsGroups(): string[];
   setMouthBlend(seconds: number): void;
+  setFrame(frame: { x?: number; y?: number; scale?: number }): void;
   setVoiceVowel(vowel: 'a' | 'i' | 'u' | 'e' | 'o' | null): void;
   onMotion(listener: (id: string | null) => void): () => void;
   advance(seconds: number, fps?: number): void;

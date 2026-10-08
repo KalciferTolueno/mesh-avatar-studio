@@ -21,6 +21,8 @@ import { CameraCapture, MicrophoneCapture, type CameraState, type MicState, type
 import { liveText } from './i18n';
 import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
+import { LiveFrame, useFrameCanvas } from './LiveFrame';
+import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
 // like VTube Studio's sample models: pitch ±20° -> ±30°, livelier brows, blush and wide eyes on
@@ -40,6 +42,9 @@ export function LiveApp() {
   const { language, setLanguage } = useI18n(), t = liveText[language];
   const [settings, setSettings] = useState(() => { const view = viewSettings(location.search); return { ...view, lighting: view.lighting ?? loadLighting(view.project), physics: view.physics ?? loadPhysics(view.project) }; });
   const [lightingOpen, setLightingOpen] = useState(false);
+  // fork: avatar position and size in the frame (src/live/LiveFrame.tsx)
+  const [frame, setFrame] = useState(() => loadFrameSettings(settings.project));
+  const frameRef = useRef(frame.frame); frameRef.current = frame.frame;
   const [options, setOptions] = useState<TrackingOptions>(loadTrackingOptions);
   useEffect(() => { try { localStorage.setItem(OPTIONS_KEY, JSON.stringify(options)); } catch { /* storage unavailable */ } }, [options]);
   const [cameraState, setCameraState] = useState<CameraState>('stopped');
@@ -54,6 +59,7 @@ export function LiveApp() {
   const camera = useRef<CameraCapture | null>(null), microphone = useRef<MicrophoneCapture | null>(null);
   const avatarRef = useRef<MeshAvatar | null>(null);
   const lightRef = useRef(settings.lighting); lightRef.current = settings.lighting;
+  useFrameCanvas(canvas, frame, setFrame);
   const pose = useRef(new FacePose());
   const expressions = useRef(new ExpressionMixer());
   const animations = useRef(new AnimationPlayer());
@@ -112,7 +118,7 @@ export function LiveApp() {
       avatar.setSpeaking(micOn); avatar.setVoiceLevel(level);
     }, (avatar, now) => {
       if (controls.current.cameraState === 'running' || controls.current.micState === 'micOn' || expressions.current.any() || animations.current.any()) send(avatar.getParameters(), now);
-    }).then(value => { if (cancelled) value.destroy(); else { view = value; avatarRef.current = value.avatar; value.avatar.setLighting(lightRef.current); setViewState('ready'); } }).catch(() => { if (!cancelled) setViewState('projectError'); });
+    }).then(value => { if (cancelled) value.destroy(); else { view = value; avatarRef.current = value.avatar; value.avatar.setLighting(lightRef.current); value.avatar.setFrame(frameRef.current); setViewState('ready'); } }).catch(() => { if (!cancelled) setViewState('projectError'); });
     return () => { cancelled = true; clock.terminate(); view?.destroy(); avatarRef.current = null; };
   }, [settings.project, settings.fit]);
   useEffect(() => {
@@ -128,10 +134,25 @@ export function LiveApp() {
     }, 34);
     return () => clearInterval(timer);
   }, [settings.project]);
+  useEffect(() => {
+    saveFrameSettings(settings.project, frame);
+    avatarRef.current?.setFrame(frame.frame);
+  }, [settings.project, frame]);
+  useEffect(() => {
+    let sent: typeof frame.frame | undefined, at = 0;
+    // like the light: throttled while dragging, and the final position always arrives; repeated
+    // every second so a stream view opened later picks it up too
+    const timer = setInterval(() => {
+      const now = performance.now();
+      if (sent === frameRef.current && now - at < 1000) return;
+      sent = frameRef.current; at = now; sendFrame(settings.project, sent);
+    }, 34);
+    return () => clearInterval(timer);
+  }, [settings.project]);
   const changeLighting = (lighting: typeof settings.lighting) => setSettings(current => ({ ...current, lighting }));
   const cameraActive = cameraState === 'starting' || cameraState === 'running';
   const micActive = micState === 'micStarting' || micState === 'micOn';
-  const url = streamUrl(settings, location.origin);
+  const url = streamUrl({ ...settings, frame: frame.frame }, location.origin);
   const status = cameraState === 'running' ? tracking ? 'tracking' : 'lost' : cameraState;
   return <main className="live-app">
     {/* fork: Edit / Live switch and theme toggle (src/theme/ThemeControls.tsx); the back link keeps its name */}
@@ -141,7 +162,7 @@ export function LiveApp() {
       <div className="live-languages">{(['es', 'en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ es: 'Español', en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div></div>
     </header>
     <div className="live-layout"><section className="live-view"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
-      <canvas ref={canvas} data-testid="live-avatar" />
+      <canvas ref={canvas} data-testid="live-avatar" className={frame.locked ? undefined : 'live-movable'} />
       {lightingOpen && <LightHandle value={settings.lighting} onChange={changeLighting} language={language} />}
     </div><p role="status" className={viewState === 'projectError' ? 'live-error' : ''}>{t[viewState]} · {settings.project}</p></section>
     <aside className="live-controls">
@@ -179,6 +200,7 @@ export function LiveApp() {
       {/* fork: expressions on keys, like VTube Studio's hotkeys (FORK.md 14) */}
       <LiveExpressions mixer={expressions} language={language} />
       <LiveAnimations player={animations} language={language} />
+      <LiveFrame value={frame} onChange={setFrame} language={language} />
       {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
       <details className="live-lighting live-movement" data-testid="movement-section" open>
         <summary><Icon name="live" />{t.movement}</summary>

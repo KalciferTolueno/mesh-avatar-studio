@@ -156,3 +156,10 @@
   background: linear-gradient(to right, var(--accent-soft) var(--p, 0%), var(--surface) var(--p, 0%)); }
 :root[data-theme] .vowel-steps > button.now { color: var(--accent); border-color: var(--accent-line); }
 :root[data-theme] .live-app .vowel-steps > button.done { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+
+/* fork: avatar framing (src/live/LiveFrame.tsx) — the preview takes the OBS shape, centred,
+   with a dashed edge, and the avatar can be dragged and scrolled */
+.live-preview { display: flex; align-items: center; justify-content: center; }
+.live-preview canvas[style*="width"] { outline: 1px dashed var(--accent, #3977d8); outline-offset: -1px; }
+.live-preview canvas.live-movable { cursor: grab; touch-action: none; }
+.live-preview canvas.live-movable[data-dragging] { cursor: grabbing; }

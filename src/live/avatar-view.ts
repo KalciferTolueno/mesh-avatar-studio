@@ -16,6 +16,7 @@ export async function createAvatarView(canvas: HTMLCanvasElement, settings: View
   const avatar = await createMeshAvatar(canvas, { rig: loaded.rig!, assets: loaded.assets, manual: true, fit: settings.fit, preserveMouthForm: true });
   if (settings.lighting) avatar.setLighting(settings.lighting);
   if (settings.physics) avatar.setPhysicsTuning(settings.physics);
+  if (settings.frame) avatar.setFrame(settings.frame);
   avatar.setAutoIdle(settings.idle); avatar.setAutoMotion(settings.idle);
   if (!settings.idle) avatar.setParameters(neutralParameters);
   canvas.dataset.state = 'ready';

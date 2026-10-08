@@ -1,5 +1,6 @@
 import { lightingFromQuery, writeLightingQuery, type LightingSettings } from '../lighting/settings';
 import { physicsFromQuery, writePhysicsQuery, type PhysicsTuning } from '../physics/settings';
+import { frameFromQuery, writeFrameQuery, type AvatarFrame } from './frame';
 export const SAMPLE_PROJECT = 'sample-miko-qipao';
 export interface ViewSettings {
   project: string;
@@ -8,6 +9,7 @@ export interface ViewSettings {
   idle: boolean;
   lighting?: LightingSettings;
   physics?: PhysicsTuning;
+  frame?: AvatarFrame;
 }
 export function backgroundColor(value: string | null): string {
   if (value === 'green') return '#00ff00';
@@ -20,12 +22,15 @@ export function viewSettings(search: string): ViewSettings {
   return { project: project && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(project) ? project : SAMPLE_PROJECT,
     background: backgroundColor(query.get('bg')), fit: query.get('fit') === 'cover' ? 'cover' : 'contain', idle: query.get('idle') !== '0', ...(query.has('light') ? { lighting: lightingFromQuery(query) } : {}),
     // fork: physics adjustments (src/physics)
-    ...(physicsFromQuery(query) ? { physics: physicsFromQuery(query)! } : {}) };
+    ...(physicsFromQuery(query) ? { physics: physicsFromQuery(query)! } : {}),
+    // fork: avatar position and size in the frame (src/live/frame.ts)
+    ...(frameFromQuery(query) ? { frame: frameFromQuery(query)! } : {}) };
 }
 export function streamUrl(settings: ViewSettings, origin: string): string {
   const url = new URL('/stream.html', origin);
   url.search = new URLSearchParams({ project: settings.project, bg: settings.background, fit: settings.fit, idle: settings.idle ? '1' : '0' }).toString();
   if (settings.lighting) writeLightingQuery(url.searchParams, settings.lighting);
   if (settings.physics) writePhysicsQuery(url.searchParams, settings.physics);
+  if (settings.frame) writeFrameQuery(url.searchParams, settings.frame);
   return url.href;
 }

@@ -361,6 +361,29 @@ git checkout mi-version && git merge main
 - **Archivos del original tocados:** `src/engine/sprites.js`, `tools/build-sprites.py`,
   `tools/agent_common.py`.
 
+### 19. Posición y tamaño del avatar en el encuadre (como VTube Studio)
+
+- **Antes:** el avatar siempre ocupaba el encuadre según "Encuadre" (encajar / llenar); no se podía
+  mover ni cambiar de tamaño, y la vista previa de En vivo tenía la forma del panel, distinta de
+  la de OBS.
+- **Ahora:** en En vivo se **arrastra** el avatar para moverlo y se usa la **rueda** sobre él para
+  cambiar su tamaño (con el punto bajo el ratón fijo). Sección **Posición y tamaño**: formato de
+  la vista previa (16:9 por defecto, 9:16, 4:3, 1:1 o libre, para que coincida con la fuente de
+  navegador de OBS), deslizadores horizontal / vertical / tamaño (20–400 %), **Bloquear
+  posición** y **Centrar y tamaño original**. Se guarda por proyecto en el navegador
+  (`mesh-avatar:frame:<proyecto>`), va en la URL de OBS (`frame=x,y,tamaño`, solo si se movió) y
+  se envía en vivo a las vistas de stream abiertas (evento `studio:frame`, repetido cada segundo
+  para que una vista abierta después se sincronice).
+- **Motor:** `setFrame({ x, y, scale })` aplica un desplazamiento (en fracciones del ancho / alto
+  del lienzo) y una escala alrededor del centro del lienzo después del resto de la vista; con los
+  valores por defecto no cambia nada (regresión 0 px).
+- **Archivos nuevos:** `src/live/frame.ts`, `src/live/LiveFrame.tsx`, `src/server/frame-relay.ts`,
+  `tests/live-frame.test.ts`.
+- **Archivos del original tocados:** `src/engine/renderer.js` (`frame`), `src/engine/createMeshAvatar.js`
+  y `src/engine/index.ts` (`setFrame`), `src/live/settings.ts`, `src/live/avatar-view.ts`,
+  `src/live/stream.ts`, `src/live/LiveApp.tsx`, `vite.config.ts` (`frameRelay()`),
+  `src/theme/theme.css` (vista previa centrada y cursor de arrastre).
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

@@ -6,9 +6,10 @@ import { localProjectsPlugin } from './src/server/local-projects';
 import { mediapipeAssets } from './src/server/mediapipe-assets';
 import { liveRelay } from './src/server/live-relay';
 import { physicsRelay } from './src/server/physics-relay';
+import { frameRelay } from './src/server/frame-relay';
 export default defineConfig({
   server: { host: '127.0.0.1' },
-  plugins: [react(), localProjectsPlugin(fileURLToPath(new URL('.', import.meta.url))), mediapipeAssets(fileURLToPath(new URL('.', import.meta.url))), liveRelay(), physicsRelay(), {
+  plugins: [react(), localProjectsPlugin(fileURLToPath(new URL('.', import.meta.url))), mediapipeAssets(fileURLToPath(new URL('.', import.meta.url))), liveRelay(), physicsRelay(), frameRelay(), {
     name: 'sample-rig',
     resolveId(id) {
       if (id === 'virtual:sample-rig') return '\0sample-rig';
