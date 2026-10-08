@@ -158,6 +158,8 @@ git checkout mi-version && git merge main
   `ModeSwitch`; botón de tema), `src/live/LiveApp.tsx` (cabecera con `ModeSwitch` y tema; el
   enlace a Editar conserva el nombre accesible "Volver al editor"), `src/editor/EditorCanvas.tsx`
   (el lienzo se limpia con `clearRect` en vez de pintarse con `#f9fafc`; el fondo lo pone el CSS).
+- **Lista de partes compacta:** la descripción de cada parte solo se muestra en la parte
+  seleccionada (regla al final de `theme.css`; el original la mostraba en todas).
 - **Si el autor cambia estilos:** sus reglas nuevas se verán con nuestros colores mientras usen
   sus variables (`--ink`, `--surface`, `--line`, `--accent`…); si añade colores fijos, hay que
   sobrescribirlos en `theme.css`.

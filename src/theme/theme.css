@@ -132,3 +132,9 @@
 :root[data-theme] .light-handle { background: #fff4cc; border: 2px solid #a66109; color: #805000; }
 :root[data-theme] .editor-canvas { background: var(--canvas-bg); }
 :root[data-theme] .camera-preview { background: var(--canvas-bg); border-radius: var(--radius-sm); }
+
+/* ---- less noise: compact part list, the description shows for the selected part only ---- */
+:root[data-theme] .part-select small { display: none; }
+:root[data-theme] .part-row.is-selected .part-select small { display: -webkit-box; }
+:root[data-theme] .part-select { padding: 7px 8px; }
+:root[data-theme] .part-section h3, :root[data-theme] .advanced-section > summary { text-transform: none; letter-spacing: .2px; color: var(--faint); }
