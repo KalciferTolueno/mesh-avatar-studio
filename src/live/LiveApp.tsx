@@ -1,6 +1,8 @@
 import { LightingControls, LightHandle, lightingText } from '../lighting/Controls';
 import { loadLighting, saveLighting } from '../lighting/settings';
 import { LivePhysics } from '../physics/LivePhysics';
+import { LiveExpressions } from '../expressions/LiveExpressions';
+import { ExpressionMixer } from '../expressions/presets';
 import { loadPhysics } from '../physics/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
@@ -49,6 +51,7 @@ export function LiveApp() {
   const avatarRef = useRef<MeshAvatar | null>(null);
   const lightRef = useRef(settings.lighting); lightRef.current = settings.lighting;
   const pose = useRef(new FacePose());
+  const expressions = useRef(new ExpressionMixer());
   const controls = useRef({ options, gain, micState, cameraState }); controls.current = { options, gain, micState, cameraState };
   const refreshDevices = () => { void navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(() => undefined); };
   useEffect(() => {
@@ -74,11 +77,14 @@ export function LiveApp() {
       const control = controls.current, sampled = pose.current.sample(now, dt, control.options);
       setTracking(sampled.tracking);
       avatar.setAutoIdle(!sampled.tracking); avatar.setAutoMotion(!sampled.tracking);
-      avatar.setParameters(sampled.params, sampled.weight);
+      // fork: expressions toggled with keys sit on top of tracking (src/expressions)
+      const mixer = expressions.current; mixer.step(dt);
+      if (sampled.tracking || !mixer.any()) avatar.setParameters(mixer.apply(sampled.params), sampled.weight);
+      else avatar.setParameters(mixer.applyAlone(), 1);
       const micOn = control.micState === 'micOn';
       avatar.setSpeaking(micOn); avatar.setVoiceLevel(micOn ? microphone.current?.level(control.gain) ?? 0 : 0);
     }, (avatar, now) => {
-      if (controls.current.cameraState === 'running' || controls.current.micState === 'micOn') send(avatar.getParameters(), now);
+      if (controls.current.cameraState === 'running' || controls.current.micState === 'micOn' || expressions.current.any()) send(avatar.getParameters(), now);
     }).then(value => { if (cancelled) value.destroy(); else { view = value; avatarRef.current = value.avatar; value.avatar.setLighting(lightRef.current); setViewState('ready'); } }).catch(() => { if (!cancelled) setViewState('projectError'); });
     return () => { cancelled = true; clock.terminate(); view?.destroy(); avatarRef.current = null; };
   }, [settings.project, settings.fit]);
@@ -140,6 +146,8 @@ export function LiveApp() {
         <a className="live-open" href={url} target="_blank" rel="noreferrer">{t.openStream}</a></div>
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
       </section>
+      {/* fork: expressions on keys, like VTube Studio's hotkeys (FORK.md 14) */}
+      <LiveExpressions mixer={expressions} language={language} />
       {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
       <details className="live-lighting live-movement" data-testid="movement-section" open>
         <summary><Icon name="live" />{t.movement}</summary>

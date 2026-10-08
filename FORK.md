@@ -266,6 +266,20 @@ git checkout mi-version && git merge main
   (sección), `src/live/i18n.ts`, `src/live/i18n-es.ts`, `src/editor/Preview.tsx`,
   `src/editor/i18n.tsx`, `src/editor/i18n-zh.ts`, `src/editor/i18n-es.ts`.
 
+### 14. Expresiones con teclas
+
+- **Nuevo:** sección **Expresiones** en En vivo, como las hotkeys de VTube Studio: Feliz, Sonrojo,
+  Enfado, Triste, Sorpresa y Sueño, con teclas 1–6 reasignables (clic en la tecla y pulsar otra) y
+  botones. Se activan y quitan con transición suave, se pueden combinar y Esc quita todas. Se
+  aplican encima del rastreo (o sobre la pose neutra sin cámara) y llegan a OBS: la página envía
+  los parámetros también cuando solo hay expresiones activas. Las teclas solo funcionan con la
+  ventana de En vivo en primer plano (un navegador no puede leer teclas globales).
+- **Archivos nuevos:** `src/expressions/presets.ts` (expresiones y mezclador),
+  `src/expressions/LiveExpressions.tsx` (sección, teclas, textos es/en/ja/zh),
+  `tests/expressions.test.ts`.
+- **Archivos del original tocados:** `src/live/LiveApp.tsx` (mezclador en cada fotograma, envío y
+  sección).
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |
