@@ -96,6 +96,7 @@ export function LiveApp() {
       const smooth = control.options.vowelSmooth ?? 0.5;
       const form = vowelMouth.current.step(vowel, dt, smooth, control.options.vowelStrength ?? 0.85);
       avatar.setMouthBlend(0.03 + 0.15 * smooth);
+      avatar.setVoiceVowel(vowel);
       const voice: Record<string, number> = form === null ? {} : { mouthForm: form };
       if (sampled.tracking || !(mixer.any() || player.any() || form !== null)) avatar.setParameters({ ...mixer.apply(player.apply(tracked)), ...voice }, sampled.weight);
       else {

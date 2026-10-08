@@ -176,6 +176,8 @@ export class Motion {
       const r = Math.random();
       this.vowel = r < 0.4 ? 'a' : r < 0.58 ? 'o' : r < 0.74 ? 'e' : r < 0.88 ? 'i' : 'u';
     }
+    // fork: a vowel heard in the voice (setVoiceVowel) replaces the random one
+    if (this.voiceVowel) this.vowel = this.voiceVowel;
     const range = this.voicePeak - this.voiceTrough;
     const rise = range < peak * 0.3 ? 1 : Math.max(0, (v - this.voiceTrough) / range);
     const shape = VOWELS[this.vowel ?? 'a'];

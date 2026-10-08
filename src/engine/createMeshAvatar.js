@@ -279,6 +279,8 @@ export async function createMeshAvatarImpl(canvas, options) {
     getPhysicsGroups() { return groupPhysics.groups.map(g => g.name); },
     /** Cross-fade time in seconds between drawn mouths (0 = instant, as upstream). */
     setMouthBlend(sec) { sprites?.setMouthBlend(sec); },
+    /** The vowel heard in the voice ('a'…'o'), or null to let each syllable pick one at random. */
+    setVoiceVowel(vowel) { motion.voiceVowel = ['a', 'i', 'u', 'e', 'o'].includes(vowel) ? vowel : null; },
     /** Called with the motion id when a motion starts and with null when it ends. */
     onMotion(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     /** Advance the simulation by `sec` and draw (for tests / hidden tabs). */

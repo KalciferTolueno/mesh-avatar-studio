@@ -312,22 +312,28 @@ git checkout mi-version && git merge main
 
 - **Antes:** con el micrófono, la boca se abría según el volumen y el motor elegía una vocal **al
   azar** en cada sílaba.
-- **Ahora (opción "Detectar vocales", activada por defecto):** se estiman los dos primeros
-  formantes de la voz uniendo los picos de los armónicos del espectro y se elige la vocal japonesa
-  más cercana entre perfiles de voz grave y aguda, con un voto corto para mantener una vocal por
-  sílaba. La vocal fija `mouthForm`, así que se usan las bocas dibujadas que correspondan (あ, い,
+- **Ahora (opción "Detectar vocales", activada por defecto):** se aplica pre-énfasis (+6 dB por
+  octava), se traza la envolvente uniendo los picos de los armónicos y se compara **la forma
+  entera** de 200 a 3200 Hz con la de cada vocal japonesa (perfiles de voz grave y aguda),
+  descontando nivel e inclinación del espectro. Las diferencias se suavizan unos 0,1 s y solo se
+  cambia a una vocal claramente mejor durante ~0,1 s, así una vocal sostenida ("ooooo") no salta
+  entre formas. El motor usa además esa vocal para la apertura de la boca (`setVoiceVowel`) en vez
+  de elegir una al azar en cada sílaba. Probado con voces sintéticas de 100 a 250 Hz, con
+  vibrato, temblor de formantes e inclinación de 0 a 9 dB/octava; con 12 dB/octava la "a" grave
+  puede confundirse a ratos con "o" La vocal fija `mouthForm`, así que se usan las bocas dibujadas que correspondan (あ, い,
   お…). Se calcula en el navegador a partir del espectro; no se graba ni se envía audio.
 - **Cambios suaves:** cada vocal se mantiene un tiempo mínimo, la forma de la boca se acerca a la
   nueva vocal con suavidad (`VowelMouth`) y el motor funde los dibujos de boca al cambiar
   (`setMouthBlend`, en `src/engine/sprites.js`; 0 = cambio instantáneo como el original, que es
   lo que usa el editor). Controles en el micrófono: **Suavidad del cambio de vocal** (fundido de
   0,03 a 0,18 s) y **Fuerza de las vocales** (acerca i/u a la boca neutra).
-- **Archivos nuevos:** `src/expressions/vowels.ts`, `tests/vowels.test.ts` (voces sintéticas de
-  100 a 250 Hz).
+- **Archivos nuevos:** `src/expressions/vowels.ts`, `tests/vowels.test.ts`,
+  `tests/vowels-sustained.test.ts`.
 - **Archivos del original tocados:** `src/live/media.ts` (método `spectrum()` en
   `MicrophoneCapture`), `src/live/tracking.ts` (opciones `voiceVowels`, `vowelSmooth`,
-  `vowelStrength`), `src/engine/sprites.js`, `src/engine/createMeshAvatar.js`,
-  `src/engine/index.ts` (`setMouthBlend`), `src/live/LiveApp.tsx`,
+  `vowelStrength`), `src/engine/sprites.js`, `src/engine/motion.js` (`voiceVowel`),
+  `src/engine/createMeshAvatar.js`, `src/engine/index.ts` (`setMouthBlend`, `setVoiceVowel`),
+  `src/live/LiveApp.tsx`,
   `src/live/i18n.ts`, `src/live/i18n-es.ts`.
 
 ## Registro de fusiones con el original
