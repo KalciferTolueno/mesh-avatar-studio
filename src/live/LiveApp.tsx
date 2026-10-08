@@ -1,5 +1,7 @@
 import { LightingControls, LightHandle, lightingText } from '../lighting/Controls';
 import { loadLighting, saveLighting } from '../lighting/settings';
+import { LivePhysics } from '../physics/LivePhysics';
+import { loadPhysics } from '../physics/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../editor/i18n';
@@ -27,7 +29,7 @@ function loadTrackingOptions(): Required<TrackingOptions> {
 
 export function LiveApp() {
   const { language, setLanguage } = useI18n(), t = liveText[language];
-  const [settings, setSettings] = useState(() => { const view = viewSettings(location.search); return { ...view, lighting: view.lighting ?? loadLighting(view.project) }; });
+  const [settings, setSettings] = useState(() => { const view = viewSettings(location.search); return { ...view, lighting: view.lighting ?? loadLighting(view.project), physics: view.physics ?? loadPhysics(view.project) }; });
   const [lightingOpen, setLightingOpen] = useState(false);
   const [options, setOptions] = useState<TrackingOptions>(loadTrackingOptions);
   useEffect(() => { try { localStorage.setItem(OPTIONS_KEY, JSON.stringify(options)); } catch { /* storage unavailable */ } }, [options]);
@@ -140,6 +142,9 @@ export function LiveApp() {
         <summary><Icon name="light" />{lightingText[language].title}{settings.lighting.enabled && <span className="lighting-on">ON</span>}</summary>
         <LightingControls value={settings.lighting} onChange={changeLighting} language={language} />
       </details>
+      {/* fork: physics adjustments (src/physics), also carried by the OBS URL */}
+      <LivePhysics project={settings.project} value={settings.physics} onChange={physics => setSettings(current => ({ ...current, physics }))}
+        avatar={avatarRef} ready={viewState === 'ready'} language={language} />
       <p className="live-privacy">{t.privacy}</p>
     </aside></div>
   </main>;

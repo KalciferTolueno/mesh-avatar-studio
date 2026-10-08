@@ -264,6 +264,10 @@ export async function createMeshAvatarImpl(canvas, options) {
     setAutoMotion(on) { motion.autoMotion = !!on; },
     /** Hair / tassel sway multiplier (1 = default). */
     setSwayGain(g) { physics.gain = g; },
+    /** Live physics adjustments (src/physics): strength also scales the hair sway. */
+    setPhysicsTuning(value) { groupPhysics.setTuning(value); if (value.strength !== undefined) physics.gain = value.strength; },
+    /** Names of the rig's physics groups, in order. */
+    getPhysicsGroups() { return groupPhysics.groups.map(g => g.name); },
     /** Called with the motion id when a motion starts and with null when it ends. */
     onMotion(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     /** Advance the simulation by `sec` and draw (for tests / hidden tabs). */

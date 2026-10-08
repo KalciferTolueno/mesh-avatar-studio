@@ -21,8 +21,11 @@ export function createGroupPhysics(rig) {
   const state = groups.map(() => ({ a: 0, v: 0, drive: null, vel: 0, acc: 0 }));
   let time = 0;
   const out = groups.map(() => 0);
+  // live adjustments (src/physics): overall strength, stiffness and wind, and per-group strength
+  let tuning = { strength: 1, stiffness: 1, wind: 1, groups: [] };
   return {
     groups,
+    setTuning(value) { tuning = { ...tuning, ...value }; },
     reset() { for (const s of state) { s.a = 0; s.v = 0; s.drive = null; s.vel = 0; s.acc = 0; } },
     /** Advance by dt seconds; returns each group's angle in radians. */
     step(P, dt) {
@@ -41,13 +44,13 @@ export function createGroupPhysics(rig) {
         const acc = (vel - s.vel) / Math.max(dt, 1e-3);
         s.vel += (vel - s.vel) * kv;
         s.acc += (acc - s.acc) * ka;
-        const maxRad = g.max * DEG;
-        const w = 2 * Math.PI * g.freq;
+        const maxRad = Math.max(1e-4, g.max * DEG * tuning.strength * (tuning.groups[gi] ?? 1));
+        const w = 2 * Math.PI * g.freq * tuning.stiffness;
         // gravity: hang straight while the head (if attached to it) and the body roll
         const roll = (g.attach === 'head' ? P.angleZ / 30 * rig.head.maxRoll : 0) + P.bodyAngleZ / 10 * rig.body.maxRoll;
         for (let i = 0; i < sub; i++) {
           const t = time + i * h;
-          const wind = g.wind * maxRad * 0.3 * (Math.sin(t * 1.3 + g.phase) + 0.5 * Math.sin(t * 2.9 + g.phase * 2));
+          const wind = g.wind * tuning.wind * maxRad * 0.3 * (Math.sin(t * 1.3 + g.phase) + 0.5 * Math.sin(t * 2.9 + g.phase * 2));
           const rest = g.hang * roll + wind;
           const accel = -w * w * (s.a - rest) - 2 * g.damping * w * s.v - 4 * g.inertia * maxRad * s.acc;
           s.v += accel * h;

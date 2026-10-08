@@ -186,6 +186,23 @@ git checkout mi-version && git merge main
 - **Ajuste práctico:** la banda (`width`) debe cubrir el objeto entero y al menos dos celdas de la
   malla (`mesh.baseCell`); si no, el objeto se estrecha y ensancha al girar.
 
+### 10. Ajustes de física en En vivo (y en OBS)
+
+- **Nuevo:** sección **Física** en la barra derecha de En vivo: fuerza, rigidez y viento globales
+  (la fuerza también escala los mechones, como la "Physics Strength" de VTube Studio) y un control
+  de intensidad por cada grupo de `rig.physics`. Se guardan por proyecto en el navegador
+  (`mesh-avatar:physics:<proyecto>`), viajan en la URL de OBS (`ph=fuerza,rigidez,viento` y
+  `phg=` uno por grupo) y se envían en vivo a las vistas de stream abiertas.
+- **Archivos nuevos:** `src/physics/settings.ts` (formato estricto, URL, almacenamiento, envío),
+  `src/physics/PhysicsControls.tsx` (controles y textos es/en/ja/zh),
+  `src/physics/LivePhysics.tsx` (sección de En vivo), `src/server/physics-relay.ts`
+  (retransmisión validada), `tests/physics-settings.test.ts`.
+- **Archivos del original tocados:** `vite.config.ts` (registra `physicsRelay()`),
+  `src/live/LiveApp.tsx` (estado `physics` y la sección), `src/live/settings.ts`
+  (`ViewSettings.physics`, URL), `src/live/avatar-view.ts` (aplica los ajustes al crear el
+  avatar), `src/live/stream.ts` (recibe los cambios), `src/engine/createMeshAvatar.js`
+  (`setPhysicsTuning`, `getPhysicsGroups`), `src/engine/index.ts` (tipos), `src/engine/groups.js`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

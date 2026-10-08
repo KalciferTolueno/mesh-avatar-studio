@@ -31,6 +31,8 @@ export interface MeshAvatar {
   setAutoIdle(on: boolean): void;
   setAutoMotion(on: boolean): void;
   setSwayGain(gain: number): void;
+  setPhysicsTuning(tuning: { strength?: number; stiffness?: number; wind?: number; groups?: number[] }): void;
+  getPhysicsGroups(): string[];
   onMotion(listener: (id: string | null) => void): () => void;
   advance(seconds: number, fps?: number): void;
   advanceParameters(seconds: number): void;
