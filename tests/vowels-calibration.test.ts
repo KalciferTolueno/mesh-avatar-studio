@@ -32,18 +32,21 @@ test('calibrating with the user own voice fixes a cheap microphone', () => {
   const plain = new VowelDetector();
   const before = VowelCalibration.ORDER.reduce((sum, v, i) => sum + sustained(plain, v, 11 + i), 0);
   // the user says a, i, u, e, o; a breath and a pause in between do not count
-  const calibration = new VowelCalibration(), probe = new VowelDetector(), noise = rng(99);
+  // one recording per vowel, as the Live page's buttons do
+  const templates = {}, probe = new VowelDetector(), noise = rng(99);
   for (const vowel of VowelCalibration.ORDER) {
+    const calibration = new VowelCalibration([vowel]);
     const [f1, f2] = speaker[vowel];
     for (let i = 0; i < 20; i++) calibration.feed(probe.envelope(voice(125, f1, f2, noise), 46.875), 0.05);
     for (let i = 0; calibration.vowel === vowel && i < 200; i++) {
       const wobble = 1 + (noise() - 0.5) * 0.06;
       calibration.feed(probe.envelope(voice(125, f1 * wobble, f2 * wobble, noise), 46.875), 0.4);
     }
+    expect(calibration.done).toBe(true); expect(Object.keys(calibration.templates)).toEqual([vowel]);
+    Object.assign(templates, calibration.templates);
   }
-  expect(calibration.done).toBe(true);
   const tuned = new VowelDetector();
-  tuned.setTemplates(calibration.templates);
+  tuned.setTemplates(templates);
   const after = VowelCalibration.ORDER.reduce((sum, v, i) => sum + sustained(tuned, v, 11 + i), 0);
   console.log(`laptop microphone: ${before} wrong frames before calibration, ${after} after`);
   expect(before).toBeGreaterThan(0);

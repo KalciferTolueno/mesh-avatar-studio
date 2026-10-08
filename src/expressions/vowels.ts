@@ -155,17 +155,19 @@ export class VowelMouth {
   }
 }
 
-/** Records the user's own vowels: each one is held for a moment and its averaged envelope
- * becomes that vowel's template. Only voiced frames count, so pauses do not matter. */
+/** Records the user's own vowels, one at a time: each is held for a moment and its averaged
+ * envelope becomes that vowel's template. Only voiced frames count, so pauses do not matter.
+ * `vowels` lists which to record, in order (the Live page records one per button press). */
 export class VowelCalibration {
   static readonly ORDER: Vowel[] = ['a', 'i', 'u', 'e', 'o'];
   static readonly FRAMES = 40;              // voiced frames per vowel, about 0.7 s
+  constructor(private readonly vowels: Vowel[] = VowelCalibration.ORDER) {}
   private index = 0;
   private frames = 0;
   private sum: number[] = [];
   readonly templates: VowelTemplates = {};
-  get vowel(): Vowel | null { return VowelCalibration.ORDER[this.index] ?? null; }
-  get done() { return this.index >= VowelCalibration.ORDER.length; }
+  get vowel(): Vowel | null { return this.vowels[this.index] ?? null; }
+  get done() { return this.index >= this.vowels.length; }
   /** 0..1 progress of the current vowel. */
   get progress() { return this.frames / VowelCalibration.FRAMES; }
   feed(envelope: number[] | null, level: number) {
@@ -182,13 +184,15 @@ export class VowelCalibration {
 }
 
 const TEMPLATES_KEY = 'mesh-avatar-vowel-templates';
-export function loadVowelTemplates(): VowelTemplates | null {
+/** Every recorded vowel, complete or not (recording can span several sessions). */
+export function loadVowelTemplates(): VowelTemplates {
   try {
-    const saved = JSON.parse(localStorage.getItem(TEMPLATES_KEY) ?? 'null');
-    const ok = saved && VowelCalibration.ORDER.every(v => Array.isArray(saved[v]) && saved[v].length === GRID.length && saved[v].every(Number.isFinite));
-    return ok ? saved : null;
-  } catch { return null; }
+    const saved = JSON.parse(localStorage.getItem(TEMPLATES_KEY) ?? 'null') ?? {};
+    return Object.fromEntries(VowelCalibration.ORDER.filter(v => Array.isArray(saved[v]) && saved[v].length === GRID.length && saved[v].every(Number.isFinite)).map(v => [v, saved[v]]));
+  } catch { return {}; }
 }
+/** The templates in use only once all five vowels are recorded. */
+export const completeTemplates = (templates: VowelTemplates) => VowelCalibration.ORDER.every(v => templates[v]) ? templates : null;
 export function saveVowelTemplates(templates: VowelTemplates | null) {
   try { if (templates) localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates)); else localStorage.removeItem(TEMPLATES_KEY); } catch { /* storage is optional */ }
 }

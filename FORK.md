@@ -327,8 +327,10 @@ git checkout mi-version && git merge main
   (`setMouthBlend`, en `src/engine/sprites.js`; 0 = cambio instantáneo como el original, que es
   lo que usa el editor). Controles en el micrófono: **Suavidad del cambio de vocal** (fundido de
   0,03 a 0,18 s) y **Fuerza de las vocales** (acerca i/u a la boca neutra).
-- **Calibración con tu voz:** "Calibrar vocales con mi voz" (en el micrófono) pide decir a, i, u, e, o
-  sostenidas; guarda la envolvente media de cada una (48 frecuencias de 200 a 3200 Hz) en este
+- **Calibración con tu voz:** en el micrófono, un botón por vocal (a, i, u, e, o): se pulsa uno, se
+  dice esa vocal sostenida y se graba solo esa (así no se mezclan); se puede repetir cualquiera y
+  lo grabado se conserva entre sesiones. Se activa al tener las cinco. Guarda la envolvente media
+  de cada una (48 frecuencias de 200 a 3200 Hz) en este
   navegador (`mesh-avatar-vowel-templates`) y desde entonces compara contra ellas en vez de contra
   voces típicas. Pensado para micrófonos de portátil o auriculares sencillos: en la prueba con un
   micrófono de portátil simulado pasa de 179 fotogramas equivocados a 0. "Usar voces típicas"
