@@ -4,6 +4,7 @@
 import { createRig } from './rig.js';
 import { createRenderer } from './renderer.js';
 import { createPhysics } from './physics.js';
+import { createGroupPhysics } from './groups.js';
 import { createSpriteModule } from './sprites.js';
 import { Motion } from './motion.js';
 import { MOTIONS, IDLE_MOTIONS } from './motions.js';
@@ -84,6 +85,7 @@ export async function createMeshAvatarImpl(canvas, options) {
     handWeights, handFrame, deformHand, TASSELS } = engine;
   const { Renderer, buildGrid } = createRenderer(engine, rig);
   const { Physics } = createPhysics(engine, rig);
+  const groupPhysics = createGroupPhysics(rig);
   const { createSprites } = createSpriteModule(engine, rig);
 
   const names = ['base', ...(rig.hand ? ['hand'] : []), ...TASSELS.map(t => t.name), ...[0, 1].flatMap(i => EYE_PARTS.map(p => `eye${i}_${p}`)), 'hairmask'];
@@ -106,7 +108,7 @@ export async function createMeshAvatarImpl(canvas, options) {
     const W = [];
     for (let i = 0; i < mesh.rest.length / 2; i++) {
       const x = mesh.rest[i * 2], y = mesh.rest[i * 2 + 1];
-      W.push(baseWeights(x, y, role === 'body' ? 0 : hair ? 1 : hairAt(x, y), role));
+      W.push(baseWeights(x, y, role === 'body' ? 0 : hair ? 1 : hairAt(x, y), role, name));
     }
     R.addLayer(name, img, mesh, { face });
     pieces.push({ mesh, W });
@@ -175,6 +177,7 @@ export async function createMeshAvatarImpl(canvas, options) {
   function tick(dt) {
     const P = updateParameters(dt);
     const phys = physics.step(P, dt);
+    phys.groups = groupPhysics.step(P, dt);
 
     for (const { mesh, W } of pieces) {
       const bp = mesh.pos, br = mesh.rest;

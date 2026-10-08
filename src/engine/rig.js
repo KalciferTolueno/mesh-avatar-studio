@@ -1,3 +1,4 @@
+import { groupWeights } from './groups.js';
 export const PARAMS = [
   { id: 'angleX', label: 'Face angle X', min: -30, max: 30, def: 0, group: 'Head and body' },
   { id: 'angleY', label: 'Face angle Y', min: -30, max: 30, def: 0, group: 'Head and body' },
@@ -35,6 +36,9 @@ export function createRig(rig, extra = {}) {
   // scale them so larger or smaller illustrations move by the same share of their size
   const BODY_PX = IMG.w / 1254;
   // optional 3D head turn (rig.head.depth); absent keeps the original flat-disk turn
+  // optional Live2D-style physics groups (rig.physics, see groups.js)
+  const GROUPS = rig.physics ?? [];
+  const NO_GROUPS = [];
   const DEPTH = rig.head.depth ? { round: 1, rigid: 0.6, nose: 0, mouth: 0, eyes: 0, ears: 0, map: 0, ...rig.head.depth } : null;
   const gaussian = (x, y, a) => a ? Math.exp(-(((x - a.cx) / a.rx) ** 2 + ((y - a.cy) / a.ry) ** 2)) : 0;
   // ---- face features ----
@@ -151,8 +155,9 @@ export function createRig(rig, extra = {}) {
   // hair: 0..1 from hairmask.png, so strands only move actual hair.
   // role: 'all' for the single base image; with separated parts (built/parts) the body part
   // ignores the head entirely and head parts follow the head fully, as cut-out pieces would.
-  function baseWeights(x, y, hair = 1, role = 'all') {
+  function baseWeights(x, y, hair = 1, role = 'all', piece = undefined) {
     const w = allWeights(x, y, hair);
+    w.groups = GROUPS.length ? groupWeights(GROUPS, x, y, piece) : NO_GROUPS;
     if (role === 'body') {
       w.head = 0; w.turn = 0; w.strands = [];
       w.bunL = w.bunR = w.brow = w.jaw = w.nose = w.mouth = w.eyeA = w.eyeB = w.earR = w.earL = w.depth = 0;
@@ -251,6 +256,11 @@ export function createRig(rig, extra = {}) {
     }
     p[0] += (phys.bunL[0] * w.bunL + phys.bunR[0] * w.bunR) * g;
     p[1] += (phys.bunL[1] * w.bunL + phys.bunR[1] * w.bunR) * g;
+    // physics groups swing their region about the pivot (rig.physics)
+    if (w.groups) for (const [gi, wi] of w.groups) {
+      const a = (phys.groups?.[gi] ?? 0) * wi;
+      if (a) rotateAround(p, GROUPS[gi].pivot[0], GROUPS[gi].pivot[1], a);
+    }
     // brows
     p[1] -= P.browY * 7 * w.brow;
     if (w.brow > 0.01) {

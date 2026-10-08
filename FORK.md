@@ -164,6 +164,25 @@ git checkout mi-version && git merge main
   sus variables (`--ink`, `--surface`, `--line`, `--accent`…); si añade colores fijos, hay que
   sobrescribirlos en `theme.css`.
 
+### 9. Física estilo Live2D (`rig.physics`)
+
+- **Antes:** solo había física en los mechones (cadenas de resortes), las borlas y los moños,
+  empujados por la cabeza.
+- **Ahora (solo si el rig tiene `physics`):** grupos de física como los de Live2D / VTube Studio:
+  cada uno es un péndulo amortiguado (pivote → punta) empujado por una mezcla configurable de
+  giro e inclinación de cabeza y cuerpo y desplazamiento lateral, con inercia, gravedad (se
+  mantiene colgando al inclinarse) y viento suave en reposo. Mueve una pieza separada (`part`,
+  p. ej. las orejas) o una banda a lo largo del eje (p. ej. los cordones de la capucha).
+  Inspirado en los `physics3.json` de los modelos de ejemplo de VTube Studio (BlackWolfGirl:
+  orejas, cola, cordones, mangas…).
+- **Archivos nuevos:** `src/engine/groups.js` (simulación y pesos), `tests/physics-groups.test.ts`.
+- **Archivos del original tocados:** `src/engine/rig.js` (`baseWeights(..., piece)` añade
+  `w.groups`; `deformBase` gira la región alrededor del pivote tras moños y mechones),
+  `src/engine/createMeshAvatar.js` (crea la simulación y la avanza en `tick`; pasa el nombre de
+  la pieza), `src/rig/validate.ts`, `src/rig/types.ts`, `docs/rig-fields.md`.
+- **Ajuste práctico:** la banda (`width`) debe cubrir el objeto entero y al menos dos celdas de la
+  malla (`mesh.baseCell`); si no, el objeto se estrecha y ensancha al girar.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

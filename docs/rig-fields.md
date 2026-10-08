@@ -7,7 +7,7 @@ radii and mesh cell sizes must be positive. Mesh cell sizes and fine-mesh rectan
 coordinates must be integers. Accessory boxes must be integer rectangles inside the image. A band is `[start, end]` with `start < end`.
 Ellipses are smooth influence regions, not hard cut-out boundaries.
 
-Only `head.depth`, `parts`, `buns`, `strands`, `accessories`, `hand` and `view.gazeCenter` are optional. Omit absent
+Only `head.depth`, `parts`, `physics`, `buns`, `strands`, `accessories`, `hand` and `view.gazeCenter` are optional. Omit absent
 optional groups. Required regions must still be placed even if their animation will be small.
 The initial draft has empty eye polygons and is intentionally invalid until they are traced.
 See [agent-guide.md](agent-guide.md) for the process and [rig-mapping.md](rig-mapping.md) for
@@ -155,6 +155,15 @@ the engine mapping. Do not copy the example illustration's coordinates into a ne
 | `parts.front.outline` | Optional polygon around the front hair locks; hair-mask pixels inside it move in front of the head. |
 | `parts.front.hairline` | Optional y, px, above which everything in the outline is front hair; default `300`. |
 | `parts.fill` | Optional fill reach in px: `body` (neck under the head, `110`), `collar` (`12`), `front` (`45`), `ears` (`35`). |
+| `physics[*].name` | Optional Live2D-style physics group label. |
+| `physics[*].pivot` / `tip` | `[x,y]`, px: where the group hangs from and its free end (an ear's base and tip, a cord's eyelet and end). |
+| `physics[*].part` | Optional separated part it moves (`ear_l`, `front`…); without it, a band of `width` px along pivot → tip. |
+| `physics[*].width` | Band half-width, px, turned as one piece before fading out; cover the whole item and two mesh cells. |
+| `physics[*].inputs` | Weights, -2–2, of the pose that drives it: `angleX`, `angleY`, `angleZ`, `bodyAngleX`, `bodyAngleZ`, `positionX`. |
+| `physics[*].freq` / `damping` | Swing frequency in Hz (default `1.2`) and damping ratio 0–1 (default `0.22`). |
+| `physics[*].max` | Largest swing in degrees (default `10`). |
+| `physics[*].inertia` / `hang` / `wind` | Lag strength (default `1`), how much gravity keeps it hanging when the head or body rolls (0–1, default `0.8`), idle wind (0–1, default `0.25`). |
+| `physics[*].attach` | `head` (default) or `body`: which roll gravity counters. |
 | `view.gazeCenter` | Optional pointer-follow origin `[x,y]`, px; between eyes; defaults to head centre. |
 
 Draft validation accepts omitted `x0/x1/top/bot` only as a complete group; supplying some of

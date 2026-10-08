@@ -1,4 +1,5 @@
 import type { Rig } from './types';
+import { PHYSICS_INPUTS } from '../engine/groups.js';
 
 type Check = (value: unknown, path: string, errors: string[]) => void;
 const number: Check = (v, p, e) => {
@@ -52,6 +53,9 @@ const depth: Check = (v, p, e) => {
 const partName: Check = (v, p, e) => {
   if (typeof v !== 'string' || !/^[A-Za-z0-9_-]+$/.test(v) || ['body', 'head', 'front'].includes(v)) e.push(`${p}: expected a file-safe name other than body, head or front`);
 };
+const pieceName: Check = (v, p, e) => {
+  if (typeof v !== 'string' || !/^[A-Za-z0-9_-]+$/.test(v)) e.push(`${p}: expected a part name such as ear_l or front`);
+};
 const schema = (draft: boolean) => object({
   version: (v, p, e) => { if (v !== 1) e.push(`${p}: only version 1 is supported`); },
   image: object({ width: integer, height: integer }),
@@ -87,7 +91,14 @@ const schema = (draft: boolean) => object({
     front: object({ outline: polygon, hairline: number }, ['hairline']),
     fill: object({ body: positive, collar: positive, front: positive, ears: positive }, ['body', 'collar', 'front', 'ears']),
   }, ['ears', 'front', 'fill']),
-}, ['buns', 'strands', 'accessories', 'hand', 'parts']);
+  // Live2D-style physics groups (src/engine/groups.js)
+  physics: array(object({
+    name: string, pivot: point, tip: point, part: pieceName, width: positive,
+    inputs: object(Object.fromEntries(PHYSICS_INPUTS.map(key => [key, depth])), PHYSICS_INPUTS),
+    freq: positive, damping: unit, max: positive, inertia: depth, hang: unit, wind: unit,
+    attach: (v, p, e) => { if (v !== 'head' && v !== 'body') e.push(`${p}: expected head or body`); },
+  }, ['part', 'width', 'freq', 'damping', 'max', 'inertia', 'hang', 'wind', 'attach']), 0, 32),
+}, ['buns', 'strands', 'accessories', 'hand', 'parts', 'physics']);
 
 export function validateRig(value: unknown, options: { draft?: boolean } = {}): string[] {
   const errors: string[] = [];

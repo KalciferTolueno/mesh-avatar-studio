@@ -75,6 +75,12 @@ export interface Rig {
     eyeCell: number; spriteCell: number;
   };
   view: { padTop: number; padSide: number; gazeCenter?: Point };
+  /** Optional Live2D-style physics groups (src/engine/groups.js). */
+  physics?: {
+    name: string; pivot: Point; tip: Point; part?: string; width?: number;
+    inputs: Partial<Record<'angleX' | 'angleY' | 'angleZ' | 'bodyAngleX' | 'bodyAngleZ' | 'positionX', number>>;
+    freq?: number; damping?: number; max?: number; inertia?: number; hang?: number; wind?: number; attach?: 'head' | 'body';
+  }[];
   /** Optional cuts for tools/build-parts.py (head above the jaw line, ears, front hair). */
   parts?: {
     jaw: Point[];
