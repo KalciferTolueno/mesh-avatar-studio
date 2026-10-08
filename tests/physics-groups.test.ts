@@ -41,3 +41,16 @@ test('a rig without physics groups returns no angles and validates bad groups', 
   rig.physics = [{ ...group, damping: 2, attach: 'arm' as 'head' }];
   expect(validateRig(rig)).toEqual(expect.arrayContaining(['rig.physics[0].damping: must be between 0 and 1', 'rig.physics[0].attach: expected head or body']));
 });
+
+test('dragging the avatar across the frame swings a group even without matching inputs, then it settles', () => {
+  const sim = createGroupPhysics({ ...parseRig(fixture), physics: [{ ...group, inputs: { angleY: 1 } }] });
+  for (let i = 0; i < 30; i++) sim.step(rest, 1 / 60);
+  const angles: number[] = [];
+  // a short sideways push (positionX units / s²), then nothing
+  for (let i = 0; i < 12; i++) angles.push(sim.step(rest, 1 / 60, i < 6 ? 8 : -8)[0]);
+  for (let i = 0; i < 240; i++) angles.push(sim.step(rest, 1 / 60)[0]);
+  const peak = Math.max(...angles.map(Math.abs));
+  expect(peak).toBeGreaterThan(0.02);
+  expect(peak).toBeLessThanOrEqual(10 * Math.PI / 180);
+  expect(Math.abs(angles.at(-1)!)).toBeLessThan(0.002);
+});

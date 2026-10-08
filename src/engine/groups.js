@@ -27,8 +27,9 @@ export function createGroupPhysics(rig) {
     groups,
     setTuning(value) { tuning = { ...tuning, ...value }; },
     reset() { for (const s of state) { s.a = 0; s.v = 0; s.drive = null; s.vel = 0; s.acc = 0; } },
-    /** Advance by dt seconds; returns each group's angle in radians. */
-    step(P, dt) {
+    /** Advance by dt seconds; returns each group's angle in radians. `dragAcc`: sideways
+     * acceleration of the whole avatar on screen (fork, src/live/frame.ts), in positionX units. */
+    step(P, dt, dragAcc = 0) {
       if (!groups.length) return out;
       const sub = Math.max(1, Math.ceil(dt / (1 / 240)));
       const h = Math.min(dt, 0.05) / sub;
@@ -52,7 +53,9 @@ export function createGroupPhysics(rig) {
           const t = time + i * h;
           const wind = g.wind * tuning.wind * maxRad * 0.3 * (Math.sin(t * 1.3 + g.phase) + 0.5 * Math.sin(t * 2.9 + g.phase * 2));
           const rest = g.hang * roll + wind;
-          const accel = -w * w * (s.a - rest) - 2 * g.damping * w * s.v - 4 * g.inertia * maxRad * s.acc;
+          let accel = -w * w * (s.a - rest) - 2 * g.damping * w * s.v - 4 * g.inertia * maxRad * s.acc;
+          // dragged across the frame: the piece lags behind like it does when the body moves
+          if (dragAcc) accel -= 4 * g.inertia * maxRad * dragAcc;
           s.v += accel * h;
           s.a += s.v * h;
         }

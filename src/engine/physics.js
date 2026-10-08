@@ -42,6 +42,7 @@ export function createPhysics(engine, rig) {
   class Physics {
     constructor() {
       this.gain = 1;          // "sway gain"
+      this.drag = null;       // fork: [x, y] acceleration of the avatar dragged on screen
       this.out = { gain: 1, bunL: [0, 0], bunR: [0, 0] };
       this.hair = {};
       for (const k of Object.keys(HAIR)) {
@@ -90,6 +91,8 @@ export function createPhysics(engine, rig) {
             const v = st.v[j], q = st.p[j];
             v[0] += (k * (tx - q[0]) - c * v[0]) * h;
             v[1] += (k * (ty - q[1]) - c * v[1]) * h;
+            // fork: dragged across the frame, the strand lags behind (image px / s²)
+            if (this.drag) { v[0] -= this.drag[0] * h; v[1] -= this.drag[1] * h; }
             q[0] += v[0] * h; q[1] += v[1] * h;
           }
           st.p[0] = [...target[0]];
@@ -112,6 +115,7 @@ export function createPhysics(engine, rig) {
         for (let i = 0; i < sub; i++) {
           s.v[0] += (k2 * (tx - s.p[0]) - c2 * s.v[0]) * h;
           s.v[1] += (k2 * (ty - s.p[1]) - c2 * s.v[1]) * h;
+          if (this.drag) { s.v[0] -= this.drag[0] * h; s.v[1] -= this.drag[1] * h; }
           s.p[0] += s.v[0] * h; s.p[1] += s.v[1] * h;
         }
         const o = [s.p[0] - a[0], s.p[1] - a[1]];

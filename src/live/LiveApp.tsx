@@ -139,7 +139,8 @@ export function LiveApp() {
     avatarRef.current?.setFrame(frame.frame);
   }, [settings.project, frame]);
   useEffect(() => {
-    let sent: typeof frame.frame | undefined, at = 0;
+    // the first send waits a second: the dev server connection is not open yet on load
+    let sent: typeof frame.frame | undefined = frameRef.current, at = performance.now();
     // like the light: throttled while dragging, and the final position always arrives; repeated
     // every second so a stream view opened later picks it up too
     const timer = setInterval(() => {

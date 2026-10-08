@@ -179,10 +179,33 @@ export async function createMeshAvatarImpl(canvas, options) {
     return { shiftY: Math.min(0, y) * 0.06,
       zooms: [[(1 + 0.1 * Math.max(0, y)) * (1 + 0.08 * Math.min(0, z)), ...bottom], [1 + 0.08 * Math.max(0, z), ...head]] };
   }
+  // fork (see FORK.md): how fast the avatar is being dragged across the frame (src/live/frame.ts),
+  // so the physics pieces lag behind and swing back. Smoothed: the stream view receives the
+  // position 30-60 times a second.
+  const drag = { on: false, x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0, gain: 1 };
+  const DRAG_SCALE = 0.05, DRAG_MAX = 10;
+  function dragAcceleration(dt) {
+    const f = R.frame, px = R.pxScale * f.scale;
+    if (!px) return null;
+    const x = f.x * R.canvas.width / px, y = f.y * R.canvas.height / px;   // image px
+    if (!drag.on) { Object.assign(drag, { on: true, x, y, vx: 0, vy: 0, ax: 0, ay: 0 }); return null; }
+    const h = Math.max(dt, 1e-3), k = 1 - Math.exp(-dt / 0.05);
+    const vx = drag.vx + ((x - drag.x) / h - drag.vx) * k, vy = drag.vy + ((y - drag.y) / h - drag.vy) * k;
+    drag.ax += ((vx - drag.vx) / h - drag.ax) * k; drag.ay += ((vy - drag.vy) / h - drag.ay) * k;
+    Object.assign(drag, { x, y, vx, vy });
+    if (Math.abs(drag.ax) + Math.abs(drag.ay) < 1e-3 || !drag.gain) return null;
+    // a mouse drag accelerates the avatar far more than moving in front of the camera: scale it
+    // down and saturate it, so a brisk drag swings the pieces most of the way, never past it.
+    // In positionX units (positionX 1 moves the avatar 0.08 of the image width).
+    const unit = 0.08 * IMG.w, soft = a => DRAG_MAX * Math.tanh(a / unit * DRAG_SCALE / DRAG_MAX) * drag.gain;
+    return [soft(drag.ax), soft(drag.ay)];
+  }
   function tick(dt) {
     const P = updateParameters(dt);
+    const dragged = dragAcceleration(dt);
+    physics.drag = dragged && [dragged[0] * 0.08 * IMG.w, dragged[1] * 0.08 * IMG.w];   // image px / s²
     const phys = physics.step(P, dt);
-    phys.groups = groupPhysics.step(P, dt);
+    phys.groups = groupPhysics.step(P, dt, dragged ? dragged[0] : 0);
 
     for (const { mesh, W } of pieces) {
       const bp = mesh.pos, br = mesh.rest;
@@ -276,7 +299,7 @@ export async function createMeshAvatarImpl(canvas, options) {
     /** Hair / tassel sway multiplier (1 = default). */
     setSwayGain(g) { physics.gain = g; },
     /** Live physics adjustments (src/physics): strength also scales the hair sway. */
-    setPhysicsTuning(value) { groupPhysics.setTuning(value); if (value.strength !== undefined) physics.gain = value.strength; },
+    setPhysicsTuning(value) { groupPhysics.setTuning(value); if (value.strength !== undefined) physics.gain = value.strength; if (value.drag !== undefined) drag.gain = value.drag; },
     /** Names of the rig's physics groups, in order. */
     getPhysicsGroups() { return groupPhysics.groups.map(g => g.name); },
     /** Cross-fade time in seconds between drawn mouths (0 = instant, as upstream). */

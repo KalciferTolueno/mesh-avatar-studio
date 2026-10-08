@@ -4,13 +4,15 @@ import { DEFAULT_PHYSICS, parsePhysics, physicsFromQuery, physicsMessage, writeP
 import { streamUrl, viewSettings } from '../src/live/settings';
 
 test('physics adjustments round-trip through the OBS URL and clamp to their ranges', () => {
-  const value = { strength: 1.4, stiffness: 0.8, wind: 0, groups: [1, 0.5, 2] };
+  const value = { strength: 1.4, stiffness: 0.8, wind: 0, drag: 1.5, groups: [1, 0.5, 2] };
   const query = new URLSearchParams(); writePhysicsQuery(query, value);
   expect(physicsFromQuery(query)).toEqual(value);
   const url = streamUrl({ ...viewSettings('?project=tigre'), physics: value }, 'http://127.0.0.1:5173');
   expect(viewSettings(new URL(url).search).physics).toEqual(value);
   expect(viewSettings('?project=tigre').physics).toBeUndefined();
-  expect(parsePhysics({ strength: 9, stiffness: 0, wind: -1, groups: [5] })).toEqual({ strength: 2, stiffness: 0.5, wind: 0, groups: [2] });
+  expect(parsePhysics({ strength: 9, stiffness: 0, wind: -1, groups: [5] })).toEqual({ strength: 2, stiffness: 0.5, wind: 0, drag: 1, groups: [2] });
+  expect(parsePhysics({ strength: 1, stiffness: 1, wind: 1, drag: 7, groups: [] })?.drag).toBe(2);
+  expect(physicsFromQuery(new URLSearchParams('ph=1,1,1'))?.drag).toBe(1);
 });
 
 test('malformed physics input and relay messages are rejected', () => {

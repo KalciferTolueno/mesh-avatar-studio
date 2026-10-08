@@ -384,6 +384,25 @@ git checkout mi-version && git merge main
   `src/live/stream.ts`, `src/live/LiveApp.tsx`, `vite.config.ts` (`frameRelay()`),
   `src/theme/theme.css` (vista previa centrada y cursor de arrastre).
 
+### 20. Física al arrastrar el avatar
+
+- **Antes:** la física solo reaccionaba a la pose (cabeza, cuerpo, posición lateral rastreada).
+- **Ahora:** al arrastrar el avatar por el encuadre (sección 19), o cuando la vista de OBS recibe
+  ese movimiento, el motor calcula la aceleración del avatar en pantalla (suavizada ~0,05 s,
+  porque OBS la recibe 30 veces por segundo) y se la pasa a la física como una fuerza de
+  inercia: los grupos de física (`src/engine/groups.js`, parámetro `dragAcc` de `step`) y los
+  mechones y moños (`src/engine/physics.js`, campo `drag`) se quedan atrás y vuelven. El arrastre
+  del ratón acelera mucho más que moverse ante la cámara, así que se escala (×0,05) y se satura
+  (máx. 10 unidades de `positionX`/s²): un arrastre rápido balancea casi hasta el máximo, nunca
+  más. Sin arrastre no se suma nada (regresión 0 px).
+- **Ajuste:** en Física, **Al arrastrar** (0–2, 1 por defecto). Va en la URL de OBS como cuarto
+  valor de `ph=` (`ph=fuerza,rigidez,viento,arrastre`; se siguen aceptando URLs con tres) y por
+  el relé de física.
+- **Archivos del original tocados:** `src/engine/createMeshAvatar.js` (`dragAcceleration`),
+  `src/engine/physics.js`, `src/engine/index.ts`. Del fork: `src/engine/groups.js`,
+  `src/physics/settings.ts`, `src/physics/PhysicsControls.tsx`, `tests/physics-settings.test.ts`,
+  `tests/physics-groups.test.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |
