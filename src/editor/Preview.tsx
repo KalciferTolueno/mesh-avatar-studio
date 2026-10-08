@@ -16,6 +16,7 @@ const sliders = [
   { id: 'EyeOpen', label: 'eyeOpen', min: 0, max: 1.25, def: 1 },
   { id: 'mouthOpen', label: 'mouthOpen', min: 0, max: 1, def: 0 },
   { id: 'bodyAngleZ', label: 'bodyTilt', min: -10, max: 10, def: 0 },
+  { id: 'bodyAngleY', label: 'bodyLean', min: -10, max: 10, def: 0 },
 ] as const;
 type Vowel = 'a' | 'i' | 'u' | 'e' | 'o' | 'n';
 type Lip = { kind: 'hold'; vowel: Vowel } | { kind: 'text'; text: string; speed: number; loop: boolean } | null;

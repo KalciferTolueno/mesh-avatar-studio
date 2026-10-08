@@ -138,3 +138,14 @@ test('movement limits cap each direction of the screen movement separately', () 
   expect(far).toMatchObject({ positionX: -0.3, positionY: -0.5 }); expect(far.positionZ).toBeCloseTo(0);
   expect(mapFace(at(20, 0, -50), neutral, options).positionX).toBe(1);
 });
+test('the body leans back with the head pitch and forward when moving towards the camera', () => {
+  const at = (pitchDown: number, z: number) => {
+    const a = pitchDown * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), r = result();
+    r.facialTransformationMatrixes[0].data = [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, z, 1];
+    return readFace(r)!;
+  };
+  const neutral = at(0, -50);
+  expect(mapFace(at(-15, -50), neutral, options).bodyAngleY).toBeCloseTo(5);
+  expect(mapFace(at(0, -42), neutral, options).bodyAngleY).toBeCloseTo(-10);
+  expect(mapFace(at(0, -42), neutral, { ...options, bodySensitivity: 0 }).bodyAngleY).toBeCloseTo(0);
+});

@@ -5,6 +5,7 @@ export const PARAMS = [
   { id: 'angleZ', label: 'Face roll', min: -30, max: 30, def: 0, group: 'Head and body' },
   { id: 'bodyAngleX', label: 'Body angle X', min: -10, max: 10, def: 0, group: 'Head and body' },
   { id: 'bodyAngleZ', label: 'Body roll', min: -10, max: 10, def: 0, group: 'Head and body' },
+  { id: 'bodyAngleY', label: 'Body lean', min: -10, max: 10, def: 0, group: 'Head and body' },
   { id: 'positionX', label: 'Position X', min: -1, max: 1, def: 0, group: 'Head and body' },
   { id: 'positionY', label: 'Position Y', min: -1, max: 1, def: 0, group: 'Head and body' },
   { id: 'positionZ', label: 'Zoom', min: -1, max: 1, def: 0, group: 'Head and body' },
@@ -240,6 +241,15 @@ export function createRig(rig, extra = {}) {
     p[1] -= b * (5 * breathW + 4 * shoulder) * BODY_PX;
     p[0] += (p[0] - BODY.chest.cx) * 0.012 * b * chest;
     p[0] += P.bodyAngleX / 10 * (7 + 9 * chest) * BODY_PX;
+    // fork: forward / back lean (bodyAngleY, + = leaning back). Leaning forward brings the
+    // upper body closer: it drops and widens a little; leaning back lifts and narrows it.
+    // Like the roll, it fades to nothing at the cut-off bottom edge.
+    const lean = (P.bodyAngleY ?? 0) / 10;
+    if (lean) {
+      const w = 1 - sstep(...BODY.rollBand, restY);
+      p[1] -= lean * 16 * BODY_PX * w;
+      p[0] -= (p[0] - BODY.chest.cx) * 0.035 * lean * w;
+    }
     // bottom rows stay put so no gap opens at the cut-off edge of the image
     rotateAround(p, BODY.pivotX, BODY.pivotY, -P.bodyAngleZ / 10 * BODY.maxRoll * (1 - sstep(...BODY.rollBand, restY)));
   }

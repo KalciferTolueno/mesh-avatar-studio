@@ -25,7 +25,7 @@ export type EyeRanges = Record<'Left' | 'Right', readonly [number, number]>;
 export const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 const smoothstep = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 export const faceNeutral: Record<string, number> = {
-  angleX: 0, angleY: 0, angleZ: 0, bodyAngleX: 0, bodyAngleZ: 0,
+  angleX: 0, angleY: 0, angleZ: 0, bodyAngleX: 0, bodyAngleY: 0, bodyAngleZ: 0,
   positionX: 0, positionY: 0, positionZ: 0, eyeLOpen: 1, eyeROpen: 1, gazeX: 0, gazeY: 0, mouthOpen: 0, mouthForm: 0, browY: 0, eyeSmile: 0, eyeSmileL: 0,
 };
 export function readFace(result: FaceResult): RawFace | null {
@@ -87,6 +87,9 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
   const move = clamp(options.screenMove ?? 1, 0, 3);
   return { angleX: x, angleY: y, angleZ: z,
     bodyAngleX: clamp(x * 0.2 + side * 0.6, -10, 10), bodyAngleZ: clamp(z * 0.2 - side * 0.4, -10, 10),
+    // fork: forward / back lean, like VTube Studio's FaceAngleY -> BodyAngleY at a third, plus
+    // leaning towards the camera (about 8 cm closer reaches the full forward lean)
+    bodyAngleY: clamp(y / 3 - offset('z') * 1.25 * clamp(options.bodySensitivity ?? 1, 0, 3), -10, 10),
     // about 8 cm sideways, 7 cm up or down and 8 cm closer reach the full movement
     // capped so the avatar stays framed (Live: "Movement limits")
     positionX: clamp(offset('x') * mirror * move / 8, -limit(options.limitSide), limit(options.limitSide)),
@@ -128,7 +131,7 @@ export class OneEuro {
 // Per-parameter filter tuning: [minimum cutoff Hz, speed coefficient]. Head angles are in
 // degrees, the rest in 0-1 units, so their speed coefficients differ in scale.
 const FILTERS: Record<string, readonly [number, number]> = {
-  angleX: [1.0, 0.03], angleY: [1.0, 0.03], angleZ: [1.0, 0.03], bodyAngleX: [0.8, 0.1], bodyAngleZ: [0.8, 0.1], positionX: [0.8, 1.0], positionY: [0.8, 1.0], positionZ: [0.6, 0.8],
+  angleX: [1.0, 0.03], angleY: [1.0, 0.03], angleZ: [1.0, 0.03], bodyAngleX: [0.8, 0.1], bodyAngleY: [0.8, 0.1], bodyAngleZ: [0.8, 0.1], positionX: [0.8, 1.0], positionY: [0.8, 1.0], positionZ: [0.6, 0.8],
   eyeLOpen: [2.5, 1.5], eyeROpen: [2.5, 1.5], mouthOpen: [2.0, 1.0],
   gazeX: [0.8, 0.4], gazeY: [0.8, 0.4], mouthForm: [0.8, 0.3], browY: [0.8, 0.3], eyeSmile: [0.6, 0.2], eyeSmileL: [0.6, 0.2],
 };

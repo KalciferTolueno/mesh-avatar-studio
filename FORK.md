@@ -225,6 +225,20 @@ git checkout mi-version && git merge main
   (`screenMove`), `src/live/tracking.ts` (posición `y`/`z` de la cabeza, opción `screenMove`),
   `src/live/LiveApp.tsx` (control), `src/live/i18n.ts` y `src/live/i18n-es.ts` (texto).
 
+### 12. Inclinación del cuerpo adelante / atrás (`bodyAngleY`)
+
+- **Antes:** el cuerpo solo giraba (`bodyAngleX`) e inclinaba de lado (`bodyAngleZ`).
+- **Ahora:** parámetro `bodyAngleY` (−10…10, positivo = hacia atrás). Inclinarse hacia delante
+  baja y ensancha un poco el torso (se acerca); hacia atrás lo sube y estrecha. Se desvanece hacia
+  el borde inferior, igual que la inclinación lateral. En En vivo lo mueve un tercio del cabeceo
+  (como `FaceAngleY → ParamBodyAngleY` en VTube Studio) más el acercarse a la cámara, escalado
+  por "Movimiento del cuerpo". Los grupos de física aceptan `bodyAngleY` como entrada. Control
+  "Adelante/atrás" en la prueba de poses del editor.
+- **Archivos del original tocados:** `src/engine/rig.js` (`PARAMS`, `applyBody`),
+  `src/engine/groups.js`, `src/rig/types.ts`, `src/live/tracking.ts`, `src/editor/Preview.tsx`
+  (control), `src/editor/i18n.tsx` y `src/editor/i18n-zh.ts` (clave `bodyLean`),
+  `src/editor/i18n-es.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

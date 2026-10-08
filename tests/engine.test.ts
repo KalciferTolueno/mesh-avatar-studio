@@ -88,3 +88,18 @@ test('separated parts: the body ignores head turns while head pieces follow them
   expect(move(x, y, 'body')).toBe(0);
   expect(move(x, y, 'head')).toBeGreaterThanOrEqual(move(x, y, 'all'));
 });
+test('leaning forward lowers and widens the upper body, the bottom edge stays put', () => {
+  const rig = parseRig(fixture), engine = createRig(rig);
+  const physics = new (createPhysics(engine, rig).Physics)();
+  const move = (x: number, y: number, lean: number) => {
+    const P = { ...Object.fromEntries(PARAMS.map(p => [p.id, p.def])), bodyAngleY: lean };
+    return engine.deformBase(x, y, engine.baseWeights(x, y, 0, 'body'), P, physics.step(P, 1 / 60), [0, 0]);
+  };
+  const { chest } = fixture.body;
+  const shoulder = [chest.cx + chest.rx, chest.cy - chest.ry * 0.5];
+  const forward = move(shoulder[0], shoulder[1], -10), back = move(shoulder[0], shoulder[1], 10);
+  expect(forward[1]).toBeGreaterThan(shoulder[1]); expect(back[1]).toBeLessThan(shoulder[1]);
+  expect(forward[0]).toBeGreaterThan(shoulder[0]); expect(back[0]).toBeLessThan(shoulder[0]);
+  const bottom = move(chest.cx + 100, fixture.image.height, -10);
+  expect(bottom[1]).toBeCloseTo(fixture.image.height); expect(bottom[0]).toBeCloseTo(chest.cx + 100);
+});

@@ -10,7 +10,7 @@
 const DEG = Math.PI / 180;
 const INPUTS = {
   angleX: P => P.angleX / 30, angleY: P => P.angleY / 30, angleZ: P => P.angleZ / 30,
-  bodyAngleX: P => P.bodyAngleX / 10, bodyAngleZ: P => P.bodyAngleZ / 10, positionX: P => P.positionX ?? 0,
+  bodyAngleX: P => P.bodyAngleX / 10, bodyAngleY: P => (P.bodyAngleY ?? 0) / 10, bodyAngleZ: P => P.bodyAngleZ / 10, positionX: P => P.positionX ?? 0,
 };
 export const PHYSICS_INPUTS = Object.keys(INPUTS);
 export const GROUP_DEFAULTS = { freq: 1.2, damping: 0.22, max: 10, inertia: 1, hang: 0.8, wind: 0.25, attach: 'head' };
