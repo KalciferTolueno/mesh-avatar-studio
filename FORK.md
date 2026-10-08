@@ -46,6 +46,9 @@ git checkout mi-version && git merge main
 - Pruebas end-to-end: usan el puerto 5173 por defecto; en este equipo otro proyecto ocupa ese
   puerto, por eso se ejecutan con `PLAYWRIGHT_PORT=5300`. Varias fallan también en el código
   original por tiempos (`preview-status` en `updating`); compáralas siempre contra `main`.
+  `e2e/lighting.spec.ts:127` (arrastrar la luz en En vivo) también falla en el original en este
+  equipo (`mouse.move` agota el tiempo). `e2e/live-streaming.spec.ts:191` (aviso de rastreo
+  detenido) a veces agota el tiempo en la ejecución completa por carga; pasa al repetirla sola.
 
 ## Principios para que las fusiones sean fáciles
 
@@ -304,6 +307,21 @@ git checkout mi-version && git merge main
 - **Archivos nuevos:** `src/expressions/life.ts`.
 - **Archivos del original tocados:** `src/live/tracking.ts` (opciones `breathing`, `blinkMode`),
   `src/live/LiveApp.tsx`, `src/live/i18n.ts`, `src/live/i18n-es.ts`.
+
+### 17. Vocales del micrófono
+
+- **Antes:** con el micrófono, la boca se abría según el volumen y el motor elegía una vocal **al
+  azar** en cada sílaba.
+- **Ahora (opción "Detectar vocales", activada por defecto):** se estiman los dos primeros
+  formantes de la voz uniendo los picos de los armónicos del espectro y se elige la vocal japonesa
+  más cercana entre perfiles de voz grave y aguda, con un voto corto para mantener una vocal por
+  sílaba. La vocal fija `mouthForm`, así que se usan las bocas dibujadas que correspondan (あ, い,
+  お…). Se calcula en el navegador a partir del espectro; no se graba ni se envía audio.
+- **Archivos nuevos:** `src/expressions/vowels.ts`, `tests/vowels.test.ts` (voces sintéticas de
+  100 a 250 Hz).
+- **Archivos del original tocados:** `src/live/media.ts` (método `spectrum()` en
+  `MicrophoneCapture`), `src/live/tracking.ts` (opción `voiceVowels`), `src/live/LiveApp.tsx`,
+  `src/live/i18n.ts`, `src/live/i18n-es.ts`.
 
 ## Registro de fusiones con el original
 
