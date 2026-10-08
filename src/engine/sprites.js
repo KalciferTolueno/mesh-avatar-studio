@@ -95,6 +95,8 @@ export function createSpriteModule(engine, rig) {
     }
     const tmp = [0, 0];
     let lastShape = null;
+    const mouthFade = { cur: null, prev: null, t: 1, sec: 0 };
+    const drawOrder = entries.map(([name]) => name);
     const eyeState = [0, 1].map(() => ({ cur: 'open', prev: 'open', t: 1 }));
     // an eye is switched to drawn frames only when its half-closed and closed drawings both
     // exist; otherwise the layered eye keeps blinking by itself (e.g. a mouth-only variant set)
@@ -118,6 +120,7 @@ export function createSpriteModule(engine, rig) {
 
     return {
       eyeDrawn,
+      setMouthBlend(sec) { mouthFade.sec = Math.max(0, Number(sec) || 0); },
       /**
        * Show / hide and deform the sprites for this frame.
        * Returns which eyes are covered by a sprite, so the layered eye parts can be hidden.
@@ -161,14 +164,28 @@ export function createSpriteModule(engine, rig) {
         lastShape = shape;
         const def = shape && MOUTH_SHAPES[shape];
         const mt = def && items[def.sprite];
+        // fork: optional cross-fade between mouth drawings (setMouthBlend); 0 = instant swap
+        if (mt && mouthFade.cur !== def.sprite) { mouthFade.prev = mouthFade.cur; mouthFade.cur = def.sprite; mouthFade.t = 0; }
+        mouthFade.t = Math.min(1, mouthFade.t + (mouthFade.sec > 0 ? dt / mouthFade.sec : 1));
         if (mt) {
           mt.layer.visible = true;
           // fade in right above the threshold so the closed line hands over softly
-          mt.layer.alpha = sstep(MOUTH_OPEN_MIN, MOUTH_OPEN_MIN + 0.04, P.mouthOpen);
+          const openAlpha = sstep(MOUTH_OPEN_MIN, MOUTH_OPEN_MIN + 0.04, P.mouthOpen);
+          mt.layer.alpha = openAlpha;
           // never squash a drawing below half its height: flatter looked like a blob
           const squash = Math.min(1.1, Math.max(0.5, P.mouthOpen / def.ref));
           place(mt, P, phys, squash, def.width);
-        }
+          const old = mouthFade.t < 1 && mouthFade.prev && mouthFade.prev !== def.sprite ? items[mouthFade.prev] : null;
+          if (old) {
+            // the drawing that is drawn higher fades, the lower one stays solid, so the face
+            // never shows through the mouth mid-fade
+            const k = sstep(0, 1, mouthFade.t), newOnTop = drawOrder.indexOf(def.sprite) > drawOrder.indexOf(mouthFade.prev);
+            old.layer.visible = true;
+            old.layer.alpha = openAlpha * (newOnTop ? 1 : 1 - k);
+            if (newOnTop) mt.layer.alpha = openAlpha * k;
+            place(old, P, phys, squash, 1);
+          }
+        } else mouthFade.cur = null;
         return { eyes: covered, mouth: shape };
       },
     };

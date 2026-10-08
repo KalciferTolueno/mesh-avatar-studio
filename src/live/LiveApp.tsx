@@ -5,7 +5,7 @@ import { LiveAnimations, LiveExpressions } from '../expressions/LiveExpressions'
 import { ExpressionMixer } from '../expressions/presets';
 import { AnimationPlayer } from '../expressions/animations';
 import { LifeLayer } from '../expressions/life';
-import { VOWEL_FORMS, VowelDetector } from '../expressions/vowels';
+import { VowelDetector, VowelMouth } from '../expressions/vowels';
 import { loadPhysics } from '../physics/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
@@ -23,7 +23,7 @@ import { createLiveSender, sendLighting } from './relay';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
 // like VTube Studio's sample models: pitch ±20° -> ±30°, livelier brows, blush and wide eyes on
-const EXPRESSION_DEFAULTS = { pitchBoost: 1.4, eyeWideGain: 1, browGain: 1.3, blushGain: 0.5, smileEyes: 1, breathing: 0.8, blinkMode: 'both' as const, voiceVowels: true };
+const EXPRESSION_DEFAULTS = { pitchBoost: 1.4, eyeWideGain: 1, browGain: 1.3, blushGain: 0.5, smileEyes: 1, breathing: 0.8, blinkMode: 'both' as const, voiceVowels: true, vowelSmooth: 0.5, vowelStrength: 0.85 };
 const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6, ...EXPRESSION_DEFAULTS };
 const MOVEMENT_DEFAULTS = { screenMove: 1, bodySensitivity: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
 // Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
@@ -58,6 +58,7 @@ export function LiveApp() {
   const animations = useRef(new AnimationPlayer());
   const life = useRef(new LifeLayer());
   const vowels = useRef(new VowelDetector());
+  const vowelMouth = useRef(new VowelMouth());
   const controls = useRef({ options, gain, micState, cameraState }); controls.current = { options, gain, micState, cameraState };
   const refreshDevices = () => { void navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(() => undefined); };
   useEffect(() => {
@@ -92,8 +93,11 @@ export function LiveApp() {
       const micOn = control.micState === 'micOn', level = micOn ? microphone.current?.level(control.gain) ?? 0 : 0;
       const spectrum = micOn && (control.options.voiceVowels ?? true) ? microphone.current?.spectrum() : null;
       const vowel = spectrum ? vowels.current.detect(spectrum.data, spectrum.binHz, level, dt) : null;
-      const voice: Record<string, number> = vowel ? { mouthForm: VOWEL_FORMS[vowel] } : {};
-      if (sampled.tracking || !(mixer.any() || player.any() || vowel)) avatar.setParameters({ ...mixer.apply(player.apply(tracked)), ...voice }, sampled.weight);
+      const smooth = control.options.vowelSmooth ?? 0.5;
+      const form = vowelMouth.current.step(vowel, dt, smooth, control.options.vowelStrength ?? 0.85);
+      avatar.setMouthBlend(0.03 + 0.15 * smooth);
+      const voice: Record<string, number> = form === null ? {} : { mouthForm: form };
+      if (sampled.tracking || !(mixer.any() || player.any() || form !== null)) avatar.setParameters({ ...mixer.apply(player.apply(tracked)), ...voice }, sampled.weight);
       else {
         // without the camera, only what they drive is set; idle motion keeps the rest alive
         const all = mixer.apply(player.apply(neutralParameters));
@@ -154,6 +158,7 @@ export function LiveApp() {
       <section><h2>{t.microphone}</h2><label className="live-check"><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{t.microphone}</label>
         <select aria-label={t.microphone} value={micId} disabled={micActive} onChange={event => setMicId(event.target.value)}><option value="">{t.defaultDevice}</option>{devices.filter(device => device.kind === 'audioinput' && device.deviceId).map((device, i) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${t.microphone} ${i + 1}`}</option>)}</select>
         <label className="live-check"><input type="checkbox" checked={options.voiceVowels} onChange={event => setOptions(current => ({ ...current, voiceVowels: event.target.checked }))} />{t.voiceVowels}</label>
+        {(['vowelSmooth', 'vowelStrength'] as const).map(key => <label key={key}>{t[key]}<input type="range" min="0" max="1" step="0.05" value={options[key]} disabled={!options.voiceVowels} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} /></label>)}
         <label>{t.gain}<input type="range" min="0.25" max="5" step="0.05" value={gain} onChange={event => setGain(Number(event.target.value))} /></label><small role="status">{t[micState]}</small>
       </section>
       <section><h2>{t.background}</h2><select aria-label={t.background} value={settings.background} onChange={event => setSettings(current => ({ ...current, background: backgroundColor(event.target.value) }))}>

@@ -34,3 +34,27 @@ test('the detector reads vowels from voiced spectra and keeps one per syllable',
   for (let i = 0; i < 30; i++) detector.detect(new Float32Array(512).fill(-120), 46.875, 0, 1 / 60);
   expect(detector.detect(new Float32Array(512).fill(-120), 46.875, 0, 1 / 60)).toBeNull();
 });
+
+test('the vowel mouth eases between vowels, holds each one briefly and can be toned down', async () => {
+  const { VowelMouth, VOWEL_FORMS } = await import('../src/expressions/vowels');
+  const mouth = new VowelMouth();
+  let form = 0;
+  for (let i = 0; i < 30; i++) form = mouth.step('a', 1 / 60, 0.5, 1)!;
+  expect(form).toBeCloseTo(0);
+  form = mouth.step('i', 1 / 60, 0.5, 1)!;
+  expect(form).toBeLessThan(0); expect(form).toBeGreaterThan(-0.3);   // eases, does not jump
+  // a different vowel right after a change is held back until the minimum time passes
+  const before = form;
+  form = mouth.step('a', 1 / 60, 0.5, 1)!;
+  expect(form).toBeLessThan(before);
+  for (let i = 0; i < 60; i++) form = mouth.step('i', 1 / 60, 0.5, 1)!;
+  expect(form).toBeCloseTo(VOWEL_FORMS.i, 1);
+  const instant = new VowelMouth();
+  instant.step('a', 1 / 60, 0, 1);
+  for (let i = 0; i < 6; i++) form = instant.step('i', 1 / 60, 0, 1)!;
+  expect(form).toBeCloseTo(VOWEL_FORMS.i, 1);
+  const mild = new VowelMouth();
+  for (let i = 0; i < 60; i++) form = mild.step('i', 1 / 60, 0.5, 0.5)!;
+  expect(form).toBeCloseTo(VOWEL_FORMS.i * 0.5, 1);
+  expect(mild.step(null, 1 / 60, 0.5, 0.5)).toBeNull();
+});

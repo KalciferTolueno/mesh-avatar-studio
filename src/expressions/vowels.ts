@@ -83,3 +83,22 @@ export class VowelDetector {
     return this.current;
   }
 }
+
+/** Turns detected vowels into a mouth form that changes smoothly: each vowel is held for a
+ * moment before the next, the form eases towards it, and `strength` pulls the extreme vowels
+ * (i, u) towards the neutral mouth. */
+export class VowelMouth {
+  private form = 0;
+  private shown: Vowel | null = null;
+  private held = 0;
+  step(vowel: Vowel | null, dt: number, smooth: number, strength: number): number | null {
+    const s = Math.max(0, Math.min(1, smooth));
+    this.held += Math.max(0, dt);
+    if (!vowel) { this.shown = null; return null; }
+    if (vowel !== this.shown && (this.shown === null || this.held >= 0.05 + 0.15 * s)) { this.shown = vowel; this.held = 0; }
+    const target = VOWEL_FORMS[this.shown ?? vowel] * Math.max(0, Math.min(1, strength));
+    const tau = 0.015 + 0.12 * s;
+    this.form += (target - this.form) * (1 - Math.exp(-Math.max(0, dt) / tau));
+    return this.form;
+  }
+}

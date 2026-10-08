@@ -26,6 +26,8 @@ export interface TrackingOptions {
   breathing?: number; blinkMode?: 'camera' | 'auto' | 'both';
   /** Live only (src/expressions/vowels.ts): mouth shape from the vowels in the microphone. */
   voiceVowels?: boolean;
+  /** How softly the mouth changes between vowels (0–1) and how marked the vowels are (0–1). */
+  vowelSmooth?: number; vowelStrength?: number;
   /** Caps on the forward / back body lean, 0–1 of its full range (default 1). */
   limitLeanForward?: number; limitLeanBack?: number;
 }

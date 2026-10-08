@@ -33,6 +33,7 @@ export interface MeshAvatar {
   setSwayGain(gain: number): void;
   setPhysicsTuning(tuning: { strength?: number; stiffness?: number; wind?: number; groups?: number[] }): void;
   getPhysicsGroups(): string[];
+  setMouthBlend(seconds: number): void;
   onMotion(listener: (id: string | null) => void): () => void;
   advance(seconds: number, fps?: number): void;
   advanceParameters(seconds: number): void;

@@ -317,10 +317,17 @@ git checkout mi-version && git merge main
   más cercana entre perfiles de voz grave y aguda, con un voto corto para mantener una vocal por
   sílaba. La vocal fija `mouthForm`, así que se usan las bocas dibujadas que correspondan (あ, い,
   お…). Se calcula en el navegador a partir del espectro; no se graba ni se envía audio.
+- **Cambios suaves:** cada vocal se mantiene un tiempo mínimo, la forma de la boca se acerca a la
+  nueva vocal con suavidad (`VowelMouth`) y el motor funde los dibujos de boca al cambiar
+  (`setMouthBlend`, en `src/engine/sprites.js`; 0 = cambio instantáneo como el original, que es
+  lo que usa el editor). Controles en el micrófono: **Suavidad del cambio de vocal** (fundido de
+  0,03 a 0,18 s) y **Fuerza de las vocales** (acerca i/u a la boca neutra).
 - **Archivos nuevos:** `src/expressions/vowels.ts`, `tests/vowels.test.ts` (voces sintéticas de
   100 a 250 Hz).
 - **Archivos del original tocados:** `src/live/media.ts` (método `spectrum()` en
-  `MicrophoneCapture`), `src/live/tracking.ts` (opción `voiceVowels`), `src/live/LiveApp.tsx`,
+  `MicrophoneCapture`), `src/live/tracking.ts` (opciones `voiceVowels`, `vowelSmooth`,
+  `vowelStrength`), `src/engine/sprites.js`, `src/engine/createMeshAvatar.js`,
+  `src/engine/index.ts` (`setMouthBlend`), `src/live/LiveApp.tsx`,
   `src/live/i18n.ts`, `src/live/i18n-es.ts`.
 
 ## Registro de fusiones con el original
