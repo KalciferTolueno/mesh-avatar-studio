@@ -12,7 +12,7 @@ import { layerSignature } from './stale';
 import { RigFields } from './RigFields';
 import { GROUPS } from './parts';
 import { PartList } from './PartList';
-import { GUIDE_KEY, I18nProvider, readPreference, savePreference, useI18n, type PartGroup } from './i18n';
+import { GUIDE_KEY, I18nProvider, LANGUAGES, LANGUAGE_NAMES, readPreference, savePreference, useI18n, type PartGroup } from './i18n';
 import { FirstGuide, GuideSteps, Help } from './Guide';
 import { Icon } from './Icon';
 import { RecentProjects } from './RecentProjects';
@@ -363,9 +363,7 @@ function Workspace() {
           title={pickedName && !localProject && !listedProject ? liveText[language].liveUnavailable : liveText[language].title}><Icon name="live" />{liveText[language].title}</a>
         <button className="icon-button" aria-label={t.help} title={t.help} aria-expanded={help} onClick={() => setHelp(current => !current)}><Icon name="help" /></button>
         <div className="language-toggle" role="group" aria-label={t.language}>
-          <button aria-label={t.english} aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>{t.enCode}</button>
-          <button aria-label={t.japanese} aria-pressed={language === 'ja'} onClick={() => setLanguage('ja')}>{t.jaCode}</button>
-          <button aria-label={t.chinese} aria-pressed={language === 'zh'} onClick={() => setLanguage('zh')}>{t.zhCode}</button>
+          {LANGUAGES.map(lang => <button key={lang} aria-label={LANGUAGE_NAMES[lang][0]} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{LANGUAGE_NAMES[lang][1]}</button>)}
         </div>
       </nav>
     </header>

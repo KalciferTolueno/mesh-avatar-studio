@@ -2,7 +2,7 @@ import { LightingControls, LightHandle, lightingText } from '../lighting/Control
 import { loadLighting, saveLighting } from '../lighting/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
-import { useI18n } from '../editor/i18n';
+import { useI18n, LANGUAGES, LANGUAGE_NAMES } from '../editor/i18n';
 import { createAvatarView } from './avatar-view';
 import { viewSettings, streamUrl, backgroundColor } from './settings';
 import { FacePose, type TrackingOptions } from './tracking';
@@ -94,7 +94,7 @@ export function LiveApp() {
   const status = cameraState === 'running' ? tracking ? 'tracking' : 'lost' : cameraState;
   return <main className="live-app">
     <header className="live-header"><div><a href="/">{t.back}</a><h1>Mesh Avatar Studio <span>{t.title}</span></h1></div>
-      <div className="live-languages">{(['en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div>
+      <div className="live-languages">{LANGUAGES.map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{LANGUAGE_NAMES[lang][0]}</button>)}</div>
     </header>
     <div className="live-layout"><section className="live-view"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
       <canvas ref={canvas} data-testid="live-avatar" />

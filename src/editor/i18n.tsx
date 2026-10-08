@@ -2,9 +2,13 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { readPreference, savePreference } from './preferences';
 import { workflowEn, workflowJa } from './workflow-i18n';
 import { uiZh, workflowZh, partsZh, fieldsZh } from './i18n-zh';
+import { uiEs, workflowEs, partsEs, fieldsEs } from './i18n-es';
 export { readPreference, savePreference } from './preferences';
 
-export type Language = 'en' | 'ja' | 'zh';
+export type Language = 'en' | 'ja' | 'zh' | 'es';
+// fork: languages offered in the switchers; the others stay in the code but are not shown
+export const LANGUAGES: Language[] = ['es', 'en'];
+export const LANGUAGE_NAMES: Record<Language, [string, string]> = { es: ['Español', 'ES'], en: ['English', 'EN'], ja: ['日本語', 'JA'], zh: ['简体中文', '中文'] };
 export const LANGUAGE_KEY = 'mesh-avatar-language';
 export const GUIDE_KEY = 'mesh-avatar-guide-seen';
 
@@ -95,10 +99,13 @@ const ja: typeof en = {
   accessory: '飾り', x: '横', y: '縦', px: '画素',
 };
 const zh: typeof en = { ...workflowZh, ...uiZh };
-export const dictionaries = { en, ja, zh };
+// English first so keys the upstream adds later still show text until they are translated
+const es: typeof en = { ...en, ...workflowEs, ...uiEs };
+export const dictionaries = { en, ja, zh, es };
 export type PartGroup = 'head' | 'eyes' | 'mouth' | 'face' | 'cheeks' | 'strands' | 'buns' | 'accessories' | 'body' | 'hand' | 'mesh' | 'view';
 const partText: Record<Language, Record<PartGroup, [string, string, string]>> = {
   zh: partsZh,
+  es: partsEs,
   en: {
     head: ['Head turn', 'Area that moves when the face turns or tilts.', 'Place the centre in the middle of the face; the circle should cover the whole head including hair.'],
     eyes: ['Eyes', 'Outline of each eye opening; drives blinking and gaze.', 'Trace the opening inside the eyelashes. Add dots where the contour changes direction.'],
@@ -162,6 +169,7 @@ export function fieldTitle(path: string, language: Language) {
       if (key === 'accessories') return t.accessory;
       if (key in parts) return parts[key as PartGroup][0];
     }
+    if (language === 'es') return fieldsEs[key] ?? fieldText[key]?.[0] ?? key;
     return language === 'zh' ? fieldsZh[key] ?? key : fieldText[key]?.[language === 'en' ? 0 : 1] ?? key;
   }).join(' · ');
 }
@@ -169,13 +177,16 @@ const Context = createContext({ language: 'en' as Language, setLanguage: (_: Lan
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
     const saved = readPreference(LANGUAGE_KEY);
-    return saved === 'ja' || saved === 'zh' ? saved : 'en';
+    // fork: a saved language that is still offered, otherwise the browser's language
+    // (Spanish browsers start in Spanish, everything else in English)
+    if (LANGUAGES.includes(saved as Language)) return saved as Language;
+    return typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('es') ? 'es' : 'en';
   });
   useEffect(() => { document.documentElement.lang = language === 'zh' ? 'zh-CN' : language; savePreference(LANGUAGE_KEY, language); }, [language]);
   return <Context.Provider value={{ language, setLanguage }}>{children}</Context.Provider>;
 }
 export function useI18n() {
   const context = useContext(Context);
-  return { ...context, t: dictionaries[context.language], parts: partText[context.language], locale: { en: 'en-GB', ja: 'ja-JP', zh: 'zh-CN' }[context.language],
+  return { ...context, t: dictionaries[context.language], parts: partText[context.language], locale: { en: 'en-GB', ja: 'ja-JP', zh: 'zh-CN', es: 'es-ES' }[context.language],
     title: (path: string) => fieldTitle(path, context.language) };
 }

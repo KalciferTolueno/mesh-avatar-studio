@@ -1,3 +1,4 @@
+import { liveEs } from './i18n-es';
 export const liveEn = {
   title: 'Live', back: 'Back to editor', camera: 'Camera', device: 'Device', defaultDevice: 'Default device',
   start: 'Start camera', stop: 'Stop camera', calibrate: 'Calibrate', calibrated: 'Neutral pose saved',
@@ -58,4 +59,4 @@ const liveZh: typeof liveEn = {
   micBlocked: '麦克风访问被拒绝。请在浏览器中允许访问后重试。', micUnavailable: '麦克风不可用。请检查所选设备。',
   liveUnavailable: '请先从本地项目列表打开此项目，再使用直播功能。',
 };
-export const liveText = { en: liveEn, ja: liveJa, zh: liveZh };
+export const liveText = { en: liveEn, ja: liveJa, zh: liveZh, es: { ...liveEn, ...liveEs } };
