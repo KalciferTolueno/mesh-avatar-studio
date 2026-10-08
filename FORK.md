@@ -125,6 +125,11 @@ git checkout mi-version && git merge main
 - **Piezas sobre el cuerpo (`parts.items`):** objetos como los cordones de la capucha se recortan
   por su contorno, la tela de detrás se rellena (suave, desde la propia ropa) y se dibujan entre
   el cuerpo y la cabeza (`z: 0.5`, rol `body`). Así la física los mueve sin deformar la ropa.
+- **Lo que hay detrás de la cabeza (`parts.behind`):** en vez de adivinarlo con un relleno
+  (que dejaba un parche rectangular y trozos de pelaje al levantar la cabeza), se pinta un cuello
+  redondeado con contorno y sombra y el forro de la ropa en sombra, con colores tomados del
+  dibujo, siempre `inset` px dentro de la silueta de la cabeza para que su borde no asome. La
+  máscara de la cabeza rellena sus huecos internos (un píxel de la boca se colaba en el cuerpo).
 - **Archivos del original tocados:** `src/engine/createMeshAvatar.js` (`addPiece`, bucle de
   `pieces`), `src/engine/rig.js` (`baseWeights` con `role`), `src/rig/validate.ts` y
   `src/rig/types.ts` (`parts`), `src/editor/project.ts`, `tools/render-poses.mjs`, documentación.
@@ -233,7 +238,8 @@ git checkout mi-version && git merge main
   el borde inferior, igual que la inclinación lateral. En En vivo lo mueve un tercio del cabeceo
   (como `FaceAngleY → ParamBodyAngleY` en VTube Studio) más el acercarse a la cámara, escalado
   por "Movimiento del cuerpo". Los grupos de física aceptan `bodyAngleY` como entrada. Control
-  "Adelante/atrás" en la prueba de poses del editor.
+  "Adelante/atrás" en la prueba de poses del editor. Amplitud: hasta 38 px (escalado al tamaño de la imagen) y un
+  6 % de ancho; en En vivo la mueve la mitad del cabeceo más el acercarse a la cámara.
 - **Archivos del original tocados:** `src/engine/rig.js` (`PARAMS`, `applyBody`),
   `src/engine/groups.js`, `src/rig/types.ts`, `src/live/tracking.ts`, `src/editor/Preview.tsx`
   (control), `src/editor/i18n.tsx` y `src/editor/i18n-zh.ts` (clave `bodyLean`),

@@ -155,6 +155,7 @@ the engine mapping. Do not copy the example illustration's coordinates into a ne
 | `parts.items[*].name` / `outline` | Optional pieces lying on the body (hoodie cords…): everything opaque inside the polygon becomes its own layer and the cloth behind it is filled. |
 | `parts.front.outline` | Optional polygon around the front hair locks; hair-mask pixels inside it move in front of the head. |
 | `parts.front.hairline` | Optional y, px, above which everything in the outline is front hair; default `300`. |
+| `parts.behind` | Optional area behind the head (`outline` polygon) painted as a rounded neck (`neck.cx`, `neck.bottom` = jaw y, `neck.width`, `neck.topWidth`) and the clothing lining in shadow, kept `inset` px (default `40`) inside the head silhouette. Replaces the guessed fill. |
 | `parts.fill` | Optional fill reach in px: `body` (neck under the head, `110`), `collar` (`12`), `front` (`45`), `ears` (`35`). |
 | `physics[*].name` | Optional Live2D-style physics group label. |
 | `physics[*].pivot` / `tip` | `[x,y]`, px: where the group hangs from and its free end (an ear's base and tip, a cord's eyelet and end). |

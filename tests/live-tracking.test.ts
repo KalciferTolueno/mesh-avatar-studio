@@ -145,7 +145,7 @@ test('the body leans back with the head pitch and forward when moving towards th
     return readFace(r)!;
   };
   const neutral = at(0, -50);
-  expect(mapFace(at(-15, -50), neutral, options).bodyAngleY).toBeCloseTo(5);
+  expect(mapFace(at(-15, -50), neutral, options).bodyAngleY).toBeCloseTo(7.5);
   expect(mapFace(at(0, -42), neutral, options).bodyAngleY).toBeCloseTo(-10);
   expect(mapFace(at(0, -42), neutral, { ...options, bodySensitivity: 0 }).bodyAngleY).toBeCloseTo(0);
 });

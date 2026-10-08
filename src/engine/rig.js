@@ -247,8 +247,8 @@ export function createRig(rig, extra = {}) {
     const lean = (P.bodyAngleY ?? 0) / 10;
     if (lean) {
       const w = 1 - sstep(...BODY.rollBand, restY);
-      p[1] -= lean * 16 * BODY_PX * w;
-      p[0] -= (p[0] - BODY.chest.cx) * 0.035 * lean * w;
+      p[1] -= lean * 38 * BODY_PX * w;
+      p[0] -= (p[0] - BODY.chest.cx) * 0.06 * lean * w;
     }
     // bottom rows stay put so no gap opens at the cut-off edge of the image
     rotateAround(p, BODY.pivotX, BODY.pivotY, -P.bodyAngleZ / 10 * BODY.maxRoll * (1 - sstep(...BODY.rollBand, restY)));

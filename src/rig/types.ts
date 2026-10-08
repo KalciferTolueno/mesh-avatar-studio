@@ -89,5 +89,7 @@ export interface Rig {
     items?: { name: string; outline: Point[] }[];
     front?: { outline: Point[]; hairline?: number };
     fill?: Partial<Record<'body' | 'collar' | 'front' | 'ears', number>>;
+    /** Drawn neck and clothing behind the head, revealed when it lifts or turns. */
+    behind?: { outline: Point[]; inset?: number; line?: [number, number, number]; neck: { cx: number; bottom: number; width: number; topWidth: number } };
   };
 }

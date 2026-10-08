@@ -74,6 +74,15 @@ def clean(mask, close=5, min_area=400):
     return keep
 
 
+def fill_holes(mask):
+    """Interior holes (a dark pixel of the mouth line) belong to the mask."""
+    m = mask.astype(np.uint8)
+    flood = m.copy()
+    h, w = m.shape
+    cv2.floodFill(flood, np.zeros((h + 2, w + 2), np.uint8), (0, 0), 1)
+    return mask | (flood == 0)
+
+
 def largest(mask):
     n, labels, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), 8)
     if n <= 1:
@@ -100,7 +109,7 @@ def split(rgba, rig, hair):
     neck = ys > neck_y
     head_area = alpha & near_head & above_jaw & (~neck | fur)
     head_area = grow_into(head_area, alpha & c["line"] & above_jaw, 3)
-    head_area = largest(clean(head_area))
+    head_area = fill_holes(largest(clean(head_area)))
     ears = []
     for ear in parts.get("ears", []):
         inside = polygon_mask(shape, ear["outline"])
@@ -221,6 +230,46 @@ def distance_to(mask):
     return cv2.distanceTransform((~mask).astype(np.uint8), cv2.DIST_L2, 5)
 
 
+def paint_behind(out, rgba, masks, hole, cfg):
+    """Paint what a lifted or turning head uncovers: a rounded neck between `neck.width` (at
+    the bottom) and `neck.topWidth` (at the top of the outline), cel shaded with an outline, and
+    the clothing behind it in shadow. Colours are sampled from the drawing."""
+    rgb = rgba[..., :3].astype(np.float32)
+    ys, xs = np.nonzero(hole)
+    if not len(ys):
+        return
+    y0, y1 = ys.min(), ys.max() + 1
+    neck = cfg["neck"]
+    cx, bottom = neck["cx"], neck["bottom"]
+    # neck colour: the fur just below the jaw; clothing: the clothing's own pixels, in shadow
+    below = masks["body"].copy()
+    below[: int(bottom)] = False
+    below[int(bottom) + 80:] = False
+    below[:, : int(cx - neck["width"] / 2)] = False
+    below[:, int(cx + neck["width"] / 2):] = False
+    lum = rgb.mean(-1)
+    fur = below & (lum > 110) & (lum < 200)   # the fur's shaded tone, not its highlights
+    neck_col = np.median(rgb[fur], axis=0) if fur.any() else np.array([190, 170, 200], np.float32)
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    cloth = masks["body"] & (r > 90) & (g < 0.45 * r) & (b < 0.6 * r)   # the hood's red lining
+    cloth[: y0] = False
+    cloth[int(bottom) + 200:] = False
+    cloth_col = np.median(rgb[cloth], axis=0) if cloth.any() else np.array([110, 30, 35], np.float32)
+    line_col = np.array(cfg.get("line", [28, 14, 24]), np.float32)
+    yy, xx = ys.astype(np.float32), xs.astype(np.float32)
+    t = np.clip((yy - y0) / max(1, bottom - y0), 0, 1)          # 0 top .. 1 jaw
+    half = (neck["topWidth"] + (neck["width"] - neck["topWidth"]) * t) / 2
+    d = np.abs(xx - cx) - half                                     # < 0 inside the neck
+    inside = np.clip(0.5 - d, 0, 1)[:, None]
+    rel = np.clip(np.abs(xx - cx) / np.maximum(half, 1), 0, 1)
+    neck_px = neck_col * ((0.8 + 0.12 * t) * (0.84 + 0.16 * (1 - rel ** 2)))[:, None]   # round, deeper up
+    cloth_px = cloth_col * (0.5 + 0.22 * t)[:, None]
+    col = neck_px * inside + cloth_px * (1 - inside)
+    line = np.clip(1.6 - np.abs(d), 0, 1)[:, None]
+    col = col * (1 - line) + line_col * line
+    out[ys, xs] = col.clip(0, 255).astype(np.uint8)
+
+
 def fill_parts(rgba, masks, rig, session):
     rgb = rgba[..., :3].copy()
     shape = rgb.shape[:2]
@@ -242,8 +291,16 @@ def fill_parts(rgba, masks, rig, session):
     near_body = distance_to(masks["body"])
     hole = covered & (near_body < reach) & (neck | (near_body < fill.get("collar", 12))) & (distance_to(~masks["alpha"]) > 2)
     body_rgb = rgb.copy()
+    behind = rig["parts"].get("behind")
+    if behind:
+        # drawn instead of guessed: a rounded neck and the hood's lining in shadow
+        # kept well inside the head's silhouette so its edge never shows when the head moves
+        inset = int(behind.get("inset", 40))
+        solid = cv2.erode((covered | masks["body"]).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * inset + 1, 2 * inset + 1))).astype(bool)
+        hole = covered & polygon_mask(shape, behind["outline"]) & solid
+        paint_behind(body_rgb, rgba, masks, hole, behind)
     body_alpha = masks["body"] | hole
-    if hole.any():
+    if hole.any() and not behind:
         # Under the head there is only neck in shadow: carry the neck, chest and collar
         # colours upwards smoothly (no invented strokes) and darken them like the head's shadow.
         # Everything that is not body, background included, is unknown.

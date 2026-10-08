@@ -89,7 +89,7 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
     bodyAngleX: clamp(x * 0.2 + side * 0.6, -10, 10), bodyAngleZ: clamp(z * 0.2 - side * 0.4, -10, 10),
     // fork: forward / back lean, like VTube Studio's FaceAngleY -> BodyAngleY at a third, plus
     // leaning towards the camera (about 8 cm closer reaches the full forward lean)
-    bodyAngleY: clamp(y / 3 - offset('z') * 1.25 * clamp(options.bodySensitivity ?? 1, 0, 3), -10, 10),
+    bodyAngleY: clamp((y / 2 - offset('z') * 1.6) * clamp(options.bodySensitivity ?? 1, 0, 3), -10, 10),
     // about 8 cm sideways, 7 cm up or down and 8 cm closer reach the full movement
     // capped so the avatar stays framed (Live: "Movement limits")
     positionX: clamp(offset('x') * mirror * move / 8, -limit(options.limitSide), limit(options.limitSide)),
