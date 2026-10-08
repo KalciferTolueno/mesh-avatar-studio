@@ -26,3 +26,16 @@ test('without tracking only the touched parameters are set, from the neutral pos
   expect(Object.keys(alone).sort()).toEqual(['browY', 'eyeWide', 'mouthForm', 'mouthOpen']);
   expect(alone.eyeWide).toBeCloseTo(1, 2); expect(alone.mouthOpen).toBeCloseTo(0.35, 2);
 });
+
+test('animations add head motion on top of tracking, blend the face and then end', async () => {
+  const { AnimationPlayer } = await import('../src/expressions/animations');
+  const player = new AnimationPlayer(), tracked = { angleX: 10, angleY: 0, eyeLOpen: 1, eyeROpen: 1, mouthForm: 0 };
+  expect(player.apply(tracked)).toEqual(tracked);
+  player.play('nod');
+  for (let i = 0; i < 19; i++) player.step(1 / 60);
+  const mid = player.apply(tracked);
+  expect(mid.angleY).toBeLessThan(-8); expect(mid.angleX).toBe(10);
+  expect(mid.eyeLOpen).toBeLessThan(0.95); expect(player.touched()).toContain('eyeROpen');
+  for (let i = 0; i < 120; i++) player.step(1 / 60);
+  expect(player.any()).toBe(false); expect(player.apply(tracked)).toEqual(tracked);
+});

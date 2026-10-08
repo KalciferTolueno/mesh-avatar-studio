@@ -1,8 +1,9 @@
 import { LightingControls, LightHandle, lightingText } from '../lighting/Controls';
 import { loadLighting, saveLighting } from '../lighting/settings';
 import { LivePhysics } from '../physics/LivePhysics';
-import { LiveExpressions } from '../expressions/LiveExpressions';
+import { LiveAnimations, LiveExpressions } from '../expressions/LiveExpressions';
 import { ExpressionMixer } from '../expressions/presets';
+import { AnimationPlayer } from '../expressions/animations';
 import { loadPhysics } from '../physics/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
@@ -10,7 +11,7 @@ import { useI18n } from '../editor/i18n';
 import { ModeSwitch, ThemeToggle } from '../theme/ThemeControls';
 import { themeText } from '../theme/theme';
 const themeLabel = (language: keyof typeof themeText) => themeText[language].edit;
-import { createAvatarView } from './avatar-view';
+import { createAvatarView, neutralParameters } from './avatar-view';
 import { viewSettings, streamUrl, backgroundColor } from './settings';
 import { FacePose, type TrackingOptions } from './tracking';
 import { CameraCapture, MicrophoneCapture, type CameraState, type MicState, type BackgroundTracking } from './media';
@@ -52,6 +53,7 @@ export function LiveApp() {
   const lightRef = useRef(settings.lighting); lightRef.current = settings.lighting;
   const pose = useRef(new FacePose());
   const expressions = useRef(new ExpressionMixer());
+  const animations = useRef(new AnimationPlayer());
   const controls = useRef({ options, gain, micState, cameraState }); controls.current = { options, gain, micState, cameraState };
   const refreshDevices = () => { void navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(() => undefined); };
   useEffect(() => {
@@ -78,13 +80,18 @@ export function LiveApp() {
       setTracking(sampled.tracking);
       avatar.setAutoIdle(!sampled.tracking); avatar.setAutoMotion(!sampled.tracking);
       // fork: expressions toggled with keys sit on top of tracking (src/expressions)
-      const mixer = expressions.current; mixer.step(dt);
-      if (sampled.tracking || !mixer.any()) avatar.setParameters(mixer.apply(sampled.params), sampled.weight);
-      else avatar.setParameters(mixer.applyAlone(), 1);
+      // and so do animations on keys (src/expressions/animations.ts)
+      const mixer = expressions.current, player = animations.current; mixer.step(dt); player.step(dt);
+      if (sampled.tracking || !(mixer.any() || player.any())) avatar.setParameters(mixer.apply(player.apply(sampled.params)), sampled.weight);
+      else {
+        // without the camera, only what they drive is set; idle motion keeps the rest alive
+        const all = mixer.apply(player.apply(neutralParameters));
+        avatar.setParameters(Object.fromEntries([...new Set([...mixer.touched(), ...player.touched()])].map(key => [key, all[key]])), 1);
+      }
       const micOn = control.micState === 'micOn';
       avatar.setSpeaking(micOn); avatar.setVoiceLevel(micOn ? microphone.current?.level(control.gain) ?? 0 : 0);
     }, (avatar, now) => {
-      if (controls.current.cameraState === 'running' || controls.current.micState === 'micOn' || expressions.current.any()) send(avatar.getParameters(), now);
+      if (controls.current.cameraState === 'running' || controls.current.micState === 'micOn' || expressions.current.any() || animations.current.any()) send(avatar.getParameters(), now);
     }).then(value => { if (cancelled) value.destroy(); else { view = value; avatarRef.current = value.avatar; value.avatar.setLighting(lightRef.current); setViewState('ready'); } }).catch(() => { if (!cancelled) setViewState('projectError'); });
     return () => { cancelled = true; clock.terminate(); view?.destroy(); avatarRef.current = null; };
   }, [settings.project, settings.fit]);
@@ -148,6 +155,7 @@ export function LiveApp() {
       </section>
       {/* fork: expressions on keys, like VTube Studio's hotkeys (FORK.md 14) */}
       <LiveExpressions mixer={expressions} language={language} />
+      <LiveAnimations player={animations} language={language} />
       {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
       <details className="live-lighting live-movement" data-testid="movement-section" open>
         <summary><Icon name="live" />{t.movement}</summary>

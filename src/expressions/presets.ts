@@ -45,23 +45,12 @@ export class ExpressionMixer {
     }
     return out;
   }
+  /** Parameter names the visible expressions drive. */
+  touched(): string[] { return [...new Set(EXPRESSIONS.filter(e => this.mix[e.id] > 0.002).flatMap(e => Object.keys(e.params)))]; }
   /** Only the parameters the visible expressions touch, applied to the neutral pose. */
   applyAlone(): Record<string, number> {
-    const touched = new Set(EXPRESSIONS.filter(e => this.mix[e.id] > 0.002).flatMap(e => Object.keys(e.params)));
     const all = this.apply({});
-    return Object.fromEntries([...touched].map(key => [key, all[key]]));
+    return Object.fromEntries(this.touched().map(key => [key, all[key]]));
   }
 }
 
-// key bindings are a per-browser convenience
-const BINDINGS_KEY = 'mesh-avatar-expression-keys';
-export function loadBindings(): Record<string, string> {
-  const defaults = Object.fromEntries(EXPRESSIONS.map(e => [e.id, e.key]));
-  try {
-    const saved = JSON.parse(localStorage.getItem(BINDINGS_KEY) ?? '{}');
-    return Object.fromEntries(EXPRESSIONS.map(e => [e.id, typeof saved[e.id] === 'string' ? saved[e.id] : defaults[e.id]]));
-  } catch { return defaults; }
-}
-export function saveBindings(bindings: Record<string, string>) {
-  try { localStorage.setItem(BINDINGS_KEY, JSON.stringify(bindings)); } catch { /* storage is optional */ }
-}

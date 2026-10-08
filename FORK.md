@@ -280,6 +280,19 @@ git checkout mi-version && git merge main
 - **Archivos del original tocados:** `src/live/LiveApp.tsx` (mezclador en cada fotograma, envío y
   sección).
 
+### 15. Animaciones con teclas
+
+- **Nuevo:** sección **Animaciones** en En vivo, como el `TriggerAnimation` de VTube Studio:
+  asentir, negar, saludar, reír, sorprenderse, ladear la cabeza, pensar, timidez y guiño (teclas
+  Q–O, reasignables). Reutilizan las animaciones del motor (`src/engine/motions.js`), pero se
+  reproducen **sobre el rastreo**: las pistas de cabeza, cuerpo y mirada se suman al movimiento
+  real y las de la cara se mezclan con entrada y salida suaves. Funcionan sin cámara y llegan a
+  OBS. Esc las detiene.
+- **Archivos nuevos:** `src/expressions/animations.ts` (reproductor), `src/expressions/HotkeyPanel.tsx`
+  (panel de botones con teclas reasignables, compartido con Expresiones).
+- **Archivos del original tocados:** `src/live/LiveApp.tsx` (reproductor en cada fotograma, envío,
+  sección). Si el autor cambia el formato de `MOTIONS` o `sampleTrack`, revisar `animations.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |
