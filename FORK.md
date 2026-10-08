@@ -213,6 +213,9 @@ git checkout mi-version && git merge main
   para la inclinación y el balanceo del cuerpo. Como la ilustración está cortada abajo, el borde
   inferior nunca sube dentro del marco: bajar desplaza, y subir o alejarse escalan respecto al
   borde inferior; acercarse escala respecto a la cabeza.
+- **Sin calibrar también funciona:** la primera posición en que se detecta la cabeza es el centro
+  del movimiento; **Calibrar** lo vuelve a fijar. Unos 8 cm de lado, 7 cm de alto u 8 cm hacia la
+  cámara dan el recorrido completo (con "Movimiento en pantalla" en 1).
 - **Archivos del original tocados:** `src/engine/rig.js` (`PARAMS`: `positionY`, `positionZ`),
   `src/engine/renderer.js` (`state.shiftY`, `state.zooms`), `src/engine/createMeshAvatar.js`
   (`screenMove`), `src/live/tracking.ts` (posición `y`/`z` de la cabeza, opción `screenMove`),

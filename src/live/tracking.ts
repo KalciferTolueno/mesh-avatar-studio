@@ -45,7 +45,9 @@ const angleDelta = (value: number, neutral: number) => ((value - neutral + 540) 
 // Webcam blink scores rarely reach 1: many faces peak around 0.5-0.7. Without a measured
 // peak, assume the eye is closed this far above its relaxed score.
 const DEFAULT_CLOSED_SPAN = 0.4;
-export function mapFace(face: RawFace, neutral: RawFace | null, options: TrackingOptions, eyeRanges?: EyeRanges): Record<string, number> {
+/** `origin`: where the head was when tracking started, used for screen movement until calibrated. */
+export type HeadOrigin = Partial<Record<'x' | 'y' | 'z', number>>;
+export function mapFace(face: RawFace, neutral: RawFace | null, options: TrackingOptions, eyeRanges?: EyeRanges, origin?: HeadOrigin | null): Record<string, number> {
   const s = (key: string) => face.shapes[key] ?? 0;
   const n = (key: string) => neutral?.shapes[key] ?? 0;
   const d = (key: string) => s(key) - n(key);
@@ -73,16 +75,19 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
   const smile = clamp((mean('mouthSmileLeft', 'mouthSmileRight') + mean('cheekSquintLeft', 'cheekSquintRight')) * 0.3);
   // Moving sideways (not only turning) carries the body: it shifts, leans and the whole
   // avatar slides a little, like VTube Studio's face-position movement. Same mirroring as yaw.
-  const offset = (key: 'x' | 'y' | 'z') => Number.isFinite(face[key]) ? (face[key] ?? 0) - (neutral?.[key] ?? face[key] ?? 0) : 0;
+  // the calibrated pose, otherwise the first tracked position, is the centre of the screen movement
+  const reference = neutral ?? origin;
+  const offset = (key: 'x' | 'y' | 'z') => Number.isFinite(face[key]) ? (face[key] ?? 0) - (reference?.[key] ?? face[key] ?? 0) : 0;
   const side = offset('x') * mirror * clamp(options.bodySensitivity ?? 1, 0, 3);
   // like VTube Studio's model movement: the avatar follows the head across the screen and
   // comes closer when leaning towards the camera (camera space: y up, z towards the viewer)
   const move = clamp(options.screenMove ?? 1, 0, 3);
   return { angleX: x, angleY: y, angleZ: z,
     bodyAngleX: clamp(x * 0.2 + side * 0.6, -10, 10), bodyAngleZ: clamp(z * 0.2 - side * 0.4, -10, 10),
-    positionX: clamp(offset('x') * mirror * move / 12, -1, 1),
-    positionY: clamp(offset('y') * move / 10, -1, 1),
-    positionZ: clamp(offset('z') * move / 12, -1, 1),
+    // about 8 cm sideways, 7 cm up or down and 8 cm closer reach the full movement
+    positionX: clamp(offset('x') * mirror * move / 8, -1, 1),
+    positionY: clamp(offset('y') * move / 7, -1, 1),
+    positionZ: clamp(offset('z') * move / 8, -1, 1),
     eyeLOpen: left, eyeROpen: right,
     gazeX: clamp((d('eyeLookOutRight') - d('eyeLookInRight') + d('eyeLookInLeft') - d('eyeLookOutLeft')) * mirror, -1, 1),
     gazeY: clamp(mean('eyeLookUpLeft', 'eyeLookUpRight') - mean('eyeLookDownLeft', 'eyeLookDownRight'), -1, 1),
@@ -132,6 +137,7 @@ export class FacePose {
   private filters = Object.fromEntries(Object.entries(FILTERS).map(([key, [cutoff, beta]]) => [key, new OneEuro(cutoff, beta)]));
   // highest blink score seen per eye, slowly forgotten, to learn how far this face's blink goes
   private blinkPeak = { Left: 0, Right: 0 };
+  private origin: HeadOrigin | null = null;
   update(result: FaceResult, now: number) {
     const face = readFace(result);
     if (!face) return;
@@ -141,15 +147,17 @@ export class FacePose {
       this.blinkPeak[side] = Math.max(score, this.blinkPeak[side] * Math.exp(-dt / 90));
     }
     this.face = face; this.seen = now;
+    if (!this.origin && [face.x, face.y, face.z].every(Number.isFinite)) this.origin = { x: face.x, y: face.y, z: face.z };
   }
   calibrate(now: number) {
     if (!this.face || now - this.seen > 500) return false;
     this.neutral = structuredClone(this.face); this.params = { ...faceNeutral };
+    this.origin = { x: this.face.x, y: this.face.y, z: this.face.z };
     for (const filter of Object.values(this.filters)) filter.reset();
     return true;
   }
   reset() {
-    this.face = null; this.neutral = null; this.seen = -Infinity; this.blinkPeak = { Left: 0, Right: 0 };
+    this.face = null; this.neutral = null; this.origin = null; this.seen = -Infinity; this.blinkPeak = { Left: 0, Right: 0 };
     for (const filter of Object.values(this.filters)) filter.reset();
   }
   private eyeRanges(): EyeRanges {
@@ -165,7 +173,7 @@ export class FacePose {
   sample(now: number, dt: number, options: TrackingOptions) {
     const tracking = !!this.face && now - this.seen <= 500;
     if (tracking) {
-      const target = mapFace(this.face!, this.neutral, options, this.eyeRanges());
+      const target = mapFace(this.face!, this.neutral, options, this.eyeRanges(), this.origin);
       // the Smoothing slider scales every cutoff: 0 is twice as responsive, 1 eight times calmer
       const scale = 2 ** (1 - 4 * clamp(options.smoothing));
       this.params = Object.fromEntries(Object.entries(target).map(([key, value]) =>
