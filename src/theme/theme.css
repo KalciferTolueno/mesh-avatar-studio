@@ -1,0 +1,134 @@
+/* Fork addition (see FORK.md): design tokens and the dark / light theme on top of the original
+   styles (editor/style.css, live/live.css, lighting/lighting.css), which stay untouched.
+   Every rule is scoped to :root[data-theme] so it wins over the originals whatever the order. */
+
+:root[data-theme] {
+  --font-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 12px; --radius-sm: 8px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+:root[data-theme="dark"] {
+  --canvas: #111114; --surface: #19191d; --surface-2: #212126; --surface-3: #2a2a30;
+  --line: #2b2b32; --line-strong: #3b3b44;
+  --ink: #ececf1; --muted: #9a9aa6; --faint: #6f6f7b;
+  --accent: #a194ff; --accent-strong: #b9afff; --accent-soft: #272342; --accent-line: #4a418c; --on-accent: #141218;
+  --warn-bg: #33290f; --warn-ink: #f2cb6e; --warn-line: #5a4a1c;
+  --err-bg: #3a1a1c; --err-ink: #ff9a9a; --ok-ink: #74dcaa;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  --canvas-bg: #151518; --checker-a: #1c1c21; --checker-b: #232329;
+}
+:root[data-theme="light"] {
+  --canvas: #f3f3f6; --surface: #ffffff; --surface-2: #f6f6f9; --surface-3: #ececf2;
+  --line: #e2e2ea; --line-strong: #cdcdd8;
+  --ink: #1c1c23; --muted: #686876; --faint: #9a9aa6;
+  --accent: #6b5ae6; --accent-strong: #5a49d6; --accent-soft: #efedff; --accent-line: #cbc4fb; --on-accent: #ffffff;
+  --warn-bg: #fff6dd; --warn-ink: #7c4b05; --warn-line: #f0dcaa;
+  --err-bg: #fff1f1; --err-ink: #a12828; --ok-ink: #166534;
+  --shadow: 0 10px 30px rgba(24, 24, 40, .12);
+  --canvas-bg: #f7f7fa; --checker-a: #e6e6ec; --checker-b: #f7f7fa;
+}
+
+/* ---- shared base ---- */
+:root[data-theme], :root[data-theme] body { font-family: var(--font-ui); color: var(--ink); background: var(--canvas); }
+:root[data-theme] ::selection { background: var(--accent-soft); }
+:root[data-theme] * { scrollbar-color: var(--line-strong) transparent; }
+:root[data-theme] button, :root[data-theme] .open-menu > summary, :root[data-theme] select,
+:root[data-theme] input:not([type]), :root[data-theme] input[type="text"], :root[data-theme] input[type="number"], :root[data-theme] textarea {
+  color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  transition: border-color .15s var(--ease), background-color .15s var(--ease), color .15s var(--ease);
+}
+:root[data-theme] button:hover:not(:disabled), :root[data-theme] .open-menu > summary:hover { border-color: var(--line-strong); background: var(--surface-3); color: var(--ink); }
+:root[data-theme] button:focus-visible, :root[data-theme] summary:focus-visible, :root[data-theme] select:focus-visible,
+:root[data-theme] input:focus-visible, :root[data-theme] textarea:focus-visible, :root[data-theme] a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:root[data-theme] input[type="range"], :root[data-theme] input[type="checkbox"] { accent-color: var(--accent); }
+:root[data-theme] button.primary, :root[data-theme] .live-primary { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+:root[data-theme] button.primary:hover:not(:disabled), :root[data-theme] .live-primary:hover:not(:disabled) { color: var(--on-accent); background: var(--accent-strong); border-color: var(--accent-strong); }
+:root[data-theme] a { color: var(--accent); }
+
+/* ---- header: mode switch and theme toggle ---- */
+:root[data-theme] .mode-switch { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+:root[data-theme] .mode-switch > a, :root[data-theme] .mode-switch > .mode-item {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 7px; font-weight: 500; font-size: 13px;
+  color: var(--muted); background: transparent; text-decoration: none; white-space: nowrap; filter: none;
+}
+:root[data-theme] .mode-switch > a:hover { color: var(--ink); background: var(--surface-3); }
+:root[data-theme] .mode-switch > [aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+:root[data-theme] .mode-switch > a[aria-disabled="true"] { opacity: .5; background: transparent; }
+:root[data-theme] .mode-switch svg { width: 16px; height: 16px; }
+:root[data-theme] .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5f6d; box-shadow: 0 0 0 3px rgba(255, 95, 109, .18); }
+:root[data-theme] .theme-toggle { color: var(--muted); }
+
+/* ---- editor ---- */
+:root[data-theme] .toolbar { padding: 4px 2px; }
+:root[data-theme] .brand h1 { font-weight: 650; letter-spacing: -.3px; }
+:root[data-theme] .brand p, :root[data-theme] .panel-title span { color: var(--muted); }
+:root[data-theme] .toolbar-divider { background: var(--line); }
+:root[data-theme] .language-toggle { border-color: var(--line); background: var(--surface); }
+:root[data-theme] .language-toggle button { background: transparent; border: 0; color: var(--muted); }
+:root[data-theme] .language-toggle button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+:root[data-theme] .panel { background: var(--surface); border-color: var(--line); }
+:root[data-theme] .panel-title, :root[data-theme] .parts-title { border-color: var(--line); }
+:root[data-theme] .panel-title h2, :root[data-theme] .parts-title { font-weight: 600; letter-spacing: -.1px; }
+:root[data-theme] .project-menu { background: var(--surface); border-color: var(--line); box-shadow: var(--shadow); }
+:root[data-theme] .project-list button { background: var(--surface-2); }
+:root[data-theme] .project-menu button { background: transparent; }
+:root[data-theme] .project-menu button:hover:not(:disabled) { background: var(--surface-3); }
+:root[data-theme] .badge { color: var(--accent); background: var(--accent-soft); }
+:root[data-theme] .save-notice, :root[data-theme] .handle-tooltip { background: var(--ink); color: var(--canvas); }
+:root[data-theme] .part-row { transition: background-color .15s var(--ease); }
+:root[data-theme] .part-row:hover:not(.is-selected) { background: var(--surface-2); }
+:root[data-theme] .part-row.is-selected { border-color: var(--accent-line); background: var(--accent-soft); }
+:root[data-theme] .part-select, :root[data-theme] .part-eye, :root[data-theme] .section-eye { background: transparent; border: 0; }
+:root[data-theme] .part-select:hover:not(:disabled), :root[data-theme] .part-eye:hover:not(:disabled), :root[data-theme] .section-eye:hover:not(:disabled) { background: transparent; }
+:root[data-theme] .part-select strong { font-weight: 550; }
+:root[data-theme] .part-swatch { border-radius: 50%; }
+:root[data-theme] .preview-tabs { border-color: var(--line); }
+:root[data-theme] .preview-tabs button { background: transparent; border: 0; color: var(--muted); }
+:root[data-theme] .preview-tabs button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
+:root[data-theme] .preview-tools, :root[data-theme] .canvas-help { border-color: var(--line); }
+:root[data-theme] .preview-tools .icon-button, :root[data-theme] .reset-pose { color: var(--accent); background: transparent; }
+:root[data-theme] .vowel-buttons button[aria-pressed="true"], :root[data-theme] .agent-recipient button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-line); }
+:root[data-theme] .lip-skipped { color: var(--warn-ink); }
+:root[data-theme] .part-tip, :root[data-theme] .variant-requests pre, :root[data-theme] .job-feedback pre { background: var(--surface-2); color: var(--ink); }
+:root[data-theme] .part-tip strong { color: var(--ink); }
+:root[data-theme] .fields input, :root[data-theme] .lip-text-row input, :root[data-theme] .ask-agent textarea, :root[data-theme] .wheel-setting select { background: var(--surface-2); color: var(--ink); border-color: var(--line); }
+:root[data-theme] .first-guide { background: var(--surface); border-color: var(--accent-line); box-shadow: var(--shadow); }
+:root[data-theme] .guide-steps li > span { background: var(--accent-soft); color: var(--accent); }
+:root[data-theme] .help-panel { box-shadow: var(--shadow); }
+:root[data-theme] .error { color: var(--err-ink); background: var(--err-bg); }
+:root[data-theme] .stale { color: var(--warn-ink); background: var(--warn-bg); border-color: var(--warn-line); }
+:root[data-theme] .ask-agent, :root[data-theme] .variant-drop { border-color: var(--accent-line); background: var(--accent-soft); }
+:root[data-theme] .variant-choices > label, :root[data-theme] .variant-requests > details, :root[data-theme] .fields details,
+:root[data-theme] .help-body dl > div, :root[data-theme] .advanced-section, :root[data-theme] .project-list, :root[data-theme] .recent-projects { border-color: var(--line); }
+:root[data-theme] .job-feedback [role="alert"] { color: var(--err-ink); }
+:root[data-theme] .job-feedback [role="status"] { color: var(--ok-ink); }
+:root[data-theme] .mouth-fallback button { color: var(--accent); background: none; border: 0; }
+
+/* ---- lighting controls (editor and live) ---- */
+:root[data-theme] .lighting-hint, :root[data-theme] .lighting-controls legend { color: var(--muted); }
+:root[data-theme] .lighting-section, :root[data-theme] .live-lighting { border-color: var(--line); }
+:root[data-theme] .live-lighting { background: var(--surface); }
+
+/* ---- live page ---- */
+:root[data-theme] .live-app { color: var(--ink); }
+:root[data-theme] .live-header h1 { font-weight: 650; letter-spacing: -.3px; }
+:root[data-theme] .live-header h1 span { color: var(--muted); }
+:root[data-theme] .live-header-actions { display: flex; align-items: center; gap: 10px; }
+:root[data-theme] .live-languages { padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+:root[data-theme] .live-languages button { border: 0; background: transparent; color: var(--muted); padding: 5px 10px; font-size: 12px; }
+:root[data-theme] .live-languages button[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+:root[data-theme] .live-controls section { background: var(--surface); border-color: var(--line); }
+:root[data-theme] .live-controls h2 { font-size: 13px; font-weight: 600; color: var(--ink); }
+:root[data-theme] .live-preview { border-color: var(--line); }
+:root[data-theme] .checkerboard { background-image: conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0); }
+:root[data-theme] .live-app button[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+:root[data-theme] .live-open { color: var(--accent); border-color: var(--accent-line); border-radius: var(--radius-sm); }
+:root[data-theme] .obs-url { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
+:root[data-theme] small, :root[data-theme] .live-privacy { color: var(--muted); }
+:root[data-theme] .live-error { color: var(--err-ink); }
+:root[data-theme] [data-testid="tracking-status"] { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; background: var(--surface-2); color: var(--muted); }
+:root[data-theme] [data-testid="tracking-status"][data-state="tracking"] { color: var(--ok-ink); background: color-mix(in srgb, var(--ok-ink) 14%, transparent); }
+:root[data-theme] [data-testid="tracking-status"][data-state="lost"] { color: var(--warn-ink); background: var(--warn-bg); }
+:root[data-theme] .light-handle { background: #fff4cc; border: 2px solid #a66109; color: #805000; }
+:root[data-theme] .editor-canvas { background: var(--canvas-bg); }
+:root[data-theme] .camera-preview { background: var(--canvas-bg); border-radius: var(--radius-sm); }

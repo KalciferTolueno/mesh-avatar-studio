@@ -123,8 +123,9 @@ export function EditorCanvas({ rig, sourceUrl, visible, selected, onSelect, onCh
     element.width = Math.round(size.width);
     element.height = Math.round(size.height);
     const context = element.getContext('2d')!;
-    context.fillStyle = '#f9fafc';
-    context.fillRect(0, 0, element.width, element.height);
+    // fork: cleared instead of filled with #f9fafc; the theme paints the background with CSS
+    // (src/theme/theme.css), so it follows a theme change without a redraw
+    context.clearRect(0, 0, element.width, element.height);
     if (imageReady && source.current) {
       context.globalAlpha = 0.7;
       context.drawImage(source.current, view.x, view.y, rig.image.width * view.scale, rig.image.height * view.scale);

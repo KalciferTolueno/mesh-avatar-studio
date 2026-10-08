@@ -142,6 +142,26 @@ git checkout mi-version && git merge main
   registro de `es`, idioma inicial), `src/editor/App.tsx` (un botón ES), `src/live/LiveApp.tsx`
   (`es` en la lista de idiomas), `src/live/i18n.ts`, `src/lighting/Controls.tsx`.
 
+### 8. Tema oscuro y claro, selector Editar / En vivo
+
+- **Antes:** un único tema claro con colores fijos en `style.css`, `live.css` y `lighting.css`; el
+  editor tenía un botón azul "Live" y la página Live un enlace "Volver al editor".
+- **Ahora:** tema **oscuro por defecto** y claro, con botón en la barra superior del editor y de
+  En vivo (preferencia `mesh-avatar-theme` en el navegador). Un selector segmentado
+  **Editar / En vivo** reúne los dos enlaces (siguen siendo páginas distintas; En vivo se abre en
+  otra pestaña como antes). La vista de stream para OBS no carga el tema y sigue transparente.
+- **Archivos nuevos:** `src/theme/theme.css` (colores y pulido; todas las reglas van bajo
+  `:root[data-theme]` para ganar a las originales sin editarlas), `src/theme/theme.ts`
+  (preferencia, aplica el tema antes del primer render, textos del selector en es/en/ja/zh),
+  `src/theme/ThemeControls.tsx` (`ThemeToggle`, `ModeSwitch`).
+- **Archivos del original tocados:** `src/editor/App.tsx` (el enlace Live va dentro de
+  `ModeSwitch`; botón de tema), `src/live/LiveApp.tsx` (cabecera con `ModeSwitch` y tema; el
+  enlace a Editar conserva el nombre accesible "Volver al editor"), `src/editor/EditorCanvas.tsx`
+  (el lienzo se limpia con `clearRect` en vez de pintarse con `#f9fafc`; el fondo lo pone el CSS).
+- **Si el autor cambia estilos:** sus reglas nuevas se verán con nuestros colores mientras usen
+  sus variables (`--ink`, `--surface`, `--line`, `--accent`…); si añade colores fijos, hay que
+  sobrescribirlos en `theme.css`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

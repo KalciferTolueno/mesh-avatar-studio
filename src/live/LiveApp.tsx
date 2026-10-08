@@ -3,6 +3,9 @@ import { loadLighting, saveLighting } from '../lighting/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../editor/i18n';
+import { ModeSwitch, ThemeToggle } from '../theme/ThemeControls';
+import { themeText } from '../theme/theme';
+const themeLabel = (language: keyof typeof themeText) => themeText[language].edit;
 import { createAvatarView } from './avatar-view';
 import { viewSettings, streamUrl, backgroundColor } from './settings';
 import { FacePose, type TrackingOptions } from './tracking';
@@ -93,8 +96,11 @@ export function LiveApp() {
   const url = streamUrl(settings, location.origin);
   const status = cameraState === 'running' ? tracking ? 'tracking' : 'lost' : cameraState;
   return <main className="live-app">
-    <header className="live-header"><div><a href="/">{t.back}</a><h1>Mesh Avatar Studio <span>{t.title}</span></h1></div>
-      <div className="live-languages">{(['es', 'en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ es: 'Español', en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div>
+    {/* fork: Edit / Live switch and theme toggle (src/theme/ThemeControls.tsx); the back link keeps its name */}
+    <header className="live-header"><div className="live-header-actions"><h1>Mesh Avatar Studio</h1>
+      <ModeSwitch language={language} current="live" edit={<a href="/" aria-label={t.back}>{themeLabel(language)}</a>} /></div>
+      <div className="live-header-actions"><ThemeToggle language={language} />
+      <div className="live-languages">{(['es', 'en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ es: 'Español', en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div></div>
     </header>
     <div className="live-layout"><section className="live-view"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
       <canvas ref={canvas} data-testid="live-avatar" />
