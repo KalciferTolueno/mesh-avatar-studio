@@ -24,7 +24,7 @@ export const uiZh = {
   lipSync: '嘴型测试', release: '松开嘴型', lipText: '日语假名文本', lipPlay: '播放', lipStop: '停止',
   lipSpeed: '每秒音拍数', lipLoop: '循环', skippedKana: '已跳过的字符：', lipHelp: '支持日语假名和空格（あ=a、い=i、う=u、え=e、お=o）。仅预览嘴型，不播放声音。',
   sweepTip: '让头部在完整角度范围内转动，检查图层之间的缝隙或破损',
-  turn: '左右转头', look: '抬头／低头', tilt: '头部倾斜', eyeOpen: '眼睛开合', mouthOpen: '嘴巴开合', bodyTilt: '身体倾斜', bodyLean: '身体前后',
+  turn: '左右转头', look: '抬头／低头', tilt: '头部倾斜', eyeOpen: '眼睛开合', mouthOpen: '嘴巴开合', bodyTilt: '身体倾斜', bodyLean: '身体前后', eyeWide: '睁大眼睛',
   loading: '正在加载本地素材…', updating: '正在更新预览…', ready: '预览已就绪', previewError: '无法加载预览',
   selection: '选中部件', selectedItem: '选中的绑定项', selectPart: '选择一个部件进行编辑', tip: '调整提示',
   guideTitle: '开始编辑，只需三步', guide1: '选择左侧的部件', guide2: '拖动原图上的控制点',

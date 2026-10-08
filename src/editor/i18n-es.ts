@@ -27,7 +27,7 @@ export const uiEs = {
   lipSync: 'Habla', release: 'Soltar', lipText: 'Texto en kana', lipPlay: 'Reproducir', lipStop: 'Detener',
   lipSpeed: 'Moras por segundo', lipLoop: 'Repetir', skippedKana: 'Caracteres omitidos:', lipHelp: 'Hiragana, katakana y espacios (あ=a, い=i, う=u, え=e, お=o). Solo vista previa, sin audio.',
   sweepTip: 'Gira la cabeza por todo su rango para encontrar roturas',
-  turn: 'Girar', look: 'Mirar arriba/abajo', tilt: 'Inclinar', eyeOpen: 'Ojos abiertos', mouthOpen: 'Boca abierta', bodyTilt: 'Inclinar cuerpo', bodyLean: 'Adelante/atrás',
+  turn: 'Girar', look: 'Mirar arriba/abajo', tilt: 'Inclinar', eyeOpen: 'Ojos abiertos', mouthOpen: 'Boca abierta', bodyTilt: 'Inclinar cuerpo', bodyLean: 'Adelante/atrás', eyeWide: 'Ojos muy abiertos',
   loading: 'Cargando archivos locales…', updating: 'Actualizando vista previa…', ready: 'Listo', previewError: 'No se pudo cargar la vista previa',
   selection: 'Parte seleccionada', selectedItem: 'Elemento del rig seleccionado', selectPart: 'Elige una parte para editarla', tip: 'Consejo',
   guideTitle: 'Tres pasos para tu primera edición', guide1: 'Elige una parte a la izquierda', guide2: 'Arrastra sus puntos sobre la imagen',

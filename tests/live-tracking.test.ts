@@ -159,3 +159,15 @@ test('the forward and back lean have their own limits', () => {
   expect(mapFace(at(0, -20), neutral, capped).bodyAngleY).toBeCloseTo(-3);
   expect(mapFace(at(-30, -50), neutral, capped).bodyAngleY).toBeCloseTo(5);
 });
+test('expression ranges amplify pitch, wide eyes, brows and blush only when asked', () => {
+  const neutral = readFace(result(0))!;
+  const a = 10 * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), up = result(0, { eyeWideLeft: 0.2, eyeWideRight: 0.2, mouthSmileLeft: 0.5, mouthSmileRight: 0.5, browInnerUp: 0.3 });
+  up.facialTransformationMatrixes[0].data = [1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1];
+  const plain = mapFace(readFace(up)!, neutral, options);
+  expect(plain.angleY).toBeCloseTo(10); expect(plain.eyeWide).toBe(0); expect(plain.blush).toBe(0);
+  const boosted = mapFace(readFace(up)!, neutral, { ...options, pitchBoost: 1.5, eyeWideGain: 1, browGain: 2, blushGain: 1 });
+  expect(boosted.angleY).toBeCloseTo(15); expect(boosted.eyeWide).toBeCloseTo(0.8); expect(boosted.blush).toBeCloseTo(0.8);
+  expect(boosted.browY).toBeCloseTo(plain.browY * 2);
+  const closed = mapFace(readFace(result(0, { eyeWideLeft: 0.2, eyeWideRight: 0.2, eyeBlinkLeft: 0.9, eyeBlinkRight: 0.9 }))!, neutral, { ...options, eyeWideGain: 1 });
+  expect(closed.eyeWide).toBe(0);
+});

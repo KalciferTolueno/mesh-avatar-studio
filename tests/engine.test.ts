@@ -103,3 +103,14 @@ test('leaning forward lowers and widens the upper body, the bottom edge stays pu
   const bottom = move(chest.cx + 100, fixture.image.height, -10);
   expect(bottom[1]).toBeCloseTo(fixture.image.height); expect(bottom[0]).toBeCloseTo(chest.cx + 100);
 });
+test('wide eyes enlarge the eye area around its centre and leave it alone by default', () => {
+  const rig = parseRig(fixture), engine = createRig(rig);
+  const physics = new (createPhysics(engine, rig).Physics)();
+  const at = (x: number, y: number, eyeWide: number) => {
+    const P = { ...Object.fromEntries(PARAMS.map(p => [p.id, p.def])), eyeWide };
+    return engine.deformBase(x, y, engine.baseWeights(x, y), P, physics.step(P, 1 / 60), [0, 0]);
+  };
+  const { eyeA } = fixture.face;
+  expect(at(eyeA.cx, eyeA.cy - 20, 1)[1]).toBeLessThan(at(eyeA.cx, eyeA.cy - 20, 0)[1] - 3);
+  expect(at(eyeA.cx, eyeA.cy + 20, 1)[1]).toBeGreaterThan(at(eyeA.cx, eyeA.cy + 20, 0)[1] + 3);
+});

@@ -17,7 +17,9 @@ import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
-const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
+// like VTube Studio's sample models: pitch ±20° -> ±30°, livelier brows, blush and wide eyes on
+const EXPRESSION_DEFAULTS = { pitchBoost: 1.4, eyeWideGain: 1, browGain: 1.3, blushGain: 0.5, smileEyes: 1 };
+const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6, ...EXPRESSION_DEFAULTS };
 const MOVEMENT_DEFAULTS = { screenMove: 1, bodySensitivity: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
 // Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
 function loadTrackingOptions(): Required<TrackingOptions> {
@@ -152,6 +154,17 @@ export function LiveApp() {
           </fieldset>
           <button type="button" onClick={() => setOptions(current => ({ ...current, ...MOVEMENT_DEFAULTS }))}>{t.resetMovement}</button>
           <p className="lighting-hint">{t.movementHint}</p>
+        </div>
+      </details>
+      {/* fork: expression ranges, like VTube Studio's amplified mappings (FORK.md 13) */}
+      <details className="live-lighting live-expression" data-testid="expression-section">
+        <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5c1 1.3 2.1 2 3.5 2s2.5-.7 3.5-2" /><path d="M9 9.5h.01M15 9.5h.01" /></svg>{t.expression}</summary>
+        <div className="lighting-controls">
+          {(['pitchBoost', 'eyeWideGain', 'browGain', 'smileEyes', 'blushGain'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
+            <input aria-label={t[key]} type="range" min="0" max={key === 'pitchBoost' ? 2.5 : 3} step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
+            <output>{(options[key] ?? 1).toFixed(2)}</output></label>)}
+          <button type="button" onClick={() => setOptions(current => ({ ...current, ...EXPRESSION_DEFAULTS }))}>{t.resetExpression}</button>
+          <p className="lighting-hint">{t.expressionHint}</p>
         </div>
       </details>
       <details className="live-lighting" data-testid="lighting-section" onToggle={event => setLightingOpen(event.currentTarget.open)}>

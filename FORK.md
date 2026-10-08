@@ -250,6 +250,22 @@ git checkout mi-version && git merge main
   (control), `src/editor/i18n.tsx` y `src/editor/i18n-zh.ts` (clave `bodyLean`),
   `src/editor/i18n-es.ts`.
 
+### 13. Expresión: rangos amplificados como VTube Studio
+
+- **Antes:** el cabeceo, las cejas y la sonrisa seguían la cámara 1:1; con ojos dibujados el ojo
+  no podía abrirse más que el dibujo; el rubor nunca se activaba desde la cámara y su tamaño
+  estaba fijado para la imagen de 1254 px.
+- **Ahora:** sección **Expresión** en En vivo con: rango arriba/abajo (`pitchBoost`, 1.4 por
+  defecto, como el ±20° → ±30° de VTube Studio), ojos muy abiertos (`eyeWideGain`), cejas
+  (`browGain`), ojos sonrientes (`smileEyes`) y rubor al sonreír (`blushGain`). En el motor, el
+  parámetro nuevo `eyeWide` agranda la zona de cada ojo (sobre todo en vertical) incluso con ojos
+  dibujados, y el rubor escala con la imagen (factor 1 en Miko). Control "Ojos muy abiertos" en la
+  prueba de poses del editor. Sin estas opciones (`mapFace` por defecto) el rastreo es el de antes.
+- **Archivos del original tocados:** `src/engine/rig.js` (`PARAMS`: `eyeWide`; `deformBase`),
+  `src/engine/renderer.js` (radios del rubor), `src/live/tracking.ts`, `src/live/LiveApp.tsx`
+  (sección), `src/live/i18n.ts`, `src/live/i18n-es.ts`, `src/editor/Preview.tsx`,
+  `src/editor/i18n.tsx`, `src/editor/i18n-zh.ts`, `src/editor/i18n-es.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

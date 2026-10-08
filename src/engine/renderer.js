@@ -116,8 +116,9 @@ export function createRenderer(engine, rig) {
     vec4 c;
     if (uFace == 1) {
       c = mouth(p, texAt(p));
-      float blush = exp(-dot((p - uCheeks.xy) / vec2(48.0, 22.0), (p - uCheeks.xy) / vec2(48.0, 22.0)))
-                  + exp(-dot((p - uCheeks.zw) / vec2(40.0, 20.0), (p - uCheeks.zw) / vec2(40.0, 20.0)));
+      // fork: blush size scales with the image (1 on the 1254 px sample)
+      float blush = exp(-dot((p - uCheeks.xy) / (vec2(48.0, 22.0) * ${(IMG.w / 1254).toFixed(4)}), (p - uCheeks.xy) / (vec2(48.0, 22.0) * ${(IMG.w / 1254).toFixed(4)})))
+                  + exp(-dot((p - uCheeks.zw) / (vec2(40.0, 20.0) * ${(IMG.w / 1254).toFixed(4)}), (p - uCheeks.zw) / (vec2(40.0, 20.0) * ${(IMG.w / 1254).toFixed(4)})));
       c.rgb = mix(c.rgb, c.rgb * vec3(1.0, 0.62, 0.64) , clamp(blush * uCheek * 0.55, 0.0, 1.0) * c.a);
     } else if (uFace >= 2) {
       c = eyeBall(uFace - 2, p);

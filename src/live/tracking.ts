@@ -19,6 +19,9 @@ export interface TrackingOptions {
   screenMove?: number;
   /** Caps on the screen movement, 0–1 of its full range (default 1): sideways, up, down, zoom in, zoom out. */
   limitSide?: number; limitUp?: number; limitDown?: number; limitIn?: number; limitOut?: number;
+  /** Expression ranges, like VTube Studio's amplified mappings (defaults in brackets): head pitch
+   * gain [1], wide-eye surprise [0], brows [1], blush on smile [0], smiling eyes [1]. */
+  pitchBoost?: number; eyeWideGain?: number; browGain?: number; blushGain?: number; smileEyes?: number;
   /** Caps on the forward / back body lean, 0–1 of its full range (default 1). */
   limitLeanForward?: number; limitLeanBack?: number;
 }
@@ -28,7 +31,7 @@ export const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min
 const smoothstep = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 export const faceNeutral: Record<string, number> = {
   angleX: 0, angleY: 0, angleZ: 0, bodyAngleX: 0, bodyAngleY: 0, bodyAngleZ: 0,
-  positionX: 0, positionY: 0, positionZ: 0, eyeLOpen: 1, eyeROpen: 1, gazeX: 0, gazeY: 0, mouthOpen: 0, mouthForm: 0, browY: 0, eyeSmile: 0, eyeSmileL: 0,
+  positionX: 0, positionY: 0, positionZ: 0, eyeWide: 0, blush: 0, eyeLOpen: 1, eyeROpen: 1, gazeX: 0, gazeY: 0, mouthOpen: 0, mouthForm: 0, browY: 0, eyeSmile: 0, eyeSmileL: 0,
 };
 export function readFace(result: FaceResult): RawFace | null {
   const matrix = result.facialTransformationMatrixes[0]?.data;
@@ -61,7 +64,8 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
   const mouthGain = clamp(options.mouthSensitivity ?? 1, 0.25, 3);
   const x = clamp(angleDelta(face.yaw, neutral?.yaw ?? 0) * gain * mirror, -30, 30);
   // camera pitch grows as the head tips down; the engine's angleY grows looking up
-  const y = clamp(-angleDelta(face.pitch, neutral?.pitch ?? 0) * gain, -30, 30);
+  // the camera sees a smaller pitch range than the avatar has: VTube Studio maps ±20° to ±30°
+  const y = clamp(-angleDelta(face.pitch, neutral?.pitch ?? 0) * gain * clamp(options.pitchBoost ?? 1, 0.5, 2.5), -30, 30);
   const z = clamp(angleDelta(face.roll, neutral?.roll ?? 0) * gain * mirror, -30, 30);
   // Eye openness eases from fully open to fully closed across the middle of this eye's own
   // blink range, so a webcam blink that never scores near 1 still closes the eye completely.
@@ -77,7 +81,10 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
   // Lips parting counts too: talking moves the lips far more than the jaw score.
   const lips = 0.5 * mean('mouthLowerDownLeft', 'mouthLowerDownRight') + 0.3 * mean('mouthUpperUpLeft', 'mouthUpperUpRight');
   const jaw = (d('jawOpen') + Math.max(0, lips) - Math.max(0, d('mouthClose'))) / Math.max(0.2, 1 - n('jawOpen'));
-  const smile = clamp((mean('mouthSmileLeft', 'mouthSmileRight') + mean('cheekSquintLeft', 'cheekSquintRight')) * 0.3);
+  const smile = clamp((mean('mouthSmileLeft', 'mouthSmileRight') + mean('cheekSquintLeft', 'cheekSquintRight')) * 0.3 * clamp(options.smileEyes ?? 1, 0, 3));
+  // wide-open eyes: MediaPipe's eyeWide scores stay small, so they are amplified; closing eyes cancel it
+  const wide = clamp(mean('eyeWideLeft', 'eyeWideRight') * 4 * clamp(options.eyeWideGain ?? 0, 0, 3)) * Math.min(left, right, 1);
+  const blush = clamp(mean('mouthSmileLeft', 'mouthSmileRight') * 1.6 * clamp(options.blushGain ?? 0, 0, 3));
   // Moving sideways (not only turning) carries the body: it shifts, leans and the whole
   // avatar slides a little, like VTube Studio's face-position movement. Same mirroring as yaw.
   // the calibrated pose, otherwise the first tracked position, is the centre of the screen movement
@@ -103,8 +110,8 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
     // a small dead zone keeps a resting mouth shut against tracking noise
     mouthOpen: clamp((jaw * mouthGain - 0.04) / 0.96),
     mouthForm: clamp((d('mouthPucker') + d('mouthFunnel') - mean('mouthSmileLeft', 'mouthSmileRight') - mean('mouthStretchLeft', 'mouthStretchRight')) * gain, -1, 1),
-    browY: clamp((d('browInnerUp') + mean('browOuterUpLeft', 'browOuterUpRight') - mean('browDownLeft', 'browDownRight')) * gain, -1, 1),
-    eyeSmile: smile, eyeSmileL: smile };
+    browY: clamp((d('browInnerUp') + mean('browOuterUpLeft', 'browOuterUpRight') - mean('browDownLeft', 'browDownRight')) * gain * clamp(options.browGain ?? 1, 0, 3), -1, 1),
+    eyeSmile: smile, eyeSmileL: smile, eyeWide: wide, blush };
 }
 export function smoothParameters(current: Record<string, number>, target: Record<string, number>, dt: number, smoothing: number) {
   const tau = clamp(smoothing) * 0.25;
@@ -134,7 +141,7 @@ export class OneEuro {
 // degrees, the rest in 0-1 units, so their speed coefficients differ in scale.
 const FILTERS: Record<string, readonly [number, number]> = {
   angleX: [1.0, 0.03], angleY: [1.0, 0.03], angleZ: [1.0, 0.03], bodyAngleX: [0.8, 0.1], bodyAngleY: [0.8, 0.1], bodyAngleZ: [0.8, 0.1], positionX: [0.8, 1.0], positionY: [0.8, 1.0], positionZ: [0.6, 0.8],
-  eyeLOpen: [2.5, 1.5], eyeROpen: [2.5, 1.5], mouthOpen: [2.0, 1.0],
+  eyeLOpen: [2.5, 1.5], eyeROpen: [2.5, 1.5], mouthOpen: [2.0, 1.0], eyeWide: [1.5, 1.0], blush: [0.5, 0.2],
   gazeX: [0.8, 0.4], gazeY: [0.8, 0.4], mouthForm: [0.8, 0.3], browY: [0.8, 0.3], eyeSmile: [0.6, 0.2], eyeSmileL: [0.6, 0.2],
 };
 export class FacePose {

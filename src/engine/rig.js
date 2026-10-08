@@ -13,6 +13,7 @@ export const PARAMS = [
   { id: 'eyeLOpen', label: 'Left eye open', min: 0, max: 1.25, def: 1, group: 'Eyes and brows' },
   { id: 'eyeROpen', label: 'Right eye open', min: 0, max: 1.25, def: 1, group: 'Eyes and brows' },
   { id: 'eyeSmile', label: 'Eye smile', min: 0, max: 1, def: 0, group: 'Eyes and brows' },
+  { id: 'eyeWide', label: 'Eyes wide', min: 0, max: 1, def: 0, group: 'Eyes and brows' },
   { id: 'gazeX', label: 'Gaze X', min: -1, max: 1, def: 0, group: 'Eyes and brows' },
   { id: 'gazeY', label: 'Gaze Y', min: -1, max: 1, def: 0, group: 'Eyes and brows' },
   { id: 'browY', label: 'Brow Y', min: -1, max: 1, def: 0, group: 'Eyes and brows' },
@@ -274,6 +275,14 @@ export function createRig(rig, extra = {}) {
       if (a) rotateAround(p, GROUPS[gi].pivot[0], GROUPS[gi].pivot[1], a);
     }
     // brows
+    // fork: wide-open eyes (eyeWide) enlarge each eye's area a little, mostly vertically, so
+    // surprise reads even with drawn eyes; the surrounding skin follows the eye's soft region
+    const wide = P.eyeWide ?? 0;
+    if (wide) for (const [eye, we] of [[rig.face.eyeA, w.eyeA], [rig.face.eyeB, w.eyeB]]) {
+      if (we < 0.01) continue;
+      p[0] += (x - eye.cx) * 0.06 * wide * we;
+      p[1] += (y - eye.cy) * 0.3 * wide * we;
+    }
     p[1] -= P.browY * 7 * w.brow;
     if (w.brow > 0.01) {
       const a = P.browAngle * 0.12 * w.brow;
