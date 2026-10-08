@@ -4,6 +4,7 @@ import { LivePhysics } from '../physics/LivePhysics';
 import { LiveAnimations, LiveExpressions } from '../expressions/LiveExpressions';
 import { ExpressionMixer } from '../expressions/presets';
 import { AnimationPlayer } from '../expressions/animations';
+import { LifeLayer } from '../expressions/life';
 import { loadPhysics } from '../physics/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
@@ -21,7 +22,7 @@ import { createLiveSender, sendLighting } from './relay';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
 // like VTube Studio's sample models: pitch ±20° -> ±30°, livelier brows, blush and wide eyes on
-const EXPRESSION_DEFAULTS = { pitchBoost: 1.4, eyeWideGain: 1, browGain: 1.3, blushGain: 0.5, smileEyes: 1 };
+const EXPRESSION_DEFAULTS = { pitchBoost: 1.4, eyeWideGain: 1, browGain: 1.3, blushGain: 0.5, smileEyes: 1, breathing: 0.8, blinkMode: 'both' as const };
 const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6, ...EXPRESSION_DEFAULTS };
 const MOVEMENT_DEFAULTS = { screenMove: 1, bodySensitivity: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
 // Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
@@ -54,6 +55,7 @@ export function LiveApp() {
   const pose = useRef(new FacePose());
   const expressions = useRef(new ExpressionMixer());
   const animations = useRef(new AnimationPlayer());
+  const life = useRef(new LifeLayer());
   const controls = useRef({ options, gain, micState, cameraState }); controls.current = { options, gain, micState, cameraState };
   const refreshDevices = () => { void navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(() => undefined); };
   useEffect(() => {
@@ -82,7 +84,9 @@ export function LiveApp() {
       // fork: expressions toggled with keys sit on top of tracking (src/expressions)
       // and so do animations on keys (src/expressions/animations.ts)
       const mixer = expressions.current, player = animations.current; mixer.step(dt); player.step(dt);
-      if (sampled.tracking || !(mixer.any() || player.any())) avatar.setParameters(mixer.apply(player.apply(sampled.params)), sampled.weight);
+      // breathing and blinking while tracking (src/expressions/life.ts); idle motion does it otherwise
+      const tracked = sampled.tracking ? life.current.apply(sampled.params, dt, { breathing: control.options.breathing ?? 0.8, blinkMode: control.options.blinkMode ?? 'both' }) : sampled.params;
+      if (sampled.tracking || !(mixer.any() || player.any())) avatar.setParameters(mixer.apply(player.apply(tracked)), sampled.weight);
       else {
         // without the camera, only what they drive is set; idle motion keeps the rest alive
         const all = mixer.apply(player.apply(neutralParameters));
@@ -179,6 +183,11 @@ export function LiveApp() {
           {(['pitchBoost', 'eyeWideGain', 'browGain', 'smileEyes', 'blushGain'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
             <input aria-label={t[key]} type="range" min="0" max={key === 'pitchBoost' ? 2.5 : 3} step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
             <output>{(options[key] ?? 1).toFixed(2)}</output></label>)}
+          <label className="lighting-slider">{t.breathing}
+            <input aria-label={t.breathing} type="range" min="0" max="1" step="0.05" value={options.breathing} onChange={event => setOptions(current => ({ ...current, breathing: Number(event.target.value) }))} />
+            <output>{(options.breathing ?? 0.8).toFixed(2)}</output></label>
+          <label>{t.blinkMode}<select aria-label={t.blinkMode} value={options.blinkMode} onChange={event => setOptions(current => ({ ...current, blinkMode: event.target.value as 'camera' | 'auto' | 'both' }))}>
+            <option value="both">{t.blinkBoth}</option><option value="camera">{t.blinkCamera}</option><option value="auto">{t.blinkAuto}</option></select></label>
           <button type="button" onClick={() => setOptions(current => ({ ...current, ...EXPRESSION_DEFAULTS }))}>{t.resetExpression}</button>
           <p className="lighting-hint">{t.expressionHint}</p>
         </div>

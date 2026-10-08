@@ -39,3 +39,29 @@ test('animations add head motion on top of tracking, blend the face and then end
   for (let i = 0; i < 120; i++) player.step(1 / 60);
   expect(player.any()).toBe(false); expect(player.apply(tracked)).toEqual(tracked);
 });
+
+test('breathing rides on tracking and blinks follow the chosen mode', async () => {
+  const { LifeLayer } = await import('../src/expressions/life');
+  const run = (mode: 'camera' | 'auto' | 'both', eyes: number, seconds: number) => {
+    const life = new LifeLayer(() => 0.5);
+    let minEye = 1, maxBreath = 0;
+    for (let i = 0; i < seconds * 60; i++) {
+      const out = life.apply({ angleY: 0, eyeLOpen: eyes, eyeROpen: eyes }, 1 / 60, { breathing: 1, blinkMode: mode });
+      minEye = Math.min(minEye, out.eyeLOpen); maxBreath = Math.max(maxBreath, out.breath);
+    }
+    return { minEye, maxBreath };
+  };
+  expect(run('camera', 1, 12)).toMatchObject({ minEye: 1 });
+  expect(run('camera', 1, 12).maxBreath).toBeGreaterThan(0.95);
+  expect(run('auto', 1, 12).minEye).toBe(0);
+  expect(run('both', 1, 12).minEye).toBe(0);
+  // a camera that keeps seeing blinks needs no backup blink in "both"
+  const life = new LifeLayer(() => 0.5);
+  let open = 1;
+  for (let i = 0; i < 12 * 60; i++) {
+    const closing = i % 180 < 6;
+    const out = life.apply({ eyeLOpen: closing ? 0 : 1, eyeROpen: closing ? 0 : 1 }, 1 / 60, { breathing: 0, blinkMode: 'both' });
+    if (!closing) open = Math.min(open, out.eyeLOpen);
+  }
+  expect(open).toBe(1);
+});

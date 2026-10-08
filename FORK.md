@@ -293,6 +293,18 @@ git checkout mi-version && git merge main
 - **Archivos del original tocados:** `src/live/LiveApp.tsx` (reproductor en cada fotograma, envío,
   sección). Si el autor cambia el formato de `MOTIONS` o `sampleTrack`, revisar `animations.ts`.
 
+### 16. Respiración y parpadeo con cámara
+
+- **Antes:** con la cámara activa la respiración del motor seguía, pero muy sutil y sin mover la
+  cabeza, y los ojos dependían solo de lo que la cámara detectara.
+- **Ahora:** en la sección Expresión, **Respiración** (0–1, 0.8 por defecto) controla el ciclo de
+  respiración durante el rastreo y la cabeza lo acompaña un poco; **Parpadeo** elige entre solo
+  cámara, solo automático, o cámara más un parpadeo automático cuando no se detecta ninguno en
+  unos 4 s (por defecto), como `UseBreathing` / `UseBlinking` de VTube Studio.
+- **Archivos nuevos:** `src/expressions/life.ts`.
+- **Archivos del original tocados:** `src/live/tracking.ts` (opciones `breathing`, `blinkMode`),
+  `src/live/LiveApp.tsx`, `src/live/i18n.ts`, `src/live/i18n-es.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

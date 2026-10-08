@@ -22,6 +22,8 @@ export interface TrackingOptions {
   /** Expression ranges, like VTube Studio's amplified mappings (defaults in brackets): head pitch
    * gain [1], wide-eye surprise [0], brows [1], blush on smile [0], smiling eyes [1]. */
   pitchBoost?: number; eyeWideGain?: number; browGain?: number; blushGain?: number; smileEyes?: number;
+  /** Live only (src/expressions/life.ts): breathing amount 0–1 and blink source. */
+  breathing?: number; blinkMode?: 'camera' | 'auto' | 'both';
   /** Caps on the forward / back body lean, 0–1 of its full range (default 1). */
   limitLeanForward?: number; limitLeanBack?: number;
 }
