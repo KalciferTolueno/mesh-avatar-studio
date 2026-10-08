@@ -177,7 +177,7 @@ export async function createMeshAvatarImpl(canvas, options) {
   function screenMove(y, z) {
     const bottom = [rig.head.cx, IMG.h], head = [rig.head.cx, rig.head.cy];
     return { shiftY: Math.min(0, y) * 0.06,
-      zooms: [[(1 + 0.1 * Math.max(0, y)) * (1 + 0.15 * Math.min(0, z)), ...bottom], [1 + 0.15 * Math.max(0, z), ...head]] };
+      zooms: [[(1 + 0.1 * Math.max(0, y)) * (1 + 0.08 * Math.min(0, z)), ...bottom], [1 + 0.08 * Math.max(0, z), ...head]] };
   }
   function tick(dt) {
     const P = updateParameters(dt);

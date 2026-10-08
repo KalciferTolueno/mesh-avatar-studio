@@ -116,8 +116,8 @@ test('looking up raises the head and moving sideways carries the body with the m
   // rising in the frame lifts the avatar; leaning towards the camera zooms in
   const place = (y: number, z: number) => { const r = result(); r.facialTransformationMatrixes[0].data[13] = y; r.facialTransformationMatrixes[0].data[14] = z; return readFace(r)!; };
   const moved3d = mapFace(place(5, -44), place(0, -50), options);
-  expect(moved3d.positionY).toBeCloseTo(5 / 7); expect(moved3d.positionZ).toBeCloseTo(0.75);
-  expect(mapFace(place(5, -44), place(0, -50), { ...options, screenMove: 2 }).positionZ).toBe(1);
+  expect(moved3d.positionY).toBeCloseTo(5 / 7); expect(moved3d.positionZ).toBeCloseTo(6 / 14);
+  expect(mapFace(place(5, -44), place(0, -50), { ...options, screenMove: 3 }).positionZ).toBe(1);
   expect(mapFace(at(6), null, options).positionX).toBe(0);
 });
 test('screen movement works before calibrating, from where the head was first seen', () => {
@@ -146,6 +146,6 @@ test('the body leans back with the head pitch and forward when moving towards th
   };
   const neutral = at(0, -50);
   expect(mapFace(at(-15, -50), neutral, options).bodyAngleY).toBeCloseTo(7.5);
-  expect(mapFace(at(0, -42), neutral, options).bodyAngleY).toBeCloseTo(-10);
+  expect(mapFace(at(0, -42), neutral, options).bodyAngleY).toBeCloseTo(-5.6);
   expect(mapFace(at(0, -42), neutral, { ...options, bodySensitivity: 0 }).bodyAngleY).toBeCloseTo(0);
 });

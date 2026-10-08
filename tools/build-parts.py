@@ -248,8 +248,11 @@ def paint_behind(out, rgba, masks, hole, cfg):
     below[:, : int(cx - neck["width"] / 2)] = False
     below[:, int(cx + neck["width"] / 2):] = False
     lum = rgb.mean(-1)
-    fur = below & (lum > 110) & (lum < 200)   # the fur's shaded tone, not its highlights
+    fur = below & (lum > 150)   # the light fur under the chin, shaded below
     neck_col = np.median(rgb[fur], axis=0) if fur.any() else np.array([190, 170, 200], np.float32)
+    # the drawing's own fur shadow (stripes, shading), so the shadow keeps the fur's hue
+    shaded = below & (lum > 100) & (lum < 175)
+    shadow_col = np.median(rgb[shaded], axis=0) if shaded.any() else neck_col * 0.7
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
     cloth = masks["body"] & (r > 90) & (g < 0.45 * r) & (b < 0.6 * r)   # the hood's red lining
     cloth[: y0] = False
@@ -258,14 +261,19 @@ def paint_behind(out, rgba, masks, hole, cfg):
     line_col = np.array(cfg.get("line", [28, 14, 24]), np.float32)
     yy, xx = ys.astype(np.float32), xs.astype(np.float32)
     t = np.clip((yy - y0) / max(1, bottom - y0), 0, 1)          # 0 top .. 1 jaw
-    half = (neck["topWidth"] + (neck["width"] - neck["topWidth"]) * t) / 2
+    # sides curve out into the shoulders like a real neck, instead of straight lines
+    half = (neck["topWidth"] + (neck["width"] - neck["topWidth"]) * t ** 1.8) / 2
     d = np.abs(xx - cx) - half                                     # < 0 inside the neck
     inside = np.clip(0.5 - d, 0, 1)[:, None]
     rel = np.clip(np.abs(xx - cx) / np.maximum(half, 1), 0, 1)
-    neck_px = neck_col * ((0.8 + 0.12 * t) * (0.84 + 0.16 * (1 - rel ** 2)))[:, None]   # round, deeper up
-    cloth_px = cloth_col * (0.5 + 0.22 * t)[:, None]
+    # deep under the head it is in shadow; towards the chest it meets the fur it continues
+    light = ((0.25 + 0.6 * t ** 1.5) * (0.8 + 0.2 * (1 - rel ** 2)))[:, None]
+    neck_px = shadow_col * 0.85 * (1 - light) + neck_col * light
+    # only a sliver of clothing shows beside the neck: dark and muted, so it reads as depth
+    muted = cloth_col * 0.6 + cloth_col.mean() * 0.4
+    cloth_px = muted * (0.32 + 0.12 * t)[:, None]
     col = neck_px * inside + cloth_px * (1 - inside)
-    line = np.clip(1.6 - np.abs(d), 0, 1)[:, None]
+    line = 0.7 * np.clip(1.3 - np.abs(d), 0, 1)[:, None]
     col = col * (1 - line) + line_col * line
     out[ys, xs] = col.clip(0, 255).astype(np.uint8)
 
