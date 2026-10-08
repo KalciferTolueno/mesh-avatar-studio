@@ -130,3 +130,11 @@ test('screen movement works before calibrating, from where the head was first se
   pose.calibrate(1000);
   expect(at(8, 1033).positionX).toBeCloseTo(0);
 });
+test('movement limits cap each direction of the screen movement separately', () => {
+  const at = (x: number, y: number, z: number) => { const r = result(); Object.assign(r.facialTransformationMatrixes[0].data, { 12: x, 13: y, 14: z }); return readFace(r)!; };
+  const neutral = at(0, 0, -50), limits = { ...options, limitSide: 0.3, limitUp: 0.2, limitDown: 0.5, limitIn: 0.4, limitOut: 0 };
+  expect(mapFace(at(20, 20, -30), neutral, limits)).toMatchObject({ positionX: 0.3, positionY: 0.2, positionZ: 0.4 });
+  const far = mapFace(at(-20, -20, -70), neutral, limits);
+  expect(far).toMatchObject({ positionX: -0.3, positionY: -0.5 }); expect(far.positionZ).toBeCloseTo(0);
+  expect(mapFace(at(20, 0, -50), neutral, options).positionX).toBe(1);
+});

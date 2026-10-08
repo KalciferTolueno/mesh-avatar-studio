@@ -5,7 +5,7 @@ export const liveEs: typeof liveEn = {
   title: 'En vivo', back: 'Volver al editor', camera: 'Cámara', device: 'Dispositivo', defaultDevice: 'Dispositivo predeterminado',
   start: 'Iniciar cámara', stop: 'Detener cámara', calibrate: 'Calibrar', calibrated: 'Pose neutra guardada',
   calibrateHint: 'Mira de frente a la cámara con los ojos relajados y la boca cerrada, y luego calibra.',
-  mirror: 'Espejo', sensitivity: 'Sensibilidad de cabeza', mouthSensitivity: 'Sensibilidad de boca', bodySensitivity: 'Movimiento del cuerpo', screenMove: 'Movimiento en pantalla', linkEyes: 'Parpadear con los dos ojos a la vez', smoothing: 'Suavizado', cameraPreview: 'Mostrar la cámara',
+  mirror: 'Espejo', sensitivity: 'Sensibilidad de cabeza', mouthSensitivity: 'Sensibilidad de boca', bodySensitivity: 'Movimiento del cuerpo', screenMove: 'Movimiento en pantalla', limits: 'Límites del movimiento', limitSide: 'Lateral', limitUp: 'Arriba', limitDown: 'Abajo', limitIn: 'Acercar', limitOut: 'Alejar', linkEyes: 'Parpadear con los dos ojos a la vez', smoothing: 'Suavizado', cameraPreview: 'Mostrar la cámara',
   microphone: 'Boca con el micrófono', gain: 'Ganancia del micrófono', privacy: 'El video de la cámara y el audio del micrófono no salen de este equipo. La vista de stream solo recibe los valores de movimiento del avatar.',
   background: 'Fondo', transparent: 'Transparente', green: 'Verde', blue: 'Azul', custom: 'Color personalizado',
   fit: 'Encuadre', contain: 'Avatar completo', cover: 'Llenar el marco', obs: 'Copiar URL de OBS', openStream: 'Abrir la vista de stream en otra pestaña', copied: 'URL copiada', copyError: 'No se pudo copiar. Selecciona y copia la URL de abajo.',

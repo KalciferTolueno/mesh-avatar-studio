@@ -216,6 +216,10 @@ git checkout mi-version && git merge main
 - **Sin calibrar también funciona:** la primera posición en que se detecta la cabeza es el centro
   del movimiento; **Calibrar** lo vuelve a fijar. Unos 8 cm de lado, 7 cm de alto u 8 cm hacia la
   cámara dan el recorrido completo (con "Movimiento en pantalla" en 1).
+- **Límites del movimiento:** desplegable bajo "Movimiento en pantalla" con topes de 0 a 100 %
+  para lateral, arriba, abajo, acercar y alejar (opciones `limitSide`, `limitUp`, `limitDown`,
+  `limitIn`, `limitOut`). Se aplican en `mapFace`, así que también limitan la vista de OBS, y se
+  guardan con los demás ajustes de rastreo.
 - **Archivos del original tocados:** `src/engine/rig.js` (`PARAMS`: `positionY`, `positionZ`),
   `src/engine/renderer.js` (`state.shiftY`, `state.zooms`), `src/engine/createMeshAvatar.js`
   (`screenMove`), `src/live/tracking.ts` (posición `y`/`z` de la cabeza, opción `screenMove`),

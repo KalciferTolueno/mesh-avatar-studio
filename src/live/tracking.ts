@@ -17,6 +17,8 @@ export interface TrackingOptions {
   bodySensitivity?: number;
   /** How far the avatar follows the head across the screen and zooms when leaning in; defaults to 1. */
   screenMove?: number;
+  /** Caps on the screen movement, 0–1 of its full range (default 1): sideways, up, down, zoom in, zoom out. */
+  limitSide?: number; limitUp?: number; limitDown?: number; limitIn?: number; limitOut?: number;
 }
 /** Blink score range per eye: [relaxed open score, score when fully closed]. */
 export type EyeRanges = Record<'Left' | 'Right', readonly [number, number]>;
@@ -41,6 +43,7 @@ export function readFace(result: FaceResult): RawFace | null {
     roll: Math.atan2(m[1], m[5]) * degrees, x: matrix[12], y: matrix[13], z: matrix[14],
     shapes: Object.fromEntries((result.faceBlendshapes[0]?.categories ?? []).map(shape => [shape.categoryName, clamp(shape.score)])) };
 }
+const limit = (value: number | undefined) => clamp(value ?? 1);
 const angleDelta = (value: number, neutral: number) => ((value - neutral + 540) % 360) - 180;
 // Webcam blink scores rarely reach 1: many faces peak around 0.5-0.7. Without a measured
 // peak, assume the eye is closed this far above its relaxed score.
@@ -85,9 +88,10 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
   return { angleX: x, angleY: y, angleZ: z,
     bodyAngleX: clamp(x * 0.2 + side * 0.6, -10, 10), bodyAngleZ: clamp(z * 0.2 - side * 0.4, -10, 10),
     // about 8 cm sideways, 7 cm up or down and 8 cm closer reach the full movement
-    positionX: clamp(offset('x') * mirror * move / 8, -1, 1),
-    positionY: clamp(offset('y') * move / 7, -1, 1),
-    positionZ: clamp(offset('z') * move / 8, -1, 1),
+    // capped so the avatar stays framed (Live: "Movement limits")
+    positionX: clamp(offset('x') * mirror * move / 8, -limit(options.limitSide), limit(options.limitSide)),
+    positionY: clamp(offset('y') * move / 7, -limit(options.limitDown), limit(options.limitUp)),
+    positionZ: clamp(offset('z') * move / 8, -limit(options.limitOut), limit(options.limitIn)),
     eyeLOpen: left, eyeROpen: right,
     gazeX: clamp((d('eyeLookOutRight') - d('eyeLookInRight') + d('eyeLookInLeft') - d('eyeLookOutLeft')) * mirror, -1, 1),
     gazeY: clamp(mean('eyeLookUpLeft', 'eyeLookUpRight') - mean('eyeLookDownLeft', 'eyeLookDownRight'), -1, 1),
