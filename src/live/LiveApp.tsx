@@ -18,6 +18,7 @@ import { createLiveSender, sendLighting } from './relay';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
 const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
+const MOVEMENT_DEFAULTS = { screenMove: 1, bodySensitivity: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
 // Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
 function loadTrackingOptions(): Required<TrackingOptions> {
   try {
@@ -120,14 +121,6 @@ export function LiveApp() {
         <label className="live-check"><input type="checkbox" checked={options.mirror} onChange={event => setOptions(current => ({ ...current, mirror: event.target.checked }))} />{t.mirror}</label>
         <label>{t.sensitivity}<input type="range" min="0.25" max="2" step="0.05" value={options.sensitivity} onChange={event => setOptions(current => ({ ...current, sensitivity: Number(event.target.value) }))} /></label>
         <label>{t.mouthSensitivity}<input type="range" min="0.5" max="3" step="0.05" value={options.mouthSensitivity} onChange={event => setOptions(current => ({ ...current, mouthSensitivity: Number(event.target.value) }))} /></label>
-        <label>{t.screenMove}<input type="range" min="0" max="3" step="0.05" value={options.screenMove} onChange={event => setOptions(current => ({ ...current, screenMove: Number(event.target.value) }))} /></label>
-        {/* fork: caps on the screen movement, applied before the values reach the stream view */}
-        <details className="movement-limits"><summary>{t.limits}</summary>
-          {(['limitSide', 'limitUp', 'limitDown', 'limitIn', 'limitOut', 'limitLeanForward', 'limitLeanBack'] as const).map(key => <label key={key}>{t[key]}
-            <input type="range" min="0" max="1" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
-            <output>{Math.round((options[key] ?? 1) * 100)} %</output></label>)}
-        </details>
-        <label>{t.bodySensitivity}<input type="range" min="0" max="3" step="0.05" value={options.bodySensitivity} onChange={event => setOptions(current => ({ ...current, bodySensitivity: Number(event.target.value) }))} /></label>
         <label className="live-check"><input type="checkbox" checked={options.linkEyes} onChange={event => setOptions(current => ({ ...current, linkEyes: event.target.checked }))} />{t.linkEyes}</label>
         <label>{t.smoothing}<input type="range" min="0" max="1" step="0.05" value={options.smoothing} onChange={event => setOptions(current => ({ ...current, smoothing: Number(event.target.value) }))} /></label>
         <label className="live-check"><input type="checkbox" checked={showCamera} onChange={event => setShowCamera(event.target.checked)} />{t.cameraPreview}</label>
@@ -145,6 +138,22 @@ export function LiveApp() {
         <a className="live-open" href={url} target="_blank" rel="noreferrer">{t.openStream}</a></div>
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
       </section>
+      {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
+      <details className="live-lighting live-movement" data-testid="movement-section" open>
+        <summary><Icon name="live" />{t.movement}</summary>
+        <div className="lighting-controls">
+          {(['screenMove', 'bodySensitivity'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
+            <input aria-label={t[key]} type="range" min="0" max="3" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
+            <output>{(options[key] ?? 1).toFixed(2)}</output></label>)}
+          <fieldset><legend>{t.limits}</legend>
+            {(['limitSide', 'limitUp', 'limitDown', 'limitIn', 'limitOut', 'limitLeanForward', 'limitLeanBack'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
+              <input aria-label={t[key]} type="range" min="0" max="1" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
+              <output>{Math.round((options[key] ?? 1) * 100)} %</output></label>)}
+          </fieldset>
+          <button type="button" onClick={() => setOptions(current => ({ ...current, ...MOVEMENT_DEFAULTS }))}>{t.resetMovement}</button>
+          <p className="lighting-hint">{t.movementHint}</p>
+        </div>
+      </details>
       <details className="live-lighting" data-testid="lighting-section" onToggle={event => setLightingOpen(event.currentTarget.open)}>
         <summary><Icon name="light" />{lightingText[language].title}{settings.lighting.enabled && <span className="lighting-on">ON</span>}</summary>
         <LightingControls value={settings.lighting} onChange={changeLighting} language={language} />
