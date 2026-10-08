@@ -149,3 +149,13 @@ test('the body leans back with the head pitch and forward when moving towards th
   expect(mapFace(at(0, -42), neutral, options).bodyAngleY).toBeCloseTo(-5.6);
   expect(mapFace(at(0, -42), neutral, { ...options, bodySensitivity: 0 }).bodyAngleY).toBeCloseTo(0);
 });
+test('the forward and back lean have their own limits', () => {
+  const at = (pitchDown: number, z: number) => {
+    const a = pitchDown * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), r = result();
+    r.facialTransformationMatrixes[0].data = [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, z, 1];
+    return readFace(r)!;
+  };
+  const neutral = at(0, -50), capped = { ...options, limitLeanForward: 0.3, limitLeanBack: 0.5 };
+  expect(mapFace(at(0, -20), neutral, capped).bodyAngleY).toBeCloseTo(-3);
+  expect(mapFace(at(-30, -50), neutral, capped).bodyAngleY).toBeCloseTo(5);
+});

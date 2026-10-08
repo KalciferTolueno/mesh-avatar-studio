@@ -17,7 +17,7 @@ import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
-const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1 };
+const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
 // Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
 function loadTrackingOptions(): Required<TrackingOptions> {
   try {
@@ -123,7 +123,7 @@ export function LiveApp() {
         <label>{t.screenMove}<input type="range" min="0" max="3" step="0.05" value={options.screenMove} onChange={event => setOptions(current => ({ ...current, screenMove: Number(event.target.value) }))} /></label>
         {/* fork: caps on the screen movement, applied before the values reach the stream view */}
         <details className="movement-limits"><summary>{t.limits}</summary>
-          {(['limitSide', 'limitUp', 'limitDown', 'limitIn', 'limitOut'] as const).map(key => <label key={key}>{t[key]}
+          {(['limitSide', 'limitUp', 'limitDown', 'limitIn', 'limitOut', 'limitLeanForward', 'limitLeanBack'] as const).map(key => <label key={key}>{t[key]}
             <input type="range" min="0" max="1" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
             <output>{Math.round((options[key] ?? 1) * 100)} %</output></label>)}
         </details>

@@ -225,6 +225,8 @@ git checkout mi-version && git merge main
   para lateral, arriba, abajo, acercar y alejar (opciones `limitSide`, `limitUp`, `limitDown`,
   `limitIn`, `limitOut`). Se aplican en `mapFace`, así que también limitan la vista de OBS, y se
   guardan con los demás ajustes de rastreo.
+  También **Inclinar adelante** e **Inclinar atrás** (`limitLeanForward`, `limitLeanBack`,
+  60 % por defecto) limitan la inclinación del cuerpo (`bodyAngleY`).
 - **Archivos del original tocados:** `src/engine/rig.js` (`PARAMS`: `positionY`, `positionZ`),
   `src/engine/renderer.js` (`state.shiftY`, `state.zooms`), `src/engine/createMeshAvatar.js`
   (`screenMove`), `src/live/tracking.ts` (posición `y`/`z` de la cabeza, opción `screenMove`),

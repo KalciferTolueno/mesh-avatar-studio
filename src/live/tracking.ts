@@ -19,6 +19,8 @@ export interface TrackingOptions {
   screenMove?: number;
   /** Caps on the screen movement, 0–1 of its full range (default 1): sideways, up, down, zoom in, zoom out. */
   limitSide?: number; limitUp?: number; limitDown?: number; limitIn?: number; limitOut?: number;
+  /** Caps on the forward / back body lean, 0–1 of its full range (default 1). */
+  limitLeanForward?: number; limitLeanBack?: number;
 }
 /** Blink score range per eye: [relaxed open score, score when fully closed]. */
 export type EyeRanges = Record<'Left' | 'Right', readonly [number, number]>;
@@ -89,7 +91,7 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
     bodyAngleX: clamp(x * 0.2 + side * 0.6, -10, 10), bodyAngleZ: clamp(z * 0.2 - side * 0.4, -10, 10),
     // fork: forward / back lean, like VTube Studio's FaceAngleY -> BodyAngleY at a third, plus
     // leaning towards the camera (about 8 cm closer reaches the full forward lean)
-    bodyAngleY: clamp((y / 2 - offset('z') * 0.7) * clamp(options.bodySensitivity ?? 1, 0, 3), -10, 10),
+    bodyAngleY: clamp((y / 2 - offset('z') * 0.7) * clamp(options.bodySensitivity ?? 1, 0, 3), -10 * limit(options.limitLeanForward), 10 * limit(options.limitLeanBack)),
     // about 8 cm sideways, 7 cm up or down and 14 cm closer reach the full movement
     // capped so the avatar stays framed (Live: "Movement limits")
     positionX: clamp(offset('x') * mirror * move / 8, -limit(options.limitSide), limit(options.limitSide)),
