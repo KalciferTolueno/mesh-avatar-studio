@@ -167,6 +167,13 @@ export class MicrophoneCapture {
       this.stop(); this.onState(error instanceof DOMException && error.name === 'NotAllowedError' ? 'micBlocked' : 'micUnavailable');
     }
   }
+  // fork: the dB spectrum for vowel detection (src/expressions/vowels.ts); nothing is stored
+  private spectrumData = new Float32Array(512);
+  spectrum(): { data: Float32Array; binHz: number } | null {
+    if (!this.analyser || !this.context) return null;
+    this.analyser.getFloatFrequencyData(this.spectrumData);
+    return { data: this.spectrumData, binHz: this.context.sampleRate / this.analyser.fftSize };
+  }
   level(gain: number) {
     if (!this.analyser) return 0;
     this.analyser.getFloatTimeDomainData(this.samples);

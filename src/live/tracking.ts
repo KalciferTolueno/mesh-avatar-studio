@@ -24,6 +24,8 @@ export interface TrackingOptions {
   pitchBoost?: number; eyeWideGain?: number; browGain?: number; blushGain?: number; smileEyes?: number;
   /** Live only (src/expressions/life.ts): breathing amount 0–1 and blink source. */
   breathing?: number; blinkMode?: 'camera' | 'auto' | 'both';
+  /** Live only (src/expressions/vowels.ts): mouth shape from the vowels in the microphone. */
+  voiceVowels?: boolean;
   /** Caps on the forward / back body lean, 0–1 of its full range (default 1). */
   limitLeanForward?: number; limitLeanBack?: number;
 }
