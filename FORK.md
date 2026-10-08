@@ -203,6 +203,21 @@ git checkout mi-version && git merge main
   avatar), `src/live/stream.ts` (recibe los cambios), `src/engine/createMeshAvatar.js`
   (`setPhysicsTuning`, `getPhysicsGroups`), `src/engine/index.ts` (tipos), `src/engine/groups.js`.
 
+### 11. Movimiento del modelo en pantalla: vertical y zoom
+
+- **Antes (en nuestra versión):** solo desplazamiento lateral (`positionX`), atado a
+  "Movimiento del cuerpo".
+- **Ahora:** como el "Model Position Movement" de VTube Studio, el avatar sigue la altura de la
+  cabeza en el encuadre (`positionY`) y se acerca al inclinarse hacia la cámara (`positionZ`). Un
+  control propio, **Movimiento en pantalla**, regula X, Y y zoom; "Movimiento del cuerpo" queda
+  para la inclinación y el balanceo del cuerpo. Como la ilustración está cortada abajo, el borde
+  inferior nunca sube dentro del marco: bajar desplaza, y subir o alejarse escalan respecto al
+  borde inferior; acercarse escala respecto a la cabeza.
+- **Archivos del original tocados:** `src/engine/rig.js` (`PARAMS`: `positionY`, `positionZ`),
+  `src/engine/renderer.js` (`state.shiftY`, `state.zooms`), `src/engine/createMeshAvatar.js`
+  (`screenMove`), `src/live/tracking.ts` (posición `y`/`z` de la cabeza, opción `screenMove`),
+  `src/live/LiveApp.tsx` (control), `src/live/i18n.ts` y `src/live/i18n-es.ts` (texto).
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

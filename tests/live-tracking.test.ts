@@ -111,6 +111,12 @@ test('looking up raises the head and moving sideways carries the body with the m
   expect(moved.positionX).toBeCloseTo(0.5); expect(moved.bodyAngleX).toBeGreaterThan(3); expect(moved.bodyAngleZ).toBeLessThan(-2);
   const mirrored = mapFace(at(6), neutral, { ...options, mirror: true });
   expect(mirrored.positionX).toBeCloseTo(-moved.positionX); expect(mirrored.bodyAngleX).toBeCloseTo(-moved.bodyAngleX);
-  expect(mapFace(at(6), neutral, { ...options, bodySensitivity: 0 })).toMatchObject({ positionX: 0, bodyAngleX: 0, bodyAngleZ: 0 });
+  expect(mapFace(at(6), neutral, { ...options, bodySensitivity: 0 })).toMatchObject({ positionX: 0.5, bodyAngleX: 0, bodyAngleZ: 0 });
+  expect(mapFace(at(6), neutral, { ...options, screenMove: 0 }).positionX).toBe(0);
+  // rising in the frame lifts the avatar; leaning towards the camera zooms in
+  const place = (y: number, z: number) => { const r = result(); r.facialTransformationMatrixes[0].data[13] = y; r.facialTransformationMatrixes[0].data[14] = z; return readFace(r)!; };
+  const moved3d = mapFace(place(5, -44), place(0, -50), options);
+  expect(moved3d.positionY).toBeCloseTo(0.5); expect(moved3d.positionZ).toBeCloseTo(0.5);
+  expect(mapFace(place(5, -44), place(0, -50), { ...options, screenMove: 2 }).positionZ).toBeCloseTo(1);
   expect(mapFace(at(6), null, options).positionX).toBe(0);
 });

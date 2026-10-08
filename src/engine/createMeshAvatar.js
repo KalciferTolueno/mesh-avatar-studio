@@ -174,6 +174,11 @@ export async function createMeshAvatarImpl(canvas, options) {
     lastParameters = P;
     return P;
   }
+  function screenMove(y, z) {
+    const bottom = [rig.head.cx, IMG.h], head = [rig.head.cx, rig.head.cy];
+    return { shiftY: Math.min(0, y) * 0.06,
+      zooms: [[(1 + 0.1 * Math.max(0, y)) * (1 + 0.15 * Math.min(0, z)), ...bottom], [1 + 0.15 * Math.max(0, z), ...head]] };
+  }
   function tick(dt) {
     const P = updateParameters(dt);
     const phys = physics.step(P, dt);
@@ -219,6 +224,10 @@ export async function createMeshAvatarImpl(canvas, options) {
       // with sprites the drawn mouths replace the shader-painted one
       mouthOpen: sprites ? 0 : P.mouthOpen, mouthForm: P.mouthForm, cheek: P.blush,
       shiftX: (P.positionX ?? 0) * 0.08,
+      // the image is cut at its bottom edge, which must stay below the frame: moving down
+      // shifts the avatar, moving up and zooming out scale about the bottom edge, and zooming
+      // in (leaning towards the camera) scales about the head
+      ...screenMove(P.positionY ?? 0, P.positionZ ?? 0),
       showMesh: false, originalAlpha: 0, joints: [],
     });
   }

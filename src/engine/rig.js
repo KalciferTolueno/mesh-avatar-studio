@@ -6,6 +6,8 @@ export const PARAMS = [
   { id: 'bodyAngleX', label: 'Body angle X', min: -10, max: 10, def: 0, group: 'Head and body' },
   { id: 'bodyAngleZ', label: 'Body roll', min: -10, max: 10, def: 0, group: 'Head and body' },
   { id: 'positionX', label: 'Position X', min: -1, max: 1, def: 0, group: 'Head and body' },
+  { id: 'positionY', label: 'Position Y', min: -1, max: 1, def: 0, group: 'Head and body' },
+  { id: 'positionZ', label: 'Zoom', min: -1, max: 1, def: 0, group: 'Head and body' },
   { id: 'breath', label: 'Breath', min: 0, max: 1, def: 0, group: 'Head and body' },
   { id: 'eyeLOpen', label: 'Left eye open', min: 0, max: 1.25, def: 1, group: 'Eyes and brows' },
   { id: 'eyeROpen', label: 'Right eye open', min: 0, max: 1.25, def: 1, group: 'Eyes and brows' },

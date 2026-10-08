@@ -6,15 +6,17 @@ export interface FaceResult {
   facialTransformationMatrixes: { data: number[] }[];
 }
 /** Head rotation in degrees and head position (MediaPipe face-geometry units, about 1 cm) seen by the camera. */
-export interface RawFace { yaw: number; pitch: number; roll: number; x?: number; y?: number; shapes: Record<string, number> }
+export interface RawFace { yaw: number; pitch: number; roll: number; x?: number; y?: number; z?: number; shapes: Record<string, number> }
 export interface TrackingOptions {
   mirror: boolean; sensitivity: number; smoothing: number;
   /** Mouth opening gain, separate from head sensitivity; defaults to 1. */
   mouthSensitivity?: number;
   /** Blink both eyes together unless one is clearly winking; defaults to true. */
   linkEyes?: boolean;
-  /** How strongly moving sideways sways and shifts the body; defaults to 1. */
+  /** How strongly moving sideways sways and leans the body; defaults to 1. */
   bodySensitivity?: number;
+  /** How far the avatar follows the head across the screen and zooms when leaning in; defaults to 1. */
+  screenMove?: number;
 }
 /** Blink score range per eye: [relaxed open score, score when fully closed]. */
 export type EyeRanges = Record<'Left' | 'Right', readonly [number, number]>;
@@ -22,7 +24,7 @@ export const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min
 const smoothstep = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 export const faceNeutral: Record<string, number> = {
   angleX: 0, angleY: 0, angleZ: 0, bodyAngleX: 0, bodyAngleZ: 0,
-  positionX: 0, eyeLOpen: 1, eyeROpen: 1, gazeX: 0, gazeY: 0, mouthOpen: 0, mouthForm: 0, browY: 0, eyeSmile: 0, eyeSmileL: 0,
+  positionX: 0, positionY: 0, positionZ: 0, eyeLOpen: 1, eyeROpen: 1, gazeX: 0, gazeY: 0, mouthOpen: 0, mouthForm: 0, browY: 0, eyeSmile: 0, eyeSmileL: 0,
 };
 export function readFace(result: FaceResult): RawFace | null {
   const matrix = result.facialTransformationMatrixes[0]?.data;
@@ -36,7 +38,7 @@ export function readFace(result: FaceResult): RawFace | null {
   }
   const degrees = 180 / Math.PI;
   return { yaw: Math.atan2(m[8], m[10]) * degrees, pitch: Math.asin(clamp(-m[9], -1, 1)) * degrees,
-    roll: Math.atan2(m[1], m[5]) * degrees, x: matrix[12], y: matrix[13],
+    roll: Math.atan2(m[1], m[5]) * degrees, x: matrix[12], y: matrix[13], z: matrix[14],
     shapes: Object.fromEntries((result.faceBlendshapes[0]?.categories ?? []).map(shape => [shape.categoryName, clamp(shape.score)])) };
 }
 const angleDelta = (value: number, neutral: number) => ((value - neutral + 540) % 360) - 180;
@@ -71,10 +73,16 @@ export function mapFace(face: RawFace, neutral: RawFace | null, options: Trackin
   const smile = clamp((mean('mouthSmileLeft', 'mouthSmileRight') + mean('cheekSquintLeft', 'cheekSquintRight')) * 0.3);
   // Moving sideways (not only turning) carries the body: it shifts, leans and the whole
   // avatar slides a little, like VTube Studio's face-position movement. Same mirroring as yaw.
-  const side = Number.isFinite(face.x) ? ((face.x ?? 0) - (neutral?.x ?? face.x ?? 0)) * mirror * clamp(options.bodySensitivity ?? 1, 0, 3) : 0;
+  const offset = (key: 'x' | 'y' | 'z') => Number.isFinite(face[key]) ? (face[key] ?? 0) - (neutral?.[key] ?? face[key] ?? 0) : 0;
+  const side = offset('x') * mirror * clamp(options.bodySensitivity ?? 1, 0, 3);
+  // like VTube Studio's model movement: the avatar follows the head across the screen and
+  // comes closer when leaning towards the camera (camera space: y up, z towards the viewer)
+  const move = clamp(options.screenMove ?? 1, 0, 3);
   return { angleX: x, angleY: y, angleZ: z,
     bodyAngleX: clamp(x * 0.2 + side * 0.6, -10, 10), bodyAngleZ: clamp(z * 0.2 - side * 0.4, -10, 10),
-    positionX: clamp(side / 12, -1, 1),
+    positionX: clamp(offset('x') * mirror * move / 12, -1, 1),
+    positionY: clamp(offset('y') * move / 10, -1, 1),
+    positionZ: clamp(offset('z') * move / 12, -1, 1),
     eyeLOpen: left, eyeROpen: right,
     gazeX: clamp((d('eyeLookOutRight') - d('eyeLookInRight') + d('eyeLookInLeft') - d('eyeLookOutLeft')) * mirror, -1, 1),
     gazeY: clamp(mean('eyeLookUpLeft', 'eyeLookUpRight') - mean('eyeLookDownLeft', 'eyeLookDownRight'), -1, 1),
@@ -111,7 +119,7 @@ export class OneEuro {
 // Per-parameter filter tuning: [minimum cutoff Hz, speed coefficient]. Head angles are in
 // degrees, the rest in 0-1 units, so their speed coefficients differ in scale.
 const FILTERS: Record<string, readonly [number, number]> = {
-  angleX: [1.0, 0.03], angleY: [1.0, 0.03], angleZ: [1.0, 0.03], bodyAngleX: [0.8, 0.1], bodyAngleZ: [0.8, 0.1], positionX: [0.8, 1.0],
+  angleX: [1.0, 0.03], angleY: [1.0, 0.03], angleZ: [1.0, 0.03], bodyAngleX: [0.8, 0.1], bodyAngleZ: [0.8, 0.1], positionX: [0.8, 1.0], positionY: [0.8, 1.0], positionZ: [0.6, 0.8],
   eyeLOpen: [2.5, 1.5], eyeROpen: [2.5, 1.5], mouthOpen: [2.0, 1.0],
   gazeX: [0.8, 0.4], gazeY: [0.8, 0.4], mouthForm: [0.8, 0.3], browY: [0.8, 0.3], eyeSmile: [0.6, 0.2], eyeSmileL: [0.6, 0.2],
 };

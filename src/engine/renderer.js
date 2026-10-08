@@ -366,6 +366,13 @@ export function createRenderer(engine, rig) {
       this.resize();
       // whole-avatar sideways shift (share of the image width), e.g. following the viewer's position
       this.offset[0] += 2 * (state.shiftX ?? 0) * IMG.w * this.pxScale / this.canvas.width;
+      this.offset[1] += 2 * (state.shiftY ?? 0) * IMG.h * this.pxScale / this.canvas.height;
+      // zooms about fixed image points, [factor, x, y] each (see createMeshAvatar.js)
+      for (const [zoom, cx, cy] of state.zooms ?? []) {
+        if (zoom === 1) continue;
+        this.offset[0] += cx * this.scale[0] * (1 - zoom); this.offset[1] += cy * this.scale[1] * (1 - zoom);
+        this.scale = [this.scale[0] * zoom, this.scale[1] * zoom];
+      }
       gl.viewport(0, 0, this.canvas.width, this.canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);

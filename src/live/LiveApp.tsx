@@ -17,7 +17,7 @@ import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
-const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1 };
+const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1 };
 // Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
 function loadTrackingOptions(): Required<TrackingOptions> {
   try {
@@ -120,6 +120,7 @@ export function LiveApp() {
         <label className="live-check"><input type="checkbox" checked={options.mirror} onChange={event => setOptions(current => ({ ...current, mirror: event.target.checked }))} />{t.mirror}</label>
         <label>{t.sensitivity}<input type="range" min="0.25" max="2" step="0.05" value={options.sensitivity} onChange={event => setOptions(current => ({ ...current, sensitivity: Number(event.target.value) }))} /></label>
         <label>{t.mouthSensitivity}<input type="range" min="0.5" max="3" step="0.05" value={options.mouthSensitivity} onChange={event => setOptions(current => ({ ...current, mouthSensitivity: Number(event.target.value) }))} /></label>
+        <label>{t.screenMove}<input type="range" min="0" max="3" step="0.05" value={options.screenMove} onChange={event => setOptions(current => ({ ...current, screenMove: Number(event.target.value) }))} /></label>
         <label>{t.bodySensitivity}<input type="range" min="0" max="3" step="0.05" value={options.bodySensitivity} onChange={event => setOptions(current => ({ ...current, bodySensitivity: Number(event.target.value) }))} /></label>
         <label className="live-check"><input type="checkbox" checked={options.linkEyes} onChange={event => setOptions(current => ({ ...current, linkEyes: event.target.checked }))} />{t.linkEyes}</label>
         <label>{t.smoothing}<input type="range" min="0" max="1" step="0.05" value={options.smoothing} onChange={event => setOptions(current => ({ ...current, smoothing: Number(event.target.value) }))} /></label>
