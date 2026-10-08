@@ -1,0 +1,133 @@
+# Mi versión de Mesh Avatar Studio
+
+Fork de [shinshin86/mesh-avatar-studio](https://github.com/shinshin86/mesh-avatar-studio)
+mantenido en [KalciferTolueno/mesh-avatar-studio](https://github.com/KalciferTolueno/mesh-avatar-studio).
+Este documento registra **cada diferencia con el original**: cómo funcionaba antes, cómo
+funciona ahora, qué archivos toca y dónde puede chocar con actualizaciones del autor. Se
+actualiza en el mismo commit que cada cambio.
+
+## Remotos y ramas
+
+| Nombre | Qué es |
+|---|---|
+| `origin` | El repositorio original del autor (solo lectura para nosotros) |
+| `fork` | Tu repositorio en GitHub |
+| `main` | Copia exacta del `main` original. No se trabaja aquí |
+| `mi-version` | Tu versión: el original más todos los cambios de este documento |
+| `feat/…` | Una mejora en curso; se fusiona en `mi-version` cuando está verificada |
+
+Base actual del original: `3e8f4e9` (Merge pull request #8, iluminación documentada).
+
+## Traer actualizaciones del autor
+
+```sh
+git fetch origin
+git checkout main && git merge --ff-only origin/main && git push fork main
+git checkout mi-version && git merge main
+```
+
+1. Si hay conflictos, revisa la sección **Cambios** de abajo: cada cambio dice qué hacía el
+   original y qué hace nuestra versión, para decidir cómo combinarlos.
+2. Comprueba (mismo orden que pide `AGENTS.md`):
+   ```sh
+   npm run lint && npm test && npm run build
+   uv run --with numpy --with pillow --with opencv-python-headless tools/test_build_layers.py
+   uv run tools/test_agent_tools.py
+   PLAYWRIGHT_PORT=5300 npm run e2e
+   ```
+   La regresión numérica (`tests/regression.test.ts`) debe seguir en **0 px**.
+3. Renderiza un proyecto con `npm run render-poses -- projects/<nombre>` y míralo.
+4. Actualiza la línea "Base actual del original" y el registro de fusiones al final.
+
+### Fallos conocidos de este equipo (no son regresiones)
+
+- `tests/local-projects.test.ts` y `tests/project-jobs.test.ts` (4 pruebas): Windows no permite
+  crear enlaces simbólicos sin el Modo de desarrollador (`EPERM: symlink`).
+- Pruebas end-to-end: usan el puerto 5173 por defecto; en este equipo otro proyecto ocupa ese
+  puerto, por eso se ejecutan con `PLAYWRIGHT_PORT=5300`. Varias fallan también en el código
+  original por tiempos (`preview-status` en `updating`); compáralas siempre contra `main`.
+
+## Principios para que las fusiones sean fáciles
+
+- **Opcional y compatible:** todo lo nuevo del motor se activa por campos opcionales del rig o
+  archivos opcionales del proyecto. Un proyecto del original se ve y se mueve igual; la muestra
+  Miko no cambia (regresión en 0 px).
+- **Archivos nuevos antes que reescribir:** herramientas nuevas en `tools/`, estilos y textos
+  nuevos en archivos propios cuando se pueda.
+- **No borrar lo del autor si basta con no cargarlo:** así sus actualizaciones no generan
+  conflictos de "modificado / borrado".
+- Cada cambio de este documento indica los archivos del original que toca: son los puntos donde
+  esperar conflictos.
+
+## Cambios
+
+### 1. Rastreo de cámara (página Live)
+
+- **Antes:** un único suavizado exponencial para todos los parámetros (temblaba o iba con
+  retraso); el ojo solo se cerraba si MediaPipe daba `eyeBlink ≥ 0.85`; la boca dependía casi
+  solo de `jawOpen` y compartía la sensibilidad de la cabeza; el cabeceo estaba invertido
+  (mirar arriba bajaba la cabeza); el cuerpo solo seguía un 20 % del giro de la cabeza.
+- **Ahora:** filtro One Euro por parámetro; rango de parpadeo aprendido por ojo (un parpadeo
+  débil cierra del todo); enlace de ojos opcional; la boca suma la separación de labios, con
+  sensibilidad propia y zona muerta; cabeceo corregido; la posición lateral de la cabeza mueve,
+  inclina y desplaza el cuerpo (parámetro nuevo `positionX`); los ajustes se guardan en el
+  navegador.
+- **Archivos:** `src/live/tracking.ts`, `src/live/LiveApp.tsx`, `src/live/i18n.ts`,
+  `tests/live-tracking.test.ts`.
+- **Conflictos probables:** si el autor cambia `mapFace`, `FacePose` o los controles de Live.
+
+### 2. Motor: parámetro `positionX` y escala del cuerpo
+
+- **Antes:** no existía desplazamiento lateral del avatar; respiración y balanceo del cuerpo
+  usaban distancias en píxeles fijas pensadas para la imagen de 1254 px.
+- **Ahora:** `positionX` (−1…1) desplaza todo el avatar hasta un 8 % del ancho
+  (`renderer.js` suma `state.shiftX` al offset); las distancias del cuerpo se multiplican por
+  `ancho / 1254` (factor 1 en Miko).
+- **Archivos:** `src/engine/rig.js` (`PARAMS`, `BODY_PX`, `applyBody`), `src/engine/renderer.js`
+  (`draw`), `src/engine/createMeshAvatar.js` (`shiftX`).
+
+### 3. Motor: ojos con bocas dibujadas pero sin ojos dibujados
+
+- **Antes:** si el proyecto tenía cualquier variante dibujada, el motor ocultaba los ojos
+  originales al parpadear aunque no hubiera ojos dibujados (los ojos desaparecían).
+- **Ahora:** cada ojo usa dibujos solo si existen `eyes_half` y `eyes_closed`; si falta
+  `eyes_smile` se usa `eyes_closed`.
+- **Archivos:** `src/engine/sprites.js` (`eyeDrawn`), `src/engine/createMeshAvatar.js`
+  (`eyeOpenFor`).
+
+### 4. Giro 3D de la cabeza (`rig.head.depth`)
+
+- **Antes:** el giro deslizaba la cara como un disco plano; las mejillas y el contorno se
+  estiraban; profundidades fijas por rasgo pensadas para Miko (nariz 8 px, orejas asimétricas).
+- **Ahora (solo si el rig tiene `head.depth`):** perfil de cúpula (`round`), parte rígida de toda
+  la cabeza (`rigid`), profundidad por rasgo (`nose`, `mouth`, `eyes`, `ears`) y mapa de
+  profundidad (`map`). Sin `head.depth` el giro es exactamente el original.
+- **Archivos:** `src/engine/rig.js` (`turnOffset`, `depthTurn`, bloque `if (DEPTH)` en
+  `deformBase`), `src/rig/validate.ts`, `src/rig/types.ts`, `docs/rig-fields.md`.
+
+### 5. Mapa de profundidad (`tools/build-depth.py`)
+
+- **Nuevo:** Depth Anything V2 Small local (ONNX) escribe `built/depth.png` y lo anota en
+  `layers.json` (`"depth"`). El motor lo muestrea por vértice si `head.depth.map` está puesto.
+- **Archivos del original tocados:** `src/engine/createMeshAvatar.js` (carga `depthAt` antes de
+  `createRig`), `src/engine/rig.js` (`createRig(rig, { depthAt })`, peso `depth`),
+  `src/editor/project.ts`, `tools/render-poses.mjs`, `docs/reference.md`.
+- **Ojo:** volver a ejecutar `build-layers.py` reescribe `layers.json`; hay que volver a correr
+  `build-depth.py` y `build-parts.py`.
+
+### 6. Piezas separadas y PSD (`tools/build-parts.py`, `tools/export-psd.py`)
+
+- **Antes:** una sola imagen base (más ojos, mano y accesorios recortados).
+- **Ahora (solo si `layers.json` tiene `"parts"`):** cuerpo, cabeza, orejas y pelo delantero en
+  capas separadas, con lo oculto rellenado localmente (LaMa para la frente, sombreado suave para
+  el cuello). El cuerpo ignora el giro de la cabeza (`baseWeights(..., role = 'body')`); las
+  piezas de cabeza la siguen completas. `export-psd.py` genera un PSD por capas.
+- **Archivos del original tocados:** `src/engine/createMeshAvatar.js` (`addPiece`, bucle de
+  `pieces`), `src/engine/rig.js` (`baseWeights` con `role`), `src/rig/validate.ts` y
+  `src/rig/types.ts` (`parts`), `src/editor/project.ts`, `tools/render-poses.mjs`, documentación.
+
+## Registro de fusiones con el original
+
+| Fecha | Commit del original | Notas |
+|---|---|---|
+| 2026-10-07 | `3e8f4e9` | Iluminación y sombras. Un conflicto en `src/live/LiveApp.tsx`: se mantuvieron los ajustes guardados de rastreo junto a los de iluminación |
