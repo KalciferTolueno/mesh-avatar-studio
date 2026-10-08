@@ -6,9 +6,6 @@ import { uiEs, workflowEs, partsEs, fieldsEs } from './i18n-es';
 export { readPreference, savePreference } from './preferences';
 
 export type Language = 'en' | 'ja' | 'zh' | 'es';
-// fork: languages offered in the switchers; the others stay in the code but are not shown
-export const LANGUAGES: Language[] = ['es', 'en'];
-export const LANGUAGE_NAMES: Record<Language, [string, string]> = { es: ['Español', 'ES'], en: ['English', 'EN'], ja: ['日本語', 'JA'], zh: ['简体中文', '中文'] };
 export const LANGUAGE_KEY = 'mesh-avatar-language';
 export const GUIDE_KEY = 'mesh-avatar-guide-seen';
 
@@ -177,9 +174,8 @@ const Context = createContext({ language: 'en' as Language, setLanguage: (_: Lan
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
     const saved = readPreference(LANGUAGE_KEY);
-    // fork: a saved language that is still offered, otherwise the browser's language
-    // (Spanish browsers start in Spanish, everything else in English)
-    if (LANGUAGES.includes(saved as Language)) return saved as Language;
+    if (saved === 'ja' || saved === 'zh' || saved === 'en' || saved === 'es') return saved;
+    // fork: without a saved choice, Spanish browsers start in Spanish (otherwise English as upstream)
     return typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('es') ? 'es' : 'en';
   });
   useEffect(() => { document.documentElement.lang = language === 'zh' ? 'zh-CN' : language; savePreference(LANGUAGE_KEY, language); }, [language]);

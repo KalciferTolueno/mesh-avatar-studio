@@ -126,22 +126,21 @@ git checkout mi-version && git merge main
   `pieces`), `src/engine/rig.js` (`baseWeights` con `role`), `src/rig/validate.ts` y
   `src/rig/types.ts` (`parts`), `src/editor/project.ts`, `tools/render-poses.mjs`, documentación.
 
-### 7. Idiomas: español e inglés
+### 7. Idioma español
 
 - **Antes:** inglés, japonés y chino; inglés por defecto salvo preferencia guardada.
-- **Ahora:** los selectores (editor y En vivo) solo ofrecen **ES / EN** (`LANGUAGES` en
-  `src/editor/i18n.tsx`). El idioma inicial es el guardado si sigue ofrecido; si no, el del
-  navegador (español si empieza por `es`, si no inglés). El japonés y el chino **siguen en el
-  código** pero no se muestran, para que las actualizaciones del autor no generen conflictos.
+- **Ahora:** se **añade** el español sin quitar nada. Los selectores (editor y En vivo) muestran
+  ES junto a los botones originales. Una preferencia guardada (incluidos japonés o chino) se
+  respeta como antes; sin preferencia, un navegador en español arranca en español y cualquier
+  otro en inglés, como el original.
 - **Textos en español** en archivos propios: `src/editor/i18n-es.ts` (interfaz, peticiones al
   agente, partes, campos), `src/live/i18n-es.ts`, `src/lighting/i18n-es.ts`. El diccionario
   español se construye sobre el inglés (`{ ...en, ...es }`): si el autor añade textos nuevos,
   se ven en inglés hasta traducirlos aquí. **Tras cada fusión, busca claves nuevas en los
-  diccionarios en inglés y tradúcelas.**
-- **Archivos del original tocados:** `src/editor/i18n.tsx` (tipo `Language`, `LANGUAGES`,
-  `LANGUAGE_NAMES`, registro de `es`, idioma inicial), `src/editor/App.tsx` y
-  `src/live/LiveApp.tsx` (botones de idioma), `src/live/i18n.ts`, `src/lighting/Controls.tsx`.
-- **Pruebas end-to-end afectadas:** las que cambian a japonés o chino (pendiente de adaptar).
+  diccionarios en inglés y tradúcelas;** el resto de idiomas los mantiene el autor.
+- **Archivos del original tocados (pocas líneas):** `src/editor/i18n.tsx` (tipo `Language`,
+  registro de `es`, idioma inicial), `src/editor/App.tsx` (un botón ES), `src/live/LiveApp.tsx`
+  (`es` en la lista de idiomas), `src/live/i18n.ts`, `src/lighting/Controls.tsx`.
 
 ## Registro de fusiones con el original
 
