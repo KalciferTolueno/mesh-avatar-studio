@@ -5,7 +5,8 @@ import { LiveAnimations, LiveExpressions } from '../expressions/LiveExpressions'
 import { ExpressionMixer } from '../expressions/presets';
 import { AnimationPlayer } from '../expressions/animations';
 import { LifeLayer } from '../expressions/life';
-import { VowelDetector, VowelMouth } from '../expressions/vowels';
+import { VowelDetector, VowelMouth, type VowelCalibration } from '../expressions/vowels';
+import { VowelCalibrationPanel } from '../expressions/VowelCalibrationPanel';
 import { loadPhysics } from '../physics/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
@@ -59,6 +60,7 @@ export function LiveApp() {
   const life = useRef(new LifeLayer());
   const vowels = useRef(new VowelDetector());
   const vowelMouth = useRef(new VowelMouth());
+  const vowelCalibration = useRef<VowelCalibration | null>(null);
   const controls = useRef({ options, gain, micState, cameraState }); controls.current = { options, gain, micState, cameraState };
   const refreshDevices = () => { void navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(() => undefined); };
   useEffect(() => {
@@ -91,8 +93,11 @@ export function LiveApp() {
       const tracked = sampled.tracking ? life.current.apply(sampled.params, dt, { breathing: control.options.breathing ?? 0.8, blinkMode: control.options.blinkMode ?? 'both' }) : sampled.params;
       // the microphone's vowels shape the drawn mouths while speaking (src/expressions/vowels.ts)
       const micOn = control.micState === 'micOn', level = micOn ? microphone.current?.level(control.gain) ?? 0 : 0;
-      const spectrum = micOn && (control.options.voiceVowels ?? true) ? microphone.current?.spectrum() : null;
-      const vowel = spectrum ? vowels.current.detect(spectrum.data, spectrum.binHz, level, dt) : null;
+      const calibrating = vowelCalibration.current;
+      const spectrum = micOn && ((control.options.voiceVowels ?? true) || calibrating) ? microphone.current?.spectrum() : null;
+      // while calibrating, the voice is recorded as templates instead of moving the mouth
+      if (calibrating && spectrum) calibrating.feed(vowels.current.envelope(spectrum.data, spectrum.binHz), level);
+      const vowel = spectrum && !calibrating && (control.options.voiceVowels ?? true) ? vowels.current.detect(spectrum.data, spectrum.binHz, level, dt) : null;
       const smooth = control.options.vowelSmooth ?? 0.5;
       const form = vowelMouth.current.step(vowel, dt, smooth, control.options.vowelStrength ?? 0.85);
       avatar.setMouthBlend(0.03 + 0.15 * smooth);
@@ -159,6 +164,7 @@ export function LiveApp() {
       <section><h2>{t.microphone}</h2><label className="live-check"><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{t.microphone}</label>
         <select aria-label={t.microphone} value={micId} disabled={micActive} onChange={event => setMicId(event.target.value)}><option value="">{t.defaultDevice}</option>{devices.filter(device => device.kind === 'audioinput' && device.deviceId).map((device, i) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${t.microphone} ${i + 1}`}</option>)}</select>
         <label className="live-check"><input type="checkbox" checked={options.voiceVowels} onChange={event => setOptions(current => ({ ...current, voiceVowels: event.target.checked }))} />{t.voiceVowels}</label>
+        {options.voiceVowels && <VowelCalibrationPanel detector={vowels} calibration={vowelCalibration} micOn={micState === 'micOn'} language={language} />}
         {(['vowelSmooth', 'vowelStrength'] as const).map(key => <label key={key}>{t[key]}<input type="range" min="0" max="1" step="0.05" value={options[key]} disabled={!options.voiceVowels} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} /></label>)}
         <label>{t.gain}<input type="range" min="0.25" max="5" step="0.05" value={gain} onChange={event => setGain(Number(event.target.value))} /></label><small role="status">{t[micState]}</small>
       </section>

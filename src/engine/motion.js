@@ -80,6 +80,8 @@ export class Motion {
     this.voice = 0;                // 0..1 loudness (setVoiceLevel)
     this.mouth = 0;
     this.vowel = 'a';
+    /** @type {string | null} fork: the vowel heard in the voice (setVoiceVowel), or null */
+    this.voiceVowel = null;
     this.vowelForm = 0;
     this.syllableArmed = true;
     this.voicePeak = 0;
