@@ -157,8 +157,15 @@ def split(rgba, rig, hair):
                 ears[k] = (ears[k][0], ears[k][1] | comp)
                 head_only &= ~comp
                 break
+    # items lying on the body (hoodie cords…): everything opaque inside their outline
+    items = []
+    for item in parts.get("items", []):
+        m = alpha & ~head_area & polygon_mask(shape, item["outline"])
+        items.append((item["name"], clean(m, 3, 100)))
     body = alpha & ~head_area
-    return {"body": body, "head": head_only, "front": front, "ears": ears, "alpha": alpha}
+    for _, m in items:
+        body &= ~m
+    return {"body": body, "head": head_only, "front": front, "ears": ears, "items": items, "alpha": alpha}
 
 
 def overlay(rgba, masks, path):
@@ -169,6 +176,8 @@ def overlay(rgba, masks, path):
         out[m] = out[m] * 0.45 + np.array(colour) * 0.55
     for i, (_, m) in enumerate(masks["ears"]):
         out[m] = out[m] * 0.45 + np.array((230, 60, 200) if i == 0 else (255, 80, 80)) * 0.55
+    for _, m in masks["items"]:
+        out[m] = out[m] * 0.45 + np.array((40, 220, 220)) * 0.55
     Image.fromarray(out.clip(0, 255).astype(np.uint8)).save(path)
 
 
@@ -259,6 +268,16 @@ def fill_parts(rgba, masks, rig, session):
             full = cv2.inpaint(rgb[y0:y1, x0:x1], unknown, 9, cv2.INPAINT_TELEA)
             region = side[y0:y1, x0:x1]
             body_rgb[y0:y1, x0:x1][region] = full[region]
+    # the cloth behind each item: smooth fill from the surrounding body only
+    for name, m in masks["items"]:
+        x0, y0, x1, y1 = square_box(m, 30, shape)
+        hole = cv2.dilate(m.astype(np.uint8), np.ones((5, 5), np.uint8))[y0:y1, x0:x1]
+        unknown = ((hole > 0) | ~masks["body"][y0:y1, x0:x1]).astype(np.uint8)
+        filled = cv2.inpaint(body_rgb[y0:y1, x0:x1], unknown, 9, cv2.INPAINT_TELEA)
+        region = (hole > 0) & masks["alpha"][y0:y1, x0:x1]
+        body_rgb[y0:y1, x0:x1][region] = filled[region]
+        body_alpha[y0:y1, x0:x1] |= region
+        layers[name] = with_alpha(rgb, m)
     layers["body"] = with_alpha(body_rgb, body_alpha)
 
     # head: the forehead under the front hair
@@ -326,8 +345,9 @@ def main(argv=None):
         ys, xs = np.nonzero(image[..., 3] > 0)
         x0, y0, x1, y1 = int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
         Image.fromarray(image[y0:y1, x0:x1]).save(out / f"{name}.png")
-        role = "body" if name == "body" else "head"
-        z = -1 if name not in order else order.index(name)
+        item = name in {n for n, _ in masks["items"]}
+        role = "body" if name == "body" or item else "head"
+        z = 0.5 if item else -1 if name not in order else order.index(name)
         entries.append({"name": name, "file": f"parts/{name}.png", "rect": [x0, y0, x1 - x0, y1 - y0], "role": role, "z": z,
                         "hair": name == "front"})
     meta["parts"] = sorted(entries, key=lambda e: e["z"])

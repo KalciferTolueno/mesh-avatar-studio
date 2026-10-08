@@ -152,6 +152,7 @@ the engine mapping. Do not copy the example illustration's coordinates into a ne
 | `parts.jaw` | Optional polyline `[x,y]`, px, left to right along the jaw outline; head above it, body below. Its end points extend sideways. |
 | `parts.ears[*].name` | File-safe ear part name, e.g. `ear_l`; not `body`, `head` or `front`. |
 | `parts.ears[*].outline` | Polygon `[x,y]`, px, generously around one ear (ring included); fur continuing outside it stays with the head. |
+| `parts.items[*].name` / `outline` | Optional pieces lying on the body (hoodie cords…): everything opaque inside the polygon becomes its own layer and the cloth behind it is filled. |
 | `parts.front.outline` | Optional polygon around the front hair locks; hair-mask pixels inside it move in front of the head. |
 | `parts.front.hairline` | Optional y, px, above which everything in the outline is front hair; default `300`. |
 | `parts.fill` | Optional fill reach in px: `body` (neck under the head, `110`), `collar` (`12`), `front` (`45`), `ears` (`35`). |

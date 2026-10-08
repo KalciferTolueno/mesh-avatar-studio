@@ -85,6 +85,8 @@ export interface Rig {
   parts?: {
     jaw: Point[];
     ears?: { name: string; outline: Point[] }[];
+    /** Pieces lying on the body, such as hoodie cords. */
+    items?: { name: string; outline: Point[] }[];
     front?: { outline: Point[]; hairline?: number };
     fill?: Partial<Record<'body' | 'collar' | 'front' | 'ears', number>>;
   };

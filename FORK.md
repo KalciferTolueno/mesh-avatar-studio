@@ -122,6 +122,9 @@ git checkout mi-version && git merge main
   capas separadas, con lo oculto rellenado localmente (LaMa para la frente, sombreado suave para
   el cuello). El cuerpo ignora el giro de la cabeza (`baseWeights(..., role = 'body')`); las
   piezas de cabeza la siguen completas. `export-psd.py` genera un PSD por capas.
+- **Piezas sobre el cuerpo (`parts.items`):** objetos como los cordones de la capucha se recortan
+  por su contorno, la tela de detrás se rellena (suave, desde la propia ropa) y se dibujan entre
+  el cuerpo y la cabeza (`z: 0.5`, rol `body`). Así la física los mueve sin deformar la ropa.
 - **Archivos del original tocados:** `src/engine/createMeshAvatar.js` (`addPiece`, bucle de
   `pieces`), `src/engine/rig.js` (`baseWeights` con `role`), `src/rig/validate.ts` y
   `src/rig/types.ts` (`parts`), `src/editor/project.ts`, `tools/render-poses.mjs`, documentación.

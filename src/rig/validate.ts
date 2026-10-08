@@ -88,9 +88,10 @@ const schema = (draft: boolean) => object({
   parts: object({
     jaw: line,
     ears: array(object({ name: partName, outline: polygon }), 0, 4),
+    items: array(object({ name: partName, outline: polygon }), 0, 16),
     front: object({ outline: polygon, hairline: number }, ['hairline']),
     fill: object({ body: positive, collar: positive, front: positive, ears: positive }, ['body', 'collar', 'front', 'ears']),
-  }, ['ears', 'front', 'fill']),
+  }, ['ears', 'items', 'front', 'fill']),
   // Live2D-style physics groups (src/engine/groups.js)
   physics: array(object({
     name: string, pivot: point, tip: point, part: pieceName, width: positive,
