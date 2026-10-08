@@ -14,6 +14,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from agent_common import (
+    EXTRA_MOUTH_VARIANTS,
     EYE_VARIANTS,
     MOUTH_VARIANTS,
     edit_masks,
@@ -75,10 +76,11 @@ def build(project, output=None, tolerance=8):
     if rig["image"] != {"width": source_image.width, "height": source_image.height}:
         raise ValueError("rig.image must match source.png")
     images, meta = {}, {}
-    for name in (*EYE_VARIANTS, *MOUTH_VARIANTS):
+    for name in (*EYE_VARIANTS, *MOUTH_VARIANTS, *EXTRA_MOUTH_VARIANTS):
         path = project / "variants" / f"{name}.png"
         if not path.exists():
-            print(f"Skipping missing variant: {name}")
+            if name not in EXTRA_MOUTH_VARIANTS:
+                print(f"Skipping missing variant: {name}")
             continue
         with Image.open(path) as image:
             if image.format != "PNG" or image.size != source_image.size:

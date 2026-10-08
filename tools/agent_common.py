@@ -110,6 +110,9 @@ def grid_image(image, region=None, step=50):
 
 EYE_VARIANTS = ("eyes_closed", "eyes_half", "eyes_smile")
 MOUTH_VARIANTS = ("mouth_a", "mouth_a_half", "mouth_i", "mouth_o")
+# fork (see FORK.md): optional own drawings for e and u; without them e reuses the half-open
+# a and u a narrowed o, as upstream does
+EXTRA_MOUTH_VARIANTS = ("mouth_e", "mouth_u")
 
 
 def edit_masks(rig, size):

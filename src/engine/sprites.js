@@ -24,6 +24,11 @@ export function createSpriteModule(engine, rig) {
     o: { sprite: 'mouth_o', ref: 0.75, width: 1 },
     u: { sprite: 'mouth_o', ref: 0.75, width: 0.78 },
   };
+  // fork (see FORK.md): a sprite set may also have its own e and u drawings
+  const OWN_MOUTHS = {
+    e: { sprite: 'mouth_e', ref: 0.6, width: 1 },
+    u: { sprite: 'mouth_u', ref: 0.6, width: 1 },
+  };
   // below this the drawn closed mouth of the original image is shown (a barely open mouth
   // drawing looked like a stuck, oddly shaped mouth)
   const MOUTH_OPEN_MIN = 0.16;
@@ -162,7 +167,7 @@ export function createSpriteModule(engine, rig) {
         });
         const shape = mouthShape(P.mouthOpen, P.mouthForm, lastShape);
         lastShape = shape;
-        const def = shape && MOUTH_SHAPES[shape];
+        const def = shape && (items[OWN_MOUTHS[shape]?.sprite] ? OWN_MOUTHS[shape] : MOUTH_SHAPES[shape]);
         const mt = def && items[def.sprite];
         // fork: optional cross-fade between mouth drawings (setMouthBlend); 0 = instant swap
         if (mt && mouthFade.cur !== def.sprite) { mouthFade.prev = mouthFade.cur; mouthFade.cur = def.sprite; mouthFade.t = 0; }

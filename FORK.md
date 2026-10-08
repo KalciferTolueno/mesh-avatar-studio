@@ -345,6 +345,22 @@ git checkout mi-version && git merge main
   `src/live/LiveApp.tsx`,
   `src/live/i18n.ts`, `src/live/i18n-es.ts`.
 
+### 18. Bocas propias para «e» y «u»
+
+- **Antes:** solo hay cuatro bocas dibujadas (`mouth_a`, `mouth_a_half`, `mouth_i`, `mouth_o`). La
+  «e» reutiliza la «a» entreabierta un 6 % más ancha y la «u» es la «o» estrechada al 78 %, así que
+  con vocales del micrófono la «e» parece «a» y la «u» parece «o».
+- **Ahora:** si el conjunto de sprites trae `mouth_e` y/o `mouth_u`, el motor los usa para esas
+  vocales (`OWN_MOUTHS` en `src/engine/sprites.js`); si no, todo sigue como en el original (Miko
+  no los tiene: regresión 0 px). `tools/build-sprites.py` recorta también
+  `variants/mouth_e.png` y `variants/mouth_u.png` cuando existen (`EXTRA_MOUTH_VARIANTS` en
+  `tools/agent_common.py`), sin avisar si faltan. El editor (subida de variantes,
+  `variant-requests.py`) no los conoce todavía: se colocan a mano en `variants/`.
+- **Tigre:** dibujadas en local con `projects/tigre/work/draw_mouths.py` («e» ancha y plana con
+  dientes de arriba, «u» pequeña y redonda) y copiadas a `tigre-3d/built/sprites`.
+- **Archivos del original tocados:** `src/engine/sprites.js`, `tools/build-sprites.py`,
+  `tools/agent_common.py`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |
