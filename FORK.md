@@ -730,6 +730,29 @@ git checkout mi-version && git merge main
   `src-tauri/capabilities/default.json`, `src/live/LiveShell.tsx`, `src/live/LiveApp.tsx`,
   `src/live/shell.css`.
 
+### 36. El editor también se abre desde la app de escritorio
+
+- **Antes:** la app de escritorio ocultaba el botón **Editar** (sección 25): el editor necesita el
+  servidor de Node (guardar el rig y reconstruir capas con las herramientas de Python), que la
+  app no lleva.
+- **Ahora:** **Editar** vuelve a estar en En vivo. En la app, ese enlace (navegar a `/`) lo
+  intercepta la ventana principal (`on_navigation`): arranca el servidor de desarrollo de Vite
+  en `127.0.0.1:5192` sin ventana de consola (`node node_modules/vite/bin/vite.js`, con
+  `CREATE_NO_WINDOW`; si ya responde, lo reutiliza) y abre el editor en una **ventana propia**
+  («Mesh Avatar Studio · Editor», con marco normal).
+  - El enlace **En vivo** del editor (abre en pestaña nueva) lo atrapa `on_new_window`: cierra
+    el editor y recarga la ventana de En vivo en el proyecto que tenía el editor, así se ven los
+    cambios.
+  - Cualquier otro enlace que pida ventana nueva, en las dos ventanas (p. ej. "Abrir la vista de
+    stream en otra pestaña"), se abre en el navegador predeterminado.
+  - Al cerrar la ventana de En vivo se cierra la app entera y se detiene el servidor del editor.
+  - Fallos al arrancarlo se anotan en `%TEMP%/mesh-avatar-desktop.log`.
+  - El repositorio se pasa sin el prefijo `\?\` de Windows, que Node y Vite no aceptan.
+- **Comprobado** con UI Automation sobre la app real: Editar abre el editor en 1,1 s (servidor
+  en frío) y sin consola; En vivo en el editor lo cierra y vuelve; Cerrar en En vivo termina la
+  app y libera el puerto 5192.
+- **Archivos:** `src-tauri/src/main.rs`, `src/live/LiveApp.tsx`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

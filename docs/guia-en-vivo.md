@@ -13,8 +13,9 @@ menos de RAM. La URL de OBS es la misma (`http://127.0.0.1:5191/stream.html…`)
 - La primera vez Windows pide permiso para la cámara y el micrófono, y los ajustes (calibración
   de vocales, posición, teclas…) se configuran una vez porque la app guarda los suyos.
 - Déjala abierta (puede quedar detrás de OBS); si la minimizas el rastreo puede ir más lento.
-- Para **editar** el avatar sigue usando `npm run dev` y el Editor en el navegador. Si cambias la
-  app, recompílala con `npm run desktop`.
+- Para **editar** el avatar, pulsa **Editar** arriba: se abre el editor en su propia ventana. Su
+  enlace **En vivo** te devuelve a la ventana principal, ya con los cambios. Si cambias el código
+  de la app, recompílala con `npm run desktop`.
 
 ## Antes de empezar (modo navegador)
 
