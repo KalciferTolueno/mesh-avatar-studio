@@ -544,6 +544,31 @@ git checkout mi-version && git merge main
   de color, números de la guía y el sol de la luz) siguen redondos. Para volver atrás basta con
   borrar esa regla.
 
+### 27. Mejoras de la auditoría de diseño (Impeccable)
+
+- **Auditoría:** en [docs/auditoria-diseno.md](docs/auditoria-diseno.md), siguiendo la guía
+  `audit` de la skill Impeccable (pbakaus/impeccable, Apache 2.0). De la skill solo se
+  descargaron sus instrucciones en Markdown a `.claude/skills/impeccable/` (local, no se sube);
+  no se instalaron su programa ni su hook. Nota: de 13/20 a 17/20.
+- **Cambios** (todos en `src/theme/theme.css`, salvo el icono):
+  - Contraste: `--faint` `#8b8b97` (oscuro) y `#6f6f7d` (claro), `--muted` `#5c5c6a` (claro) y
+    un token nuevo, `--accent-ink` (`#5544d4` en claro), para todo texto de acento. Antes, el
+    morado sobre lila del tema claro daba 4,31:1 y las etiquetas de sección 2,78–3,54:1.
+  - Fuente: se declara la que de verdad se ve (Segoe UI Variable / Segoe UI / system-ui).
+    «Inter» estaba declarada pero nunca se cargaba.
+  - Insignias (`.lighting-on`, `.badge`) con la paleta de acento en lugar de amarillo; textos
+    pequeños a un mínimo de 11–12 px; números tabulares en los valores.
+  - Calibración de vocales sin caja propia (era una tarjeta dentro de otra): ahora es una línea
+    divisoria.
+  - Casillas de 16 px, deslizadores con 24 px de alto, botones y selectores de En vivo con
+    32 px mínimo.
+  - Chevrons dibujados con CSS en las secciones plegables, en lugar de los caracteres ▸/▾.
+    El sol de la luz pasa a ser SVG (`src/lighting/Controls.tsx`, archivo del original).
+  - Cabecera de En vivo que se ajusta en varias líneas en pantallas estrechas, `caret-color`
+    con el acento y alternativa para `prefers-reduced-motion` (sin transiciones).
+- **Archivos del original tocados:** `src/lighting/Controls.tsx`. Del fork:
+  `src/theme/theme.css`, `docs/auditoria-diseno.md`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

@@ -59,5 +59,7 @@ export function LightHandle({ value, onChange, language }: Props) {
     disabled={!value.enabled} style={{ left: area ? area.left + value.x * area.width : `${value.x * 100}%`, top: area ? area.top + value.y * area.height : `${value.y * 100}%` }}
     onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); position(e); }}
     onPointerMove={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) position(e); }}
-    onPointerUp={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }} onKeyDown={move}>☀</button>;
+    onPointerUp={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }} onKeyDown={move}>
+    {/* fork (FORK.md 27): a drawn sun instead of the ☀ character */}
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" /></svg></button>;
 }
