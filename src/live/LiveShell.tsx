@@ -127,3 +127,38 @@ export function LanguageMenu({ language, onChange }: { language: Lang; onChange:
     </div>}
   </div>;
 }
+
+// ---- window controls in the title bar (desktop app without a Windows frame, FORK.md 35) ----
+type TauriWindow = { minimize(): Promise<void>; toggleMaximize(): Promise<void>; close(): Promise<void>; isMaximized(): Promise<boolean> };
+const tauriWindow = (): TauriWindow | null =>
+  (window as unknown as { __TAURI__?: { window?: { getCurrentWindow?: () => TauriWindow } } }).__TAURI__?.window?.getCurrentWindow?.() ?? null;
+/** True inside the desktop app, where the page draws the window's title bar. */
+export const hasWindowControls = () => tauriWindow() !== null;
+const windowText = {
+  es: { minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Cerrar' },
+  en: { minimize: 'Minimize', maximize: 'Maximize', restore: 'Restore', close: 'Close' },
+  ja: { minimize: '最小化', maximize: '最大化', restore: '元に戻す', close: '閉じる' },
+  zh: { minimize: '最小化', maximize: '最大化', restore: '还原', close: '关闭' },
+};
+export function WindowControls({ language }: { language: Lang }) {
+  const [maximized, setMaximized] = useState(false);
+  const win = tauriWindow();
+  useEffect(() => {
+    if (!win) return;
+    const update = () => { void win.isMaximized().then(setMaximized).catch(() => undefined); };
+    update(); window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [win]);
+  if (!win) return null;
+  const t = windowText[language];
+  const icon = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.2, strokeLinecap: 'square' as const };
+  return <div className="app-window-controls">
+    <button type="button" className="app-window-button" aria-label={t.minimize} title={t.minimize} onClick={() => void win.minimize()}>
+      <svg viewBox="0 0 10 10" {...icon}><path d="M0 5.5h10" /></svg></button>
+    <button type="button" className="app-window-button" aria-label={maximized ? t.restore : t.maximize} title={maximized ? t.restore : t.maximize} onClick={() => void win.toggleMaximize()}>
+      {maximized ? <svg viewBox="0 0 10 10" {...icon}><rect x="0.5" y="2.5" width="7" height="7" /><path d="M2.5 2.5V.5h7v7h-2" /></svg>
+        : <svg viewBox="0 0 10 10" {...icon}><rect x="0.5" y="0.5" width="9" height="9" /></svg>}</button>
+    <button type="button" className="app-window-button app-window-close" aria-label={t.close} title={t.close} onClick={() => void win.close()}>
+      <svg viewBox="0 0 10 10" {...icon}><path d="M0 0l10 10M10 0L0 10" /></svg></button>
+  </div>;
+}

@@ -1,7 +1,22 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The Live page needs no app commands: it talks to the local server only.",
-  "windows": ["main"],
-  "permissions": []
+  "description": "The Live page is served by the app's own local server; it may only move, minimize, maximize and close its window (the in-app title bar, FORK.md 35).",
+  "windows": [
+    "main"
+  ],
+  "remote": {
+    "urls": [
+      "http://127.0.0.1:5191/*",
+      "http://localhost:5191/*"
+    ]
+  },
+  "permissions": [
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-close",
+    "core:window:allow-start-dragging",
+    "core:window:allow-internal-toggle-maximize"
+  ]
 }

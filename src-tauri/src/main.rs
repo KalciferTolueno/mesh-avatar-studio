@@ -44,6 +44,11 @@ fn main() {
                 .title("Mesh Avatar Studio · En vivo")
                 .inner_size(1440.0, 900.0)
                 .min_inner_size(900.0, 600.0)
+                // fork (FORK.md 35): no Windows frame; the Live page draws its own title bar with
+                // minimize, maximize and close (src/live/LiveShell.tsx), and keeps the shadow
+                // and the resize borders
+                .decorations(false)
+                .shadow(true)
                 .build()?;
             Ok(())
         })

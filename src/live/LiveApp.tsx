@@ -29,7 +29,7 @@ import { LiveItems } from './LiveItems';
 import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
 import { LiveBackground } from './LiveBackground';
 import { LiveProjectPicker } from './LiveProjectPicker';
-import { LanguageMenu, ShellRail, StatusMeters, shellIcons, shellText, useFpsCounter, useShellGroup, type ShellGroup } from './LiveShell';
+import { LanguageMenu, WindowControls, hasWindowControls, ShellRail, StatusMeters, shellIcons, shellText, useFpsCounter, useShellGroup, type ShellGroup } from './LiveShell';
 import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
 import { loadChangedAt, loadFrameSettings, parseFrame, saveChangedAt, saveFrameSettings, sendFrame } from './frame';
 
@@ -300,14 +300,14 @@ export function LiveApp() {
   const group = (id: ShellGroup, children: React.ReactNode) => <div className="app-group" data-group={id} hidden={shellGroup !== id}>{children}</div>;
   return <main className="live-app app-shell">
     {/* fork: Edit / Live switch and theme toggle (src/theme/ThemeControls.tsx); the back link keeps its name */}
-    <header className="live-header app-bar"><div className="live-header-actions">
-      <span className="app-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 10L7 4l4 3M18 10l-1-6-4 3" /><circle cx="12" cy="13" r="7" /><path d="M9.5 15.5c.7.6 1.5.9 2.5.9s1.8-.3 2.5-.9" /></svg></span>
-      <h1>Mesh Avatar Studio</h1>
+    <header className="live-header app-bar" data-tauri-drag-region data-frameless={hasWindowControls()}><div className="live-header-actions" data-tauri-drag-region>
+      <span className="app-mark" aria-hidden="true" data-tauri-drag-region><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 10L7 4l4 3M18 10l-1-6-4 3" /><circle cx="12" cy="13" r="7" /><path d="M9.5 15.5c.7.6 1.5.9 2.5.9s1.8-.3 2.5-.9" /></svg></span>
+      <h1 data-tauri-drag-region>Mesh Avatar Studio</h1>
       {/* fork: the desktop app (src-tauri) has no editor; both choose the project here */}
       {import.meta.env.MODE !== 'desktop' && <ModeSwitch language={language} current="live" edit={<a href="/" aria-label={t.back}>{themeLabel(language)}</a>} />}
       <LiveProjectPicker current={settings.project} language={language} /></div>
-      <div className="live-header-actions"><ThemeToggle language={language} />
-      <LanguageMenu language={language} onChange={setLanguage} /></div>
+      <div className="live-header-actions" data-tauri-drag-region><ThemeToggle language={language} />
+      <LanguageMenu language={language} onChange={setLanguage} /><WindowControls language={language} /></div>
     </header>
     <div className="live-layout app-main"><section className="live-view app-stage"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
       <canvas ref={canvas} data-testid="live-avatar" className={frame.locked ? undefined : 'live-movable'} />

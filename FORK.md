@@ -707,6 +707,29 @@ git checkout mi-version && git merge main
   movimiento.
 - **Archivos:** `src/live/LiveShell.tsx` (texto e icono), `src/live/LiveApp.tsx`.
 
+### 35. Ventana sin marco de Windows: los botones van en la barra de la app
+
+- **Antes:** la app de escritorio tenía la barra de título de Windows encima de la barra de la app.
+- **Ahora:** la ventana se crea sin decoraciones (`.decorations(false)`) y con sombra
+  (`.shadow(true)`, que mantiene los bordes para redimensionar y el encaje en los bordes de la
+  pantalla). La barra superior de En vivo hace de barra de título:
+  - **Minimizar, maximizar/restaurar y cerrar** a la derecha (`WindowControls` en
+    `src/live/LiveShell.tsx`), con el estilo de Windows (cerrar en rojo al pasar el ratón). El
+    icono de maximizar cambia a restaurar según el estado.
+  - **Arrastrar** la ventana desde las zonas vacías, el logo o el título
+    (`data-tauri-drag-region`), y **doble clic** para maximizar o restaurar.
+  - Solo aparece dentro de la app (cuando existe `window.__TAURI__`); en el navegador la página
+    queda igual.
+- **Permisos:** `app.withGlobalTauri: true` y la capacidad `default` concede a la página servida
+  en `http://127.0.0.1:5191` y `localhost:5191` (`remote.urls`) solo `minimize`,
+  `toggle-maximize`, `is-maximized`, `close`, `start-dragging` e `internal-toggle-maximize` de
+  su ventana.
+- **Comprobado** con UI Automation sobre la ventana real: los tres botones están; maximizar,
+  restaurar y minimizar cambian el estado de la ventana. Captura: sin barra de Windows.
+- **Archivos:** `src-tauri/src/main.rs`, `src-tauri/tauri.conf.json`,
+  `src-tauri/capabilities/default.json`, `src/live/LiveShell.tsx`, `src/live/LiveApp.tsx`,
+  `src/live/shell.css`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |
