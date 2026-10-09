@@ -403,6 +403,27 @@ git checkout mi-version && git merge main
   `src/physics/settings.ts`, `src/physics/PhysicsControls.tsx`, `tests/physics-settings.test.ts`,
   `tests/physics-groups.test.ts`.
 
+### 21. Cara perdida (como VTube Studio)
+
+- **Antes:** con la cámara encendida, si la cara no se veía durante 0,5 s el avatar volvía al
+  reposo (peso con constante 0,2 s, parámetros 0,175 s) y pasaba a las animaciones de espera del
+  motor. Nada era configurable.
+- **Ahora:** sección **Cara perdida** en En vivo (`src/live/LiveLost.tsx`):
+  **Esperar antes de reaccionar** (`lostDelay`, 0,5 s por defecto), **Tiempo de vuelta al
+  reposo** (`lostReturn`, 0,6 s: reproduce las constantes originales), **Mientras no te ve**
+  (`lostMode`: animaciones de espera como antes, quieto respirando y parpadeando, o mantener la
+  última postura de cabeza y cuerpo con la cara relajada), **Expresión mientras no te ve**
+  (`lostExpression`, p. ej. Sueño; `ExpressionMixer.setAuto`, no altera las expresiones
+  activadas con teclas) y **Animación al volver** (`foundAnimation`, p. ej. Saludar; también se
+  reproduce la primera vez que la cámara encuentra la cara). Con los valores por defecto se
+  comporta como el original. Sin cámara encendida no cambia nada.
+- `FacePose.sample` devuelve además `hold` y `lostFor` (segundos sin ver la cara).
+- **Archivos nuevos:** `src/live/LiveLost.tsx`.
+- **Archivos del original tocados:** `src/live/tracking.ts` (opciones `lost*`, `sample`),
+  `src/live/LiveApp.tsx`. Del fork: `src/expressions/presets.ts` (`setAuto`),
+  `src/expressions/LiveExpressions.tsx` (exporta `expressionText`), `tests/live-tracking.test.ts`,
+  `tests/expressions.test.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

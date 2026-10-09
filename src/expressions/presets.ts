@@ -21,12 +21,15 @@ const RANGES = new Map<string, [number, number]>([...PARAMS.map(p => [p.id, [p.m
 export class ExpressionMixer {
   readonly active = new Set<string>();
   private mix: Record<string, number> = Object.fromEntries(EXPRESSIONS.map(e => [e.id, 0]));
+  // shown on its own while the face is lost (src/live/LiveLost.tsx), apart from the toggled ones
+  private auto: string | null = null;
   toggle(id: string) { if (!this.active.delete(id)) this.active.add(id); }
+  setAuto(id: string | null) { this.auto = EXPRESSIONS.some(e => e.id === id) ? id : null; }
   clear() { this.active.clear(); }
   /** Fade each expression towards on / off over about a quarter of a second. */
   step(dt: number) {
     const k = 1 - Math.exp(-Math.max(0, dt) / 0.08);
-    for (const e of EXPRESSIONS) this.mix[e.id] += ((this.active.has(e.id) ? 1 : 0) - this.mix[e.id]) * k;
+    for (const e of EXPRESSIONS) this.mix[e.id] += ((this.active.has(e.id) || this.auto === e.id ? 1 : 0) - this.mix[e.id]) * k;
   }
   any() { return EXPRESSIONS.some(e => this.mix[e.id] > 0.002); }
   /** The parameters with every visible expression applied on top. */

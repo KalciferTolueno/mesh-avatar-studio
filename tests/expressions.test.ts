@@ -65,3 +65,14 @@ test('breathing rides on tracking and blinks follow the chosen mode', async () =
   }
   expect(open).toBe(1);
 });
+
+test('an automatic expression (face lost) fades in and out without touching the toggled ones', () => {
+  const mixer = new ExpressionMixer();
+  mixer.setAuto('sleepy');
+  for (let i = 0; i < 60; i++) mixer.step(1 / 60);
+  expect(mixer.active.size).toBe(0); expect(mixer.any()).toBe(true);
+  expect(mixer.apply({ eyeLOpen: 1 }).eyeLOpen).toBeCloseTo(0.35, 2);
+  mixer.setAuto('nonsense');
+  for (let i = 0; i < 60; i++) mixer.step(1 / 60);
+  expect(mixer.any()).toBe(false);
+});

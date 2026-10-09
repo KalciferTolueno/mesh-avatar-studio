@@ -3,7 +3,7 @@ import { loadLighting, saveLighting } from '../lighting/settings';
 import { LivePhysics } from '../physics/LivePhysics';
 import { LiveAnimations, LiveExpressions } from '../expressions/LiveExpressions';
 import { ExpressionMixer } from '../expressions/presets';
-import { AnimationPlayer } from '../expressions/animations';
+import { AnimationPlayer, ANIMATIONS } from '../expressions/animations';
 import { LifeLayer } from '../expressions/life';
 import { VowelDetector, VowelMouth, type VowelCalibration } from '../expressions/vowels';
 import { VowelCalibrationPanel } from '../expressions/VowelCalibrationPanel';
@@ -22,19 +22,22 @@ import { liveText } from './i18n';
 import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
 import { LiveFrame, useFrameCanvas } from './LiveFrame';
+import { LiveLost, LOST_DEFAULTS } from './LiveLost';
 import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
 // like VTube Studio's sample models: pitch ±20° -> ±30°, livelier brows, blush and wide eyes on
 const EXPRESSION_DEFAULTS = { pitchBoost: 1.4, eyeWideGain: 1, browGain: 1.3, blushGain: 0.5, smileEyes: 1, breathing: 0.8, blinkMode: 'both' as const, voiceVowels: true, vowelSmooth: 0.5, vowelStrength: 0.85 };
-const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6, ...EXPRESSION_DEFAULTS };
+const DEFAULT_OPTIONS: Required<TrackingOptions> = { mirror: true, sensitivity: 1, smoothing: 0.35, mouthSensitivity: 1.5, linkEyes: true, bodySensitivity: 1, screenMove: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6, ...EXPRESSION_DEFAULTS, ...LOST_DEFAULTS };
 const MOVEMENT_DEFAULTS = { screenMove: 1, bodySensitivity: 1, limitSide: 1, limitUp: 1, limitDown: 1, limitIn: 1, limitOut: 1, limitLeanForward: 0.6, limitLeanBack: 0.6 };
 // Tracking adjustments are a per-browser convenience; anything unreadable falls back to defaults.
 function loadTrackingOptions(): Required<TrackingOptions> {
   try {
     const saved = JSON.parse(localStorage.getItem(OPTIONS_KEY) ?? '{}');
-    return Object.fromEntries(Object.entries(DEFAULT_OPTIONS).map(([key, value]) =>
+    const options = Object.fromEntries(Object.entries(DEFAULT_OPTIONS).map(([key, value]) =>
       [key, typeof saved[key] === typeof value && (typeof value !== 'number' || Number.isFinite(saved[key])) ? saved[key] : value])) as Required<TrackingOptions>;
+    if (!['idle', 'rest', 'hold'].includes(options.lostMode)) options.lostMode = 'idle';
+    return options;
   } catch { return { ...DEFAULT_OPTIONS }; }
 }
 
@@ -67,6 +70,8 @@ export function LiveApp() {
   const vowels = useRef(new VowelDetector());
   const vowelMouth = useRef(new VowelMouth());
   const vowelCalibration = useRef<VowelCalibration | null>(null);
+  // fork: face lost for longer than the wait (src/live/LiveLost.tsx)
+  const faceLost = useRef(false);
   const controls = useRef({ options, gain, micState, cameraState }); controls.current = { options, gain, micState, cameraState };
   const refreshDevices = () => { void navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(() => undefined); };
   useEffect(() => {
@@ -91,12 +96,25 @@ export function LiveApp() {
     void createAvatarView(canvas.current!, settings, (avatar, now, dt) => {
       const control = controls.current, sampled = pose.current.sample(now, dt, control.options);
       setTracking(sampled.tracking);
-      avatar.setAutoIdle(!sampled.tracking); avatar.setAutoMotion(!sampled.tracking);
+      // fork: with the camera on and the face lost, the chosen behaviour (src/live/LiveLost.tsx):
+      // idle motions as before, a still rest, or the held pose; plus an expression meanwhile and
+      // an animation when the face is back
+      const mixer = expressions.current, player = animations.current;
+      const cameraOn = control.cameraState === 'running', lost = cameraOn && !sampled.tracking;
+      const idle = !sampled.tracking && (!lost || (control.options.lostMode ?? 'idle') === 'idle');
+      avatar.setAutoIdle(idle); avatar.setAutoMotion(idle);
+      if (lost) faceLost.current = true;
+      else if (sampled.tracking && faceLost.current) {
+        faceLost.current = false;
+        const back = ANIMATIONS.find(a => a.id === control.options.foundAnimation);
+        if (back) player.play(back.id);
+      }
+      mixer.setAuto(lost ? control.options.lostExpression || null : null);
       // fork: expressions toggled with keys sit on top of tracking (src/expressions)
       // and so do animations on keys (src/expressions/animations.ts)
-      const mixer = expressions.current, player = animations.current; mixer.step(dt); player.step(dt);
-      // breathing and blinking while tracking (src/expressions/life.ts); idle motion does it otherwise
-      const tracked = sampled.tracking ? life.current.apply(sampled.params, dt, { breathing: control.options.breathing ?? 0.8, blinkMode: control.options.blinkMode ?? 'both' }) : sampled.params;
+      mixer.step(dt); player.step(dt);
+      // breathing and blinking while tracking or holding the pose (src/expressions/life.ts); idle motion does it otherwise
+      const tracked = sampled.tracking || sampled.hold ? life.current.apply(sampled.params, dt, { breathing: control.options.breathing ?? 0.8, blinkMode: control.options.blinkMode ?? 'both' }) : sampled.params;
       // the microphone's vowels shape the drawn mouths while speaking (src/expressions/vowels.ts)
       const micOn = control.micState === 'micOn', level = micOn ? microphone.current?.level(control.gain) ?? 0 : 0;
       const calibrating = vowelCalibration.current;
@@ -109,7 +127,7 @@ export function LiveApp() {
       avatar.setMouthBlend(0.03 + 0.15 * smooth);
       avatar.setVoiceVowel(vowel);
       const voice: Record<string, number> = form === null ? {} : { mouthForm: form };
-      if (sampled.tracking || !(mixer.any() || player.any() || form !== null)) avatar.setParameters({ ...mixer.apply(player.apply(tracked)), ...voice }, sampled.weight);
+      if (sampled.tracking || sampled.hold || !(mixer.any() || player.any() || form !== null)) avatar.setParameters({ ...mixer.apply(player.apply(tracked)), ...voice }, sampled.weight);
       else {
         // without the camera, only what they drive is set; idle motion keeps the rest alive
         const all = mixer.apply(player.apply(neutralParameters));
@@ -202,6 +220,7 @@ export function LiveApp() {
       <LiveExpressions mixer={expressions} language={language} />
       <LiveAnimations player={animations} language={language} />
       <LiveFrame value={frame} onChange={setFrame} language={language} />
+      <LiveLost options={options} onChange={patch => setOptions(current => ({ ...current, ...patch }))} language={language} />
       {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
       <details className="live-lighting live-movement" data-testid="movement-section" open>
         <summary><Icon name="live" />{t.movement}</summary>

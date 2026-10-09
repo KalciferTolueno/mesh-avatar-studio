@@ -30,6 +30,12 @@ export interface TrackingOptions {
   vowelSmooth?: number; vowelStrength?: number;
   /** Caps on the forward / back body lean, 0–1 of its full range (default 1). */
   limitLeanForward?: number; limitLeanBack?: number;
+  /** Fork (src/live/LiveLost.tsx): when the face is lost — seconds before reacting [0.5], seconds
+   * to return to rest [0.6], and what the avatar does meanwhile: idle motions, stay at rest, or
+   * hold the last head / body pose ['idle']. Live only: expression shown while lost and
+   * animation played when the face is back ('' for none). */
+  lostDelay?: number; lostReturn?: number; lostMode?: 'idle' | 'rest' | 'hold';
+  lostExpression?: string; foundAnimation?: string;
 }
 /** Blink score range per eye: [relaxed open score, score when fully closed]. */
 export type EyeRanges = Record<'Left' | 'Right', readonly [number, number]>;
@@ -193,7 +199,10 @@ export class FacePose {
     return { Left: range('Left'), Right: range('Right') };
   }
   sample(now: number, dt: number, options: TrackingOptions) {
-    const tracking = !!this.face && now - this.seen <= 500;
+    const delay = clamp(options.lostDelay ?? 0.5, 0, 10), back = clamp(options.lostReturn ?? 0.6, 0.05, 10);
+    const tracking = !!this.face && now - this.seen <= delay * 1000;
+    // hold: the last head and body pose stays (the face relaxes); idle / rest hand the avatar back
+    const hold = !tracking && !!this.face && options.lostMode === 'hold';
     if (tracking) {
       const target = mapFace(this.face!, this.neutral, options, this.eyeRanges(), this.origin);
       // the Smoothing slider scales every cutoff: 0 is twice as responsive, 1 eight times calmer
@@ -203,12 +212,18 @@ export class FacePose {
       // a closed eye snaps shut: blinks are faster than any filter should allow
       for (const eye of ['eyeLOpen', 'eyeROpen']) if (target[eye] <= 0.02) this.params[eye] = 0;
     } else {
-      this.params = smoothParameters(this.params, faceNeutral, dt, 0.7);
+      const k = 1 - Math.exp(-Math.max(0, dt) / (back * 0.175 / 0.6));
+      this.params = Object.fromEntries(Object.entries(faceNeutral).map(([key, value]) => {
+        const current = this.params[key] ?? value;
+        return [key, hold && /^(angle|bodyAngle|position)/.test(key) ? current : current + (value - current) * k];
+      }));
       for (const filter of Object.values(this.filters)) filter.reset();
     }
-    this.weight = tracking ? 1 : this.weight * Math.exp(-dt / 0.2);
+    this.weight = tracking || hold ? 1 : this.weight * Math.exp(-dt / (back / 3));
     if (this.weight < 0.005) this.weight = 0;
-    return { tracking, params: { ...this.params }, weight: this.weight };
+    // seconds since the face was last seen (Infinity before it ever was)
+    const lostFor = tracking ? 0 : Math.max(0, (now - this.seen) / 1000);
+    return { tracking, hold, lostFor, params: { ...this.params }, weight: this.weight };
   }
 }
 export function rmsLevel(samples: Float32Array, gain: number): number {

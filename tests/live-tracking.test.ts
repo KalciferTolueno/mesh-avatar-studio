@@ -171,3 +171,19 @@ test('expression ranges amplify pitch, wide eyes, brows and blush only when aske
   const closed = mapFace(readFace(result(0, { eyeWideLeft: 0.2, eyeWideRight: 0.2, eyeBlinkLeft: 0.9, eyeBlinkRight: 0.9 }))!, neutral, { ...options, eyeWideGain: 1 });
   expect(closed.eyeWide).toBe(0);
 });
+test('face lost: the wait, the return time and holding the last pose are configurable', () => {
+  const seen = () => { const pose = new FacePose(); pose.update(result(30, { eyeBlinkLeft: 0.9 }), 0); pose.sample(0, 0.016, options); return pose; };
+  // a longer wait keeps following the last face; a slower return keeps more of it after the same time
+  expect(seen().sample(1500, 0.016, { ...options, lostDelay: 2 })).toMatchObject({ tracking: true, lostFor: 0 });
+  const quick = seen(), slow = seen();
+  let q = quick.sample(600, 0.016, options), s = slow.sample(600, 0.016, { ...options, lostReturn: 2 });
+  expect(q.lostFor).toBeCloseTo(0.6);
+  for (let t = 616; t <= 900; t += 16) { q = quick.sample(t, 0.016, options); s = slow.sample(t, 0.016, { ...options, lostReturn: 2 }); }
+  expect(s.weight).toBeGreaterThan(q.weight); expect(s.params.angleX).toBeGreaterThan(q.params.angleX);
+  // hold: the head stays turned at full weight while the face relaxes
+  const hold = seen();
+  let h = hold.sample(600, 0.016, { ...options, lostMode: 'hold' });
+  for (let t = 616; t <= 5000; t += 16) h = hold.sample(t, 0.016, { ...options, lostMode: 'hold' });
+  expect(h).toMatchObject({ tracking: false, hold: true, weight: 1 });
+  expect(h.params.angleX).toBeCloseTo(30); expect(h.params.eyeLOpen).toBeCloseTo(faceNeutral.eyeLOpen);
+});

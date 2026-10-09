@@ -4,7 +4,7 @@ import { HotkeyPanel } from './HotkeyPanel';
 import { ANIMATIONS, type AnimationId, type AnimationPlayer } from './animations';
 import { EXPRESSIONS, type ExpressionMixer } from './presets';
 
-const text = {
+export const expressionText = {
   es: { title: 'Expresiones', happy: 'Feliz', blush: 'Sonrojo', angry: 'Enfado', sad: 'Triste', surprised: 'Sorpresa', sleepy: 'Sueño', off: 'Quitar todas', hint: 'Pulsa la tecla (o el botón) para activar o quitar cada expresión; se pueden combinar. Las teclas funcionan con esta ventana en primer plano: un navegador no puede leer teclas mientras usas otra aplicación. Esc quita todas.',
     animations: 'Animaciones', nod: 'Asentir', no: 'Negar', greet: 'Saludar', giggle: 'Reír', surprise: 'Sorprenderse', tilt: 'Ladear cabeza', think: 'Pensar', shy: 'Timidez', wink: 'Guiño', animHint: 'Cada tecla reproduce una animación corta sobre tu movimiento, con cámara o sin ella. Pulsarla otra vez la reinicia.' },
   en: { title: 'Expressions', happy: 'Happy', blush: 'Blush', angry: 'Angry', sad: 'Sad', surprised: 'Surprised', sleepy: 'Sleepy', off: 'Clear all', hint: 'Press the key (or the button) to toggle each expression; they can be combined. Keys work while this window is in front: a browser cannot read keys while another app is focused. Esc clears all.',
@@ -14,10 +14,10 @@ const text = {
   zh: { title: '表情', happy: '开心', blush: '脸红', angry: '生气', sad: '难过', surprised: '惊讶', sleepy: '困', off: '全部取消', hint: '按键或按钮切换各表情，可叠加。按键仅在此窗口位于前台时有效。Esc 全部取消。',
     animations: '动作', nod: '点头', no: '摇头', greet: '打招呼', giggle: '笑', surprise: '吓一跳', tilt: '歪头', think: '思考', shy: '害羞', wink: '眨眼', animHint: '每个按键在你的动作之上播放一段短动作。' },
 };
-type Lang = keyof typeof text;
+type Lang = keyof typeof expressionText;
 
 export function LiveExpressions({ mixer, language }: { mixer: MutableRefObject<ExpressionMixer>; language: Lang }) {
-  const t = text[language];
+  const t = expressionText[language];
   const [active, setActive] = useState<string[]>([]);
   const sync = () => setActive([...mixer.current.active]);
   const clear = () => { mixer.current.clear(); sync(); };
@@ -30,7 +30,7 @@ export function LiveExpressions({ mixer, language }: { mixer: MutableRefObject<E
 }
 
 export function LiveAnimations({ player, language }: { player: MutableRefObject<AnimationPlayer>; language: Lang }) {
-  const t = text[language];
+  const t = expressionText[language];
   const [current, setCurrent] = useState<string | null>(null);
   // the highlight follows the animation until it ends
   useEffect(() => {
