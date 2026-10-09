@@ -1,6 +1,7 @@
 import { lightingFromQuery, writeLightingQuery, type LightingSettings } from '../lighting/settings';
 import { physicsFromQuery, writePhysicsQuery, type PhysicsTuning } from '../physics/settings';
 import { frameFromQuery, writeFrameQuery, type AvatarFrame } from './frame';
+import { backgroundFromQuery, writeBackgroundQuery, type BackgroundImage } from './background';
 export const SAMPLE_PROJECT = 'sample-miko-qipao';
 export interface ViewSettings {
   project: string;
@@ -10,6 +11,7 @@ export interface ViewSettings {
   lighting?: LightingSettings;
   physics?: PhysicsTuning;
   frame?: AvatarFrame;
+  backgroundImage?: BackgroundImage;
 }
 export function backgroundColor(value: string | null): string {
   if (value === 'green') return '#00ff00';
@@ -24,7 +26,9 @@ export function viewSettings(search: string): ViewSettings {
     // fork: physics adjustments (src/physics)
     ...(physicsFromQuery(query) ? { physics: physicsFromQuery(query)! } : {}),
     // fork: avatar position and size in the frame (src/live/frame.ts)
-    ...(frameFromQuery(query) ? { frame: frameFromQuery(query)! } : {}) };
+    ...(frameFromQuery(query) ? { frame: frameFromQuery(query)! } : {}),
+    // fork: picture or video behind the avatar (src/live/background.ts)
+    ...(backgroundFromQuery(query) ? { backgroundImage: backgroundFromQuery(query)! } : {}) };
 }
 export function streamUrl(settings: ViewSettings, origin: string): string {
   const url = new URL('/stream.html', origin);
@@ -32,5 +36,6 @@ export function streamUrl(settings: ViewSettings, origin: string): string {
   if (settings.lighting) writeLightingQuery(url.searchParams, settings.lighting);
   if (settings.physics) writePhysicsQuery(url.searchParams, settings.physics);
   if (settings.frame) writeFrameQuery(url.searchParams, settings.frame);
+  if (settings.backgroundImage) writeBackgroundQuery(url.searchParams, settings.backgroundImage);
   return url.href;
 }

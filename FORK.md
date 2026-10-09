@@ -456,6 +456,26 @@ git checkout mi-version && git merge main
   `src/engine/index.ts`, `src/live/LiveApp.tsx`, `src/live/stream.ts`, `vite.config.ts`. Del fork:
   `src/live/LiveFrame.tsx` (arrastre y rueda sobre accesorios), `src/theme/theme.css`.
 
+### 23. Imágenes y videos de fondo
+
+- **Antes:** el fondo solo podía ser transparente, verde, azul o un color.
+- **Ahora:** en **Fondo** (`src/live/LiveBackground.tsx`): **Imagen o video de fondo** con
+  **Subir imagen o video…** (PNG, JPEG, WebP, GIF animado, MP4 o WebM, hasta 60 MB; el video se
+  repite en bucle y sin sonido), lista de los ya subidos, **Ajuste del fondo** (cubrir, completo,
+  estirar) y **Borrar este archivo**. Se muestra detrás del lienzo del avatar
+  (`showBackground` en `src/live/background.ts`: fondo CSS del lienzo para imágenes, un
+  `<video>` colocado justo debajo para videos), tanto en la vista previa (dentro del recuadro de
+  Posición y tamaño) como en la vista de stream. Se guarda por proyecto en el navegador
+  (`mesh-avatar:background:<proyecto>`), va en la URL de OBS (`bgimg=<archivo>&bgfit=…`, solo si
+  hay uno) y se envía en vivo (evento `studio:background`, repetido cada segundo).
+- **Archivos:** `projects/<proyecto>/backgrounds/` mediante el plugin de la sección 22
+  (`/__items/<proyecto>/backgrounds`, `upload-background` con los bytes en bruto, y
+  `background/<archivo>`), con las mismas reglas: solo origen local, nombres seguros, sin salir
+  del proyecto y tipo comprobado por los bytes (GIF, MP4, WebM, PNG, JPEG, WebP).
+- **Archivos nuevos:** `src/live/background.ts`, `src/live/LiveBackground.tsx`.
+- **Archivos del original tocados:** `src/live/settings.ts`, `src/live/stream.ts`,
+  `src/live/LiveApp.tsx`. Del fork: `src/server/project-items.ts`, `tests/live-items.test.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

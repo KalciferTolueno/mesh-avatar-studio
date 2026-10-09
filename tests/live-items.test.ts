@@ -73,3 +73,46 @@ test('rejects foreign origins, other pictures, bad names and unknown projects', 
   expect((await call('/__items/missing')).status).toBe(404);
   expect((await call('/elsewhere')).status).toBe(-1);
 });
+
+test('background files: types by bytes, strict settings, OBS URL and relay', async () => {
+  const { backgroundType } = await import('../src/server/project-items');
+  const { parseBackground, backgroundFromQuery, writeBackgroundQuery, backgroundMessage } = await import('../src/live/background');
+  expect(backgroundType(Buffer.from('GIF89a\0\0'))).toBe('gif');
+  expect(backgroundType(Buffer.from('\0\0\0\x18ftypisom\0\0'))).toBe('mp4');
+  expect(backgroundType(Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x9f]))).toBe('webm');
+  expect(backgroundType(PNG)).toBe('png');
+  expect(backgroundType(Buffer.from('#!/bin/sh\n'))).toBeNull();
+  expect(parseBackground({ file: 'room-0a1b2c3d.webm', fit: 'contain' })).toEqual({ file: 'room-0a1b2c3d.webm', fit: 'contain' });
+  expect(parseBackground({ file: '../rig.json', fit: 'cover' })).toBeNull();
+  expect(parseBackground({ file: null, fit: 'zoom' })).toBeNull();
+  const query = new URLSearchParams();
+  writeBackgroundQuery(query, { file: null, fit: 'cover' }); expect(query.has('bgimg')).toBe(false);
+  writeBackgroundQuery(query, { file: 'room-0a1b2c3d.png', fit: 'stretch' });
+  expect(backgroundFromQuery(query)).toEqual({ file: 'room-0a1b2c3d.png', fit: 'stretch' });
+  expect(backgroundMessage({ project: 'tigre', background: { file: null, fit: 'cover' } })).toEqual({ project: 'tigre', background: { file: null, fit: 'cover' } });
+  expect(backgroundMessage({ project: 'tigre', background: { file: 'x.exe', fit: 'cover' } })).toBeNull();
+});
+
+async function raw(path: string, bytes: Buffer, name: string) {
+  const request = Readable.from([bytes]) as IncomingMessage;
+  request.url = path; request.method = 'POST';
+  request.headers = { host: '127.0.0.1:5173', 'content-type': 'application/octet-stream', 'x-file-name': encodeURIComponent(name) };
+  let status = 0, payload = '';
+  const response = { writeHead(code: number) { status = code; return response; }, end(value: string) { payload = String(value); } } as unknown as ServerResponse;
+  await projectItemsMiddleware(root)(request, response, () => undefined);
+  return { status, json: () => JSON.parse(payload) };
+}
+
+test('backgrounds upload as raw bytes, list, play back and delete inside the project', async () => {
+  const gif = Buffer.from('GIF89a\x01\0\x01\0\0\0\0;');
+  const upload = await raw('/__items/nova/upload-background', gif, 'Mi Cuarto.gif');
+  expect(upload.status).toBe(200);
+  const file = upload.json().file as string;
+  expect(file).toMatch(/^mi-cuarto-[0-9a-f]{8}\.gif$/);
+  expect((await call('/__items/nova/backgrounds')).json()).toEqual([file]);
+  const served = await call(`/__items/nova/background/${file}`);
+  expect(served.type).toBe('image/gif'); expect(served.bytes.equals(gif)).toBe(true);
+  expect((await raw('/__items/nova/upload-background', Buffer.from('<html>'), 'x.html')).status).toBe(400);
+  expect((await call(`/__items/nova/background/${file}`, 'DELETE')).status).toBe(200);
+  expect((await call('/__items/nova/backgrounds')).json()).toEqual([]);
+});

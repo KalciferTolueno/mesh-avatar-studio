@@ -3,17 +3,28 @@
 // views. Same rules as the local projects API: local origin only, safe names, nothing outside
 // the project folder, pictures checked by their bytes.
 import { randomBytes } from 'node:crypto';
-import { mkdir, readFile, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin, WebSocketClient } from 'vite';
 import { ITEM_FILE, ITEMS_EVENT, itemsMessage, parseItems } from '../live/items';
+import { BACKGROUND_EVENT, BACKGROUND_FILE, backgroundMessage } from '../live/background';
 
 class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
 const inside = (base: string, path: string) => { const rel = relative(base, path); return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel)); };
 const projectName = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
-const MIME: Record<string, string> = { png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg' };
-const MAX_PICTURE = 10 * 1024 * 1024;
+const MIME: Record<string, string> = { png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', gif: 'image/gif', mp4: 'video/mp4', webm: 'video/webm' };
+const MAX_PICTURE = 10 * 1024 * 1024, MAX_BACKGROUND = 60 * 1024 * 1024;
+
+/** Background file type from its bytes (pictures, animated GIF, MP4 or WebM video), or null. */
+export function backgroundType(bytes: Uint8Array): 'png' | 'webp' | 'jpg' | 'gif' | 'mp4' | 'webm' | null {
+  const at = (offset: number, text: string) => [...text].every((ch, i) => bytes[offset + i] === ch.charCodeAt(0));
+  if (bytes.length > 6 && at(0, 'GIF8')) return 'gif';
+  if (bytes.length > 12 && at(4, 'ftyp')) return 'mp4';
+  if (bytes.length > 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) return 'webm';
+  return pictureType(bytes);
+}
+const slugOf = (name: unknown) => (typeof name === 'string' ? name : '').toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 
 /** File extension from the picture's own bytes, or null. */
 export function pictureType(bytes: Uint8Array): 'png' | 'webp' | 'jpg' | null {
@@ -26,12 +37,12 @@ export function pictureType(bytes: Uint8Array): 'png' | 'webp' | 'jpg' | null {
 
 export function projectItemsMiddleware(root: string) {
   const base = resolve(root, 'projects');
-  async function folder(name: string, create = false) {
+  async function folder(name: string, create = false, kind: 'items' | 'backgrounds' = 'items') {
     if (!projectName.test(name) || name === '.' || name === '..') throw new HttpError(400, 'Invalid project name.');
     const project = resolve(base, name);
     if (!inside(base, project) || await realpath(base) !== base) throw new HttpError(400, 'Project root cannot redirect elsewhere.');
     if (!(await stat(project)).isDirectory() || !inside(base, await realpath(project))) throw new HttpError(404, 'Project not found.');
-    const items = resolve(project, 'items');
+    const items = resolve(project, kind);
     if (create) await mkdir(items, { recursive: true });
     try { if (!inside(project, await realpath(items))) throw new HttpError(400, 'Items folder cannot redirect elsewhere.'); }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
@@ -42,6 +53,12 @@ export function projectItemsMiddleware(root: string) {
     const chunks: Buffer[] = []; let size = 0;
     for await (const chunk of req) { size += chunk.length; if (size > limit) throw new HttpError(413, 'Request is too large.'); chunks.push(chunk); }
     try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new HttpError(400, 'Invalid JSON.'); }
+  }
+  async function readRaw(req: IncomingMessage, limit: number) {
+    if (req.headers['content-type']?.split(';')[0] !== 'application/octet-stream') throw new HttpError(400, 'Send the file bytes.');
+    const chunks: Buffer[] = []; let size = 0;
+    for await (const chunk of req) { size += chunk.length; if (size > limit) throw new HttpError(413, 'File is too large.'); chunks.push(chunk); }
+    return Buffer.concat(chunks);
   }
   async function atomicWrite(dir: string, file: string, data: string | Uint8Array) {
     const temporary = resolve(dir, `.${file}-${randomBytes(6).toString('hex')}.tmp`);
@@ -76,10 +93,35 @@ export function projectItemsMiddleware(root: string) {
         const bytes = Buffer.from(body.data, 'base64'), type = pictureType(bytes);
         if (!type) throw new HttpError(400, 'Send a PNG, WebP or JPEG picture.');
         if (bytes.length > MAX_PICTURE) throw new HttpError(413, 'Picture is too large.');
-        const slug = (typeof body.name === 'string' ? body.name : '').toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'item';
+        const slug = slugOf(body.name) || 'item';
         const stored = `${slug}-${randomBytes(4).toString('hex')}.${type}`;
         await atomicWrite(await folder(name, true), stored, bytes);
         json(200, { file: stored }); return;
+      }
+      // fork (src/live/background.ts): background pictures and videos
+      if (parts.length === 2 && action === 'backgrounds' && req.method === 'GET') {
+        const dir = await folder(name, false, 'backgrounds');
+        let files: string[] = [];
+        try { files = (await readdir(dir)).filter(entry => BACKGROUND_FILE.test(entry)).sort(); }
+        catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+        json(200, files); return;
+      }
+      if (parts.length === 2 && action === 'upload-background' && req.method === 'POST') {
+        const bytes = await readRaw(req, MAX_BACKGROUND), type = backgroundType(bytes);
+        if (!type) throw new HttpError(400, 'Send a PNG, JPEG, WebP or GIF picture, or an MP4 or WebM video.');
+        let original = '';
+        try { original = decodeURIComponent(String(req.headers['x-file-name'] ?? '')); } catch { /* keep the default name */ }
+        const stored = `${slugOf(original) || 'background'}-${randomBytes(4).toString('hex')}.${type}`;
+        await atomicWrite(await folder(name, true, 'backgrounds'), stored, bytes);
+        json(200, { file: stored }); return;
+      }
+      if (parts.length === 3 && action === 'background' && BACKGROUND_FILE.test(file) && (req.method === 'GET' || req.method === 'DELETE')) {
+        const dir = await folder(name, false, 'backgrounds'), path = resolve(dir, file);
+        if (!inside(dir, path)) throw new HttpError(400, 'Invalid file.');
+        if (req.method === 'DELETE') { await unlink(path); json(200, { deleted: file }); return; }
+        const bytes = await readFile(path);
+        res.writeHead(200, { 'Content-Type': MIME[file.split('.').pop()!], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Length': String(bytes.length) });
+        res.end(bytes); return;
       }
       if (parts.length === 3 && action === 'file' && ITEM_FILE.test(file) && (req.method === 'GET' || req.method === 'DELETE')) {
         const items = await folder(name), path = resolve(items, file);
@@ -110,6 +152,10 @@ export function projectItems(root: string): Plugin {
         if (!message || now - (last.get(client.socket) ?? -Infinity) < 1000 / 30) return;
         last.set(client.socket, now);
         server.ws.send(ITEMS_EVENT, message);
+      });
+      server.ws.on(BACKGROUND_EVENT, data => {
+        const message = backgroundMessage(data);
+        if (message) server.ws.send(BACKGROUND_EVENT, message);
       });
     },
   };

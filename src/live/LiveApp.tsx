@@ -25,6 +25,8 @@ import { LiveFrame, useFrameCanvas } from './LiveFrame';
 import { LiveLost, LOST_DEFAULTS } from './LiveLost';
 import { LiveItems } from './LiveItems';
 import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
+import { LiveBackground } from './LiveBackground';
+import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
 import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
@@ -45,7 +47,7 @@ function loadTrackingOptions(): Required<TrackingOptions> {
 
 export function LiveApp() {
   const { language, setLanguage } = useI18n(), t = liveText[language];
-  const [settings, setSettings] = useState(() => { const view = viewSettings(location.search); return { ...view, lighting: view.lighting ?? loadLighting(view.project), physics: view.physics ?? loadPhysics(view.project) }; });
+  const [settings, setSettings] = useState(() => { const view = viewSettings(location.search); return { ...view, lighting: view.lighting ?? loadLighting(view.project), physics: view.physics ?? loadPhysics(view.project), backgroundImage: view.backgroundImage ?? loadBackground(view.project) }; });
   const [lightingOpen, setLightingOpen] = useState(false);
   // fork: avatar position and size in the frame (src/live/LiveFrame.tsx)
   const [frame, setFrame] = useState(() => loadFrameSettings(settings.project));
@@ -208,6 +210,22 @@ export function LiveApp() {
     if (!top || !bottom || !centre) return null;
     return { x: centre[0], y: centre[1], scale: Math.abs(bottom[1] - top[1]) / 4 / width };
   };
+  // fork: picture or video behind the avatar (src/live/background.ts), shown on the preview
+  // canvas, saved per project and relayed to the stream views (repeated every second)
+  const backgroundRef = useRef(settings.backgroundImage); backgroundRef.current = settings.backgroundImage;
+  useEffect(() => {
+    saveBackground(settings.project, settings.backgroundImage);
+    return canvas.current ? showBackground(canvas.current, settings.project, settings.backgroundImage) : undefined;
+  }, [settings.project, settings.backgroundImage]);
+  useEffect(() => {
+    let sent = backgroundRef.current, at = performance.now();
+    const timer = setInterval(() => {
+      const now = performance.now();
+      if (sent === backgroundRef.current && now - at < 1000) return;
+      sent = backgroundRef.current; at = now; sendBackground(settings.project, sent);
+    }, 100);
+    return () => clearInterval(timer);
+  }, [settings.project]);
   const removeItemFile = (file: string) => { void fetch(`/__items/${encodeURIComponent(settings.project)}/file/${encodeURIComponent(file)}`, { method: 'DELETE' }).catch(() => undefined); };
   const changeLighting = (lighting: typeof settings.lighting) => setSettings(current => ({ ...current, lighting }));
   const cameraActive = cameraState === 'starting' || cameraState === 'running';
@@ -252,6 +270,7 @@ export function LiveApp() {
       <section><h2>{t.background}</h2><select aria-label={t.background} value={settings.background} onChange={event => setSettings(current => ({ ...current, background: backgroundColor(event.target.value) }))}>
         <option value="transparent">{t.transparent}</option><option value="#00ff00">{t.green}</option><option value="#0000ff">{t.blue}</option>{!['transparent', '#00ff00', '#0000ff'].includes(settings.background) && <option value={settings.background}>{t.custom}</option>}
       </select><label>{t.custom}<input type="color" value={settings.background === 'transparent' ? '#ffffff' : settings.background} onChange={event => setSettings(current => ({ ...current, background: event.target.value }))} /></label>
+        <LiveBackground project={settings.project} value={settings.backgroundImage} onChange={backgroundImage => setSettings(current => ({ ...current, backgroundImage }))} language={language} />
         <label>{t.fit}<select value={settings.fit} onChange={event => setSettings(current => ({ ...current, fit: event.target.value as 'contain' | 'cover' }))}><option value="contain">{t.contain}</option><option value="cover">{t.cover}</option></select></label>
         <div className="live-buttons"><button className="live-primary" onClick={() => { void navigator.clipboard.writeText(url).then(() => setCopyState('copied')).catch(() => setCopyState('copyError')); }}>{t.obs}</button>
         <a className="live-open" href={url} target="_blank" rel="noreferrer">{t.openStream}</a></div>

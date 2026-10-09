@@ -42,6 +42,12 @@ respecto al original están en [FORK.md](../FORK.md).
 
 ### Fondo
 - Transparente, verde, azul o un color. **Encuadre**: *Avatar completo* o *Llenar el marco*.
+- **Imagen o video de fondo**: pulsa **Subir imagen o video…** y elige un PNG, JPEG, WebP,
+  **GIF animado** o un **video MP4 / WebM** corto (se repite en bucle y sin sonido; hasta 60 MB).
+  Queda en la lista para volver a elegirlo. **Ajuste**: *Cubrir* (llena el recuadro y recorta
+  bordes), *Completo* (se ve entero, con bandas) o *Estirar*. Usa imágenes 16:9 (1920 × 1080).
+- Sale también en OBS. Si prefieres montar el fondo en OBS, deja **Ninguno** y fondo
+  **Transparente**.
 
 ### Expresiones (teclas 1–6)
 - Feliz, Sonrojo, Enfado, Triste, Sorpresa y Sueño. Cada tecla activa o quita la suya; se
