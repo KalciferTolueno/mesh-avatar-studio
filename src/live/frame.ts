@@ -5,12 +5,19 @@ import { busOn, busSend } from './bus';
 
 /** x / y: shift in shares of the canvas width / height; scale about the canvas centre. */
 export interface AvatarFrame { x: number; y: number; scale: number }
-/** The Live preview's shape, so it matches the OBS browser source. */
-export type FrameAspect = '16:9' | '9:16' | '4:3' | '1:1' | 'free';
-export interface FrameSettings { frame: AvatarFrame; aspect: FrameAspect; locked: boolean }
+/** The Live preview's shape, so it matches the OBS browser source ('custom': width x height). */
+export type FrameAspect = '16:9' | '9:16' | '4:3' | '3:4' | '1:1' | 'custom' | 'free';
+/** Fork (FORK.md 32): `auto` fits the avatar into the box with `safe` margins (share of the box). */
+export interface FrameSettings { frame: AvatarFrame; aspect: FrameAspect; locked: boolean; custom: { w: number; h: number }; auto: boolean; safe: number }
 export const DEFAULT_FRAME: Readonly<AvatarFrame> = Object.freeze({ x: 0, y: 0, scale: 1 });
 export const FRAME_RANGES = { x: [-1, 1], y: [-1, 1], scale: [0.2, 4] } as const;
-export const ASPECTS: FrameAspect[] = ['16:9', '9:16', '4:3', '1:1', 'free'];
+export const ASPECTS: FrameAspect[] = ['16:9', '9:16', '4:3', '3:4', '1:1', 'custom', 'free'];
+/** OBS browser source size for each shape (1080 px on the short side). */
+export const ASPECT_SIZE: Record<Exclude<FrameAspect, 'custom' | 'free'>, [number, number]> = {
+  '16:9': [1920, 1080], '9:16': [1080, 1920], '4:3': [1440, 1080], '3:4': [1080, 1440], '1:1': [1080, 1080],
+};
+export const SAFE_RANGE = [0, 0.2] as const;
+export const CUSTOM_RANGE = [200, 4096] as const;
 const clampTo = (value: number, [min, max]: readonly [number, number]) => Math.max(min, Math.min(max, value));
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 
@@ -43,11 +50,17 @@ export function writeFrameQuery(query: URLSearchParams, frame: AvatarFrame) {
 
 const storageKey = (project: string) => `mesh-avatar:frame:${project}`;
 export function loadFrameSettings(project: string): FrameSettings {
-  const fallback: FrameSettings = { frame: { ...DEFAULT_FRAME }, aspect: '16:9', locked: false };
+  const fallback: FrameSettings = { frame: { ...DEFAULT_FRAME }, aspect: '16:9', locked: false, custom: { w: 1080, h: 1080 }, auto: true, safe: 0.05 };
   try {
     const stored = JSON.parse(localStorage.getItem(storageKey(project)) ?? 'null');
     if (!stored || typeof stored !== 'object') return fallback;
-    return { frame: parseFrame(stored.frame) ?? fallback.frame, aspect: ASPECTS.includes(stored.aspect) ? stored.aspect : fallback.aspect, locked: stored.locked === true };
+    const frame = parseFrame(stored.frame) ?? fallback.frame;
+    const size = (value: unknown) => finite(value) ? Math.round(clampTo(value, CUSTOM_RANGE)) : null;
+    const custom = stored.custom && typeof stored.custom === 'object' ? { w: size(stored.custom.w) ?? 1080, h: size(stored.custom.h) ?? 1080 } : fallback.custom;
+    return { frame, aspect: ASPECTS.includes(stored.aspect) ? stored.aspect : fallback.aspect, locked: stored.locked === true, custom,
+      // saved before automatic framing existed: automatic only if the avatar was never moved
+      auto: typeof stored.auto === 'boolean' ? stored.auto : isDefaultFrame(frame),
+      safe: finite(stored.safe) ? clampTo(stored.safe, SAFE_RANGE) : fallback.safe };
   } catch { return fallback; }
 }
 export function saveFrameSettings(project: string, value: FrameSettings) {

@@ -97,6 +97,12 @@ menos de RAM. La URL de OBS es la misma (`http://127.0.0.1:5191/stream.html…`)
   transparente, vista frontal"; luego colócalas aquí.
 
 ### Posición y tamaño
+- **Formato del recuadro:** elige la forma de tu avatar en la escena (16:9, 9:16, 4:3, 3:4, 1:1 o
+  personalizado) y pon **la fuente de navegador de OBS con el tamaño que indica** (p. ej. 1080 ×
+  1080 para 1:1). Un recuadro ajustado al personaje es más fácil de colocar en OBS.
+- **Encuadre automático con zona segura:** coloca y escala el avatar solo, con un margen, para
+  que no se salga ni se corte aunque te muevas al máximo. La línea discontinua verde de la vista
+  previa es la zona segura. Si lo mueves a mano se apaga; **Encajar ahora** lo vuelve a aplicar.
 - **Arrastra el avatar** con el ratón para moverlo y usa **la rueda** sobre él para cambiar su
   tamaño (se acerca hacia donde apunta el ratón).
 - **Formato**: elige el de tu fuente de OBS (16:9 normalmente). El recuadro punteado es

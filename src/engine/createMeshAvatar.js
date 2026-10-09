@@ -158,6 +158,17 @@ export async function createMeshAvatarImpl(canvas, options) {
   if (rig.hand) R.addLayer('hand', imgs.hand, handMesh);
   // fork: accessories that follow the head or body (src/engine/items.js)
   const items = createItems(R, engine, loadImage);
+  // fork (FORK.md 32): where the drawing really is (opaque pixels of the base image), for
+  // fitting the avatar into the OBS box with safe margins
+  const content = (() => {
+    const alpha = alphaOf(imgs.base), w = imgs.base.width, h = alpha.length / w;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) if (alpha[y * w + x] > 24) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    const k = IMG.w / w;
+    return x1 < 0 ? [0, 0, IMG.w, IMG.h] : [x0 * k, y0 * k, (x1 + 2) * k, Math.min(IMG.h, (y1 + 2) * k)];
+  })();
 
   const physics = new Physics();
   const motion = new Motion(rig.view.gazeCenter ?? [rig.head.cx, rig.head.cy]);
@@ -303,6 +314,27 @@ export async function createMeshAvatarImpl(canvas, options) {
     /** Canvas CSS px -> source image px, as last drawn.
      * @returns {[number, number] | null} */
     canvasToImage(cx, cy) { const p = R.toImageDrawn(cx, cy); return p ? [p[0], p[1]] : null; },
+    /** The drawing's bounds in source-image px: [x0, y0, x1, y1]. */
+    getContentBounds() { return [...content]; },
+    /**
+     * Framing that fits the drawing inside the canvas: `safe` keeps that share of the canvas free
+     * on the top and the sides; the bounds first grow by the screen movement the avatar can make:
+     * `shiftX` sideways (share of the image width, like positionX) and `grow` upwards and wider
+     * (share of the drawing's height, the zoom of moving up / towards the camera). A drawing cut
+     * at the image bottom stays on the canvas bottom, so the cut never shows.
+     */
+    fitFrame({ safe = 0.05, shiftX = 0, grow = 0 } = {}) {
+      R.resize();
+      const W = R.canvas.width, H = R.canvas.height, s0 = R.pxScale, [ox, oy] = R.pxOff;
+      if (!W || !H || !s0) return null;
+      const [x0, y0, x1, y1] = content, bw = x1 - x0, bh = y1 - y0;
+      const ex0 = x0 - shiftX * IMG.w - bw * grow / 2, ex1 = x1 + shiftX * IMG.w + bw * grow / 2, ey0 = y0 - bh * grow, ey1 = y1;
+      const cut = y1 >= IMG.h - 4, bottom = cut ? 0 : safe;
+      const k = Math.min(W * (1 - 2 * safe) / ((ex1 - ex0) * s0), H * (1 - safe - bottom) / ((ey1 - ey0) * s0));
+      const cx = ox + (ex0 + ex1) / 2 * s0, by = oy + ey1 * s0;
+      const x = -(cx - W / 2) * k / W, y = (H * (1 - bottom) - H / 2 - (by - H / 2) * k) / H;
+      return { x, y, scale: k };
+    },
     // fork: avatar position and size in the frame (src/live/frame.ts)
     setFrame({ x = 0, y = 0, scale = 1 } = {}) { R.frame = { x, y, scale }; },
     getLightingStats() { return { ...R.lightingStats }; },

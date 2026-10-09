@@ -647,6 +647,30 @@ git checkout mi-version && git merge main
   (`live-streaming.spec.ts:173`) bajan a ~14 fps (mínimo 15) por la carga de la GPU; con OBS
   cerrado pasan.
 
+### 32. Formatos del recuadro y encuadre automático con zona segura
+
+- **Antes:** el recuadro (la fuente de navegador de OBS) solo podía ser 16:9, 9:16, 4:3, 1:1 o el
+  panel entero, y el avatar se colocaba a mano: con la cámara podía salirse o cortarse.
+- **Ahora** (Escena → Posición y tamaño):
+  - **Formatos:** 16:9, 9:16, 4:3, **3:4**, 1:1, **Personalizado** (ancho × alto en px, de 200 a
+    4096) y ajustar al panel. Se muestra el **tamaño que debe tener la fuente en OBS** (p. ej.
+    1080 × 1080 para 1:1).
+  - **Encuadre automático con zona segura** (activo por defecto si el avatar nunca se movió a
+    mano) y **Margen de seguridad** (0–20 %, 5 % por defecto). Coloca y escala el avatar para que
+    quepa con ese margen arriba y a los lados (abajo apoya en el borde si el dibujo está cortado
+    ahí), contando el movimiento máximo de la cámara: de lado (`positionX`, 0,08 del ancho de la
+    imagen × límite lateral) y arriba o acercándose (zoom de hasta 10 % y 8 % × límites). Se
+    recalcula al cambiar el formato, el margen o los límites de Movimiento. Mover, escalar o usar
+    los deslizadores a mano lo apaga. **Encajar ahora** lo aplica una vez.
+  - **Guía de zona segura:** línea discontinua sobre la vista previa mientras está abierto el
+    grupo Escena.
+- **Motor:** `getContentBounds()` (contorno de los píxeles opacos de `base.png`) y
+  `fitFrame({ safe, shiftX, grow })` en `src/engine/createMeshAvatar.js`.
+- **Comprobado** en 1:1 llevando el tigre al extremo de cada movimiento y de todos a la vez: el
+  margen libre más pequeño fue 5,4 % (con margen de 5 %); nunca se corta.
+- **Archivos:** `src/engine/createMeshAvatar.js`, `src/engine/index.ts`, `src/live/frame.ts`,
+  `src/live/LiveFrame.tsx`, `src/live/LiveApp.tsx`, `src/live/shell.css`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

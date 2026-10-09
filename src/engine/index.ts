@@ -40,6 +40,8 @@ export interface MeshAvatar {
   setItems(items: AvatarItemLayer[]): Promise<void>;
   itemAt(x: number, y: number): string | null;
   canvasToImage(x: number, y: number): [number, number] | null;
+  getContentBounds(): number[];
+  fitFrame(options?: { safe?: number; shiftX?: number; grow?: number }): { x: number; y: number; scale: number } | null;
   setVoiceVowel(vowel: 'a' | 'i' | 'u' | 'e' | 'o' | null): void;
   onMotion(listener: (id: string | null) => void): () => void;
   advance(seconds: number, fps?: number): void;

@@ -21,7 +21,7 @@ import { CameraCapture, MicrophoneCapture, type CameraState, type MicState, type
 import { liveText } from './i18n';
 import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
-import { LiveFrame, useFrameCanvas } from './LiveFrame';
+import { LiveFrame, SafeZoneGuide, useFrameCanvas } from './LiveFrame';
 import { LiveLost, LOST_DEFAULTS } from './LiveLost';
 import { LiveItems } from './LiveItems';
 import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
@@ -29,7 +29,7 @@ import { LiveBackground } from './LiveBackground';
 import { LiveProjectPicker } from './LiveProjectPicker';
 import { LanguageMenu, ShellRail, StatusMeters, shellIcons, shellText, useFpsCounter, useShellGroup, type ShellGroup } from './LiveShell';
 import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
-import { loadChangedAt, loadFrameSettings, saveChangedAt, saveFrameSettings, sendFrame } from './frame';
+import { loadChangedAt, loadFrameSettings, parseFrame, saveChangedAt, saveFrameSettings, sendFrame } from './frame';
 
 // fork: name of the folding background section, which also holds the OBS link
 const FOLD_TEXT = { es: { background: 'Fondo y OBS' }, en: { background: 'Background and OBS' }, ja: { background: '背景と OBS' }, zh: { background: '背景和 OBS' } };
@@ -248,6 +248,29 @@ export function LiveApp() {
     return () => clearInterval(timer);
   }, [settings.project]);
   const removeItemFile = (file: string) => { void fetch(`/__items/${encodeURIComponent(settings.project)}/file/${encodeURIComponent(file)}`, { method: 'DELETE' }).catch(() => undefined); };
+  // fork (FORK.md 32): automatic framing with a safe zone. The drawing's bounds grow by the
+  // screen movement the tracking may make (positionX: 0.08 of the image width; moving up and
+  // leaning in zoom it by up to 10 % and 8 %), so it never leaves the box or gets cut.
+  const fitNow = () => {
+    const avatar = avatarRef.current;
+    if (!avatar) return;
+    const moves = (options.screenMove ?? 1) > 0 ? 1 : 0;
+    const fitted = avatar.fitFrame({ safe: frame.safe, shiftX: (0.08 * (options.limitSide ?? 1) + 0.01) * moves,
+      grow: (0.1 * (options.limitUp ?? 1) + 0.08 * (options.limitIn ?? 1)) * moves });
+    const next = fitted && parseFrame(fitted);
+    if (next) setFrame(current => ({ ...current, frame: next }));
+  };
+  const fitRef = useRef(fitNow); fitRef.current = fitNow;
+  useEffect(() => {
+    if (!frame.auto || viewState !== 'ready') return;
+    // after the canvas took the box shape
+    const id = requestAnimationFrame(() => fitRef.current());
+    const element = canvas.current;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const observer = frame.aspect === 'free' && element ? new ResizeObserver(() => { clearTimeout(timer); timer = setTimeout(() => fitRef.current(), 150); }) : null;
+    if (observer && element) observer.observe(element);
+    return () => { cancelAnimationFrame(id); clearTimeout(timer); observer?.disconnect(); };
+  }, [frame.auto, frame.safe, frame.aspect, frame.custom.w, frame.custom.h, viewState, options.screenMove, options.limitSide, options.limitUp, options.limitIn]);
   const changeLighting = (lighting: typeof settings.lighting) => setSettings(current => ({ ...current, lighting }));
   const cameraActive = cameraState === 'starting' || cameraState === 'running';
   const micActive = micState === 'micStarting' || micState === 'micOn';
@@ -270,6 +293,7 @@ export function LiveApp() {
     </header>
     <div className="live-layout app-main"><section className="live-view app-stage"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
       <canvas ref={canvas} data-testid="live-avatar" className={frame.locked ? undefined : 'live-movable'} />
+      <SafeZoneGuide canvas={canvas} safe={frame.safe} visible={shellGroup === 'scene' && viewState === 'ready'} />
       {lightingOpen && shellGroup === 'light' && <LightHandle value={settings.lighting} onChange={changeLighting} language={language} />}
       <div className="app-toolbar" role="toolbar" aria-label={shell.tools}>
         <button className={cameraActive ? 'app-tool' : 'app-tool live-primary'} disabled={!cameraActive && viewState !== 'ready'} onClick={() => {
@@ -328,7 +352,7 @@ export function LiveApp() {
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
         </div>
       </details>
-      <LiveFrame value={frame} onChange={setFrame} language={language} />
+      <LiveFrame value={frame} onChange={setFrame} onFit={fitNow} language={language} />
 
       <LiveItems project={settings.project} items={items} onChange={setItems} selected={selectedItem} onSelect={setSelectedItem} place={placeItem} onRemoveFile={removeItemFile} language={language} />
 
