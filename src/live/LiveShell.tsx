@@ -9,19 +9,19 @@ export const SHELL_GROUPS = ['capture', 'scene', 'expression', 'motion', 'light'
 export type ShellGroup = typeof SHELL_GROUPS[number];
 
 export const shellText = {
-  es: { center: 'Centrar personaje', capture: 'Cámara y voz', scene: 'Escena', expression: 'Expresión', motion: 'Movimiento', light: 'Luz y física', groups: 'Ajustes',
+  es: { center: 'Centrar y ajustar al recuadro', capture: 'Cámara y voz', scene: 'Escena', expression: 'Expresión', motion: 'Movimiento', light: 'Luz y física', groups: 'Ajustes',
     lock: 'Bloquear posición', light_: 'Iluminación', copy: 'Copiar URL de OBS', copied: 'URL de OBS copiada', copyError: 'No se pudo copiar la URL',
     hint: 'Arrastra para mover · rueda para escalar', mic: 'Nivel del micrófono', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS sin conectar' : n === 1 ? 'OBS: 1 vista conectada' : `OBS: ${n} vistas conectadas`, tools: 'Herramientas del directo' },
-  en: { center: 'Center the avatar', capture: 'Camera and voice', scene: 'Scene', expression: 'Expression', motion: 'Movement', light: 'Light and physics', groups: 'Settings',
+  en: { center: 'Center and fill the box', capture: 'Camera and voice', scene: 'Scene', expression: 'Expression', motion: 'Movement', light: 'Light and physics', groups: 'Settings',
     lock: 'Lock position', light_: 'Lighting', copy: 'Copy OBS link', copied: 'OBS link copied', copyError: 'Could not copy the link',
     hint: 'Drag to move · scroll to resize', mic: 'Microphone level', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS not connected' : n === 1 ? 'OBS: 1 view connected' : `OBS: ${n} views connected`, tools: 'Stream tools' },
-  ja: { center: 'アバターを中央に', capture: 'カメラと声', scene: 'シーン', expression: '表情', motion: '動き', light: 'ライトと物理', groups: '設定',
+  ja: { center: '中央に配置して枠に合わせる', capture: 'カメラと声', scene: 'シーン', expression: '表情', motion: '動き', light: 'ライトと物理', groups: '設定',
     lock: '位置を固定', light_: 'ライティング', copy: 'OBS の URL をコピー', copied: 'OBS の URL をコピーしました', copyError: 'URL をコピーできませんでした',
     hint: 'ドラッグで移動・ホイールで拡大縮小', mic: 'マイクの音量', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS 未接続' : `OBS: ${n} 画面接続中`, tools: '配信ツール' },
-  zh: { center: '形象居中', capture: '摄像头和声音', scene: '场景', expression: '表情', motion: '动作', light: '光照和物理', groups: '设置',
+  zh: { center: '居中并填满画框', capture: '摄像头和声音', scene: '场景', expression: '表情', motion: '动作', light: '光照和物理', groups: '设置',
     lock: '锁定位置', light_: '光照', copy: '复制 OBS 链接', copied: '已复制 OBS 链接', copyError: '无法复制链接',
     hint: '拖动移动 · 滚轮缩放', mic: '麦克风音量', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS 未连接' : `OBS：已连接 ${n} 个画面`, tools: '直播工具' },

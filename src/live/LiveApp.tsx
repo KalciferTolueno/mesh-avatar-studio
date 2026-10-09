@@ -253,10 +253,11 @@ export function LiveApp() {
   // fork (FORK.md 32): automatic framing with a safe zone. The drawing's bounds grow by the
   // screen movement the tracking may make (positionX: 0.08 of the image width; moving up and
   // leaning in zoom it by up to 10 % and 8 %), so it never leaves the box or gets cut.
-  const fitNow = () => {
+  const fitNow = (maximize = false) => {
     const avatar = avatarRef.current;
     if (!avatar) return;
-    const moves = (options.screenMove ?? 1) > 0 ? 1 : 0;
+    // maximize: as large as the box allows, keeping only the safe margin (no movement reserve)
+    const moves = !maximize && (options.screenMove ?? 1) > 0 ? 1 : 0;
     const fitted = avatar.fitFrame({ safe: frame.safe, shiftX: (0.08 * (options.limitSide ?? 1) + 0.01) * moves,
       grow: (0.1 * (options.limitUp ?? 1) + 0.08 * (options.limitIn ?? 1)) * moves });
     const next = fitted && parseFrame(fitted);
@@ -320,7 +321,7 @@ export function LiveApp() {
         <button className="app-tool" disabled={!tracking} title={t.calibrateHint} onClick={() => setCalibrated(pose.current.calibrate(performance.now()))}>{t.calibrate}</button>
         <label className="app-tool app-icon-tool" title={t.microphone} data-on={micActive}><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{shellIcons.mic}<span className="app-sr">{t.microphone}</span></label>
         <span className="app-toolbar-gap" aria-hidden="true" />
-        <button className="app-tool app-icon-tool" aria-label={shell.center} title={shell.center} disabled={viewState !== 'ready'} onClick={fitNow}>{shellIcons.center}</button>
+        <button className="app-tool app-icon-tool" aria-label={shell.center} title={shell.center} disabled={viewState !== 'ready'} onClick={() => fitNow(true)}>{shellIcons.center}</button>
         <button className="app-tool app-icon-tool" aria-pressed={frame.locked} aria-label={shell.lock} title={shell.lock} onClick={() => setFrame(current => ({ ...current, locked: !current.locked }))}>{frame.locked ? shellIcons.lock : shellIcons.unlock}</button>
         <button className="app-tool app-icon-tool" aria-pressed={settings.lighting.enabled} aria-label={shell.light_} title={shell.light_} onClick={() => changeLighting({ ...settings.lighting, enabled: !settings.lighting.enabled })}>{shellIcons.light}</button>
         <button className="app-tool app-icon-tool" aria-label={shell.copy} title={shell.copy} onClick={copyObs}>{shellIcons.copy}</button>
@@ -370,7 +371,7 @@ export function LiveApp() {
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
         </div>
       </details>
-      <LiveFrame value={frame} onChange={setFrame} onFit={fitNow} obs={obsLink} onObsApply={resizeObs} language={language} />
+      <LiveFrame value={frame} onChange={setFrame} onFit={() => fitNow()} obs={obsLink} onObsApply={resizeObs} language={language} />
 
       <LiveItems project={settings.project} items={items} onChange={setItems} selected={selectedItem} onSelect={setSelectedItem} place={placeItem} onRemoveFile={removeItemFile} language={language} />
 

@@ -696,12 +696,15 @@ git checkout mi-version && git merge main
   `src-tauri/src/server.rs`, `src/live/frame.ts` (`obs`), `src/live/LiveFrame.tsx`,
   `src/live/LiveApp.tsx`, `src/live/shell.css`.
 
-### 34. Botón «Centrar personaje»
+### 34. Botón «Centrar y ajustar al recuadro»
 
-- En la barra de herramientas sobre el avatar, un botón que devuelve el avatar a su sitio si se
-  movió demasiado: lo coloca y escala dentro del recuadro con la zona segura (`fitNow`, el mismo
-  cálculo que el encuadre automático de la sección 32), aunque la posición esté bloqueada o el
-  automático apagado; no cambia esas opciones. Llega a OBS como cualquier cambio de encuadre.
+- En la barra de herramientas sobre el avatar: centra el avatar y lo **maximiza** dentro del
+  recuadro, dejando solo el margen de seguridad (sin la reserva de movimiento del encuadre
+  automático): `fitNow(true)`, que llama a `fitFrame` con `shiftX` y `grow` a 0. En 1:1 el tigre
+  queda con 5 % libre a cada lado y apoyado abajo. Funciona aunque la posición esté bloqueada o
+  el automático apagado, y no cambia esas opciones. Llega a OBS como cualquier cambio de
+  encuadre. El botón **Encajar ahora** de la sección sigue aplicando el encaje con reserva de
+  movimiento.
 - **Archivos:** `src/live/LiveShell.tsx` (texto e icono), `src/live/LiveApp.tsx`.
 
 ## Registro de fusiones con el original

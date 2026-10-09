@@ -39,7 +39,8 @@ menos de RAM. La URL de OBS es la misma (`http://127.0.0.1:5191/stream.html…`)
 
 - **Arriba:** proyecto, tema e idioma.
 - **Sobre el avatar**, la barra de herramientas del directo: **Iniciar cámara**, **Calibrar**,
-  **micrófono**, **centrar personaje** (lo devuelve a su sitio si lo moviste demasiado), **bloquear
+  **micrófono**, **centrar y ajustar al recuadro** (lo centra y lo hace lo más grande posible
+  dentro del recuadro), **bloquear
   posición**, **luz** y **copiar la URL de OBS**. Tu imagen de la cámara
   aparece en una esquina mientras la cámara está encendida.
 - **A la derecha**, cinco iconos abren cada uno su panel de ajustes: **Cámara y voz**,
