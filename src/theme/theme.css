@@ -4,7 +4,8 @@
 
 :root[data-theme] {
   --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-  --radius: 12px; --radius-sm: 8px;
+  /* fork (FORK.md 26): square corners everywhere */
+  --radius: 0; --radius-sm: 0;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
 :root[data-theme="dark"] {
@@ -211,3 +212,8 @@
 @media (prefers-reduced-motion: reduce) {
   :root[data-theme] *, :root[data-theme] *::before { transition-duration: 0s !important; }
 }
+
+/* fork (FORK.md 26): controls are square too: buttons (the light handle included), selects,
+   text fields and links styled as buttons. Upstream sheets give them their own corners, so this
+   one rule overrides them all; checkboxes and slider thumbs keep the browser's shapes. */
+:root[data-theme] :is(button, select, textarea, input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), .live-open, .live-link, .mode-switch > a, .mode-switch > .mode-item) { border-radius: 0 !important; }

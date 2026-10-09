@@ -540,9 +540,12 @@ git checkout mi-version && git merge main
   esquinas redondeadas (4–12 px, o píldoras).
 - **Ahora:** una regla al final de `src/theme/theme.css` deja a 0 el `border-radius` de todos los
   contenedores (div, section, details, p, label, video, canvas, span…) en el editor y en En vivo.
-  Los botones y campos conservan sus esquinas; los círculos de verdad (punto de En vivo, muestras
-  de color, números de la guía y el sol de la luz) siguen redondos. Para volver atrás basta con
-  borrar esa regla.
+  Después, también los controles: `--radius` y `--radius-sm` a 0 y una regla con `!important`
+  para botones (incluido el sol de la luz), selectores, campos de texto y enlaces con forma de
+  botón, que en las hojas del original tienen sus propias esquinas. Solo siguen redondos los
+  círculos de verdad (punto de En vivo, muestras de color y números de la guía), además de las
+  casillas y los tiradores de los deslizadores del navegador. Para volver atrás basta con borrar
+  esas dos reglas y restaurar los tokens.
 
 ### 27. Mejoras de la auditoría de diseño (Impeccable)
 
