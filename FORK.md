@@ -534,6 +534,16 @@ git checkout mi-version && git merge main
   `desktop:web` y `desktop`, `@tauri-apps/cli`), `.gitignore`, `src/live/relay.ts`,
   `src/editor/project.ts`, `src/live/main.tsx`, `src/live/LiveApp.tsx`.
 
+### 26. Esquinas rectas en los contenedores
+
+- **Antes:** paneles, secciones, vista previa, recuadros, menús, avisos y etiquetas tenían
+  esquinas redondeadas (4–12 px, o píldoras).
+- **Ahora:** una regla al final de `src/theme/theme.css` deja a 0 el `border-radius` de todos los
+  contenedores (div, section, details, p, label, video, canvas, span…) en el editor y en En vivo.
+  Los botones y campos conservan sus esquinas; los círculos de verdad (punto de En vivo, muestras
+  de color, números de la guía y el sol de la luz) siguen redondos. Para volver atrás basta con
+  borrar esa regla.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

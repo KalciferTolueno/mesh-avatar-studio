@@ -179,3 +179,8 @@
 
 /* fork: project picker in the Live header (src/live/LiveProjectPicker.tsx) */
 .live-header .live-project { padding: 6px 8px; max-width: 200px; }
+
+/* fork (FORK.md 26): square corners on every container (panels, sections, previews, boxes,
+   menus, notices, badges). Buttons and form fields keep their own corners; true circles (the
+   live dot, colour swatches, numbered guide steps, the light handle) stay round. */
+:root[data-theme] :is(div, section, details, summary, aside, main, header, nav, article, p, ul, ol, li, label, video, canvas, figure, span, small, output):not(.live-dot):not(.part-swatch):not(.guide-steps li > span) { border-radius: 0; }
