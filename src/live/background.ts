@@ -1,6 +1,7 @@
 // Fork addition (see FORK.md): a picture, animated GIF or looping video behind the avatar, like
 // VTube Studio's backgrounds. Files live in projects/<name>/backgrounds/ (see
 // src/server/project-items.ts); the choice goes in the OBS URL and is relayed live.
+import { busOn, busSend } from './bus';
 
 export type BackgroundFit = 'cover' | 'contain' | 'stretch';
 export interface BackgroundImage { file: string | null; fit: BackgroundFit }
@@ -100,10 +101,9 @@ export function backgroundMessage(input: unknown): BackgroundMessage | null {
 }
 export function sendBackground(project: string, background: BackgroundImage) {
   const message = backgroundMessage({ project, background });
-  if (message) import.meta.hot?.send(BACKGROUND_EVENT, message);
+  if (message) busSend(BACKGROUND_EVENT, message);
 }
 export function receiveBackground(project: string, callback: (value: BackgroundImage) => void) {
   const receive = (data: unknown) => { const message = backgroundMessage(data); if (message?.project === project) callback(message.background); };
-  import.meta.hot?.on(BACKGROUND_EVENT, receive);
-  return () => import.meta.hot?.off(BACKGROUND_EVENT, receive);
+  return busOn(BACKGROUND_EVENT, receive);
 }

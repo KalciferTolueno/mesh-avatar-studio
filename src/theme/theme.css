@@ -176,3 +176,6 @@
 .live-controls .live-quick p { margin: 10px 0 4px; }
 .live-controls .live-quick .live-check { margin: 10px 0 2px; }
 .live-controls .live-quick .camera-preview { margin-top: 10px; }
+
+/* fork: project picker in the Live header (src/live/LiveProjectPicker.tsx) */
+.live-header .live-project { padding: 6px 8px; max-width: 200px; }

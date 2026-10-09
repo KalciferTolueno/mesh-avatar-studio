@@ -26,6 +26,7 @@ import { LiveLost, LOST_DEFAULTS } from './LiveLost';
 import { LiveItems } from './LiveItems';
 import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
 import { LiveBackground } from './LiveBackground';
+import { LiveProjectPicker } from './LiveProjectPicker';
 import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
 import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
@@ -237,7 +238,9 @@ export function LiveApp() {
   return <main className="live-app">
     {/* fork: Edit / Live switch and theme toggle (src/theme/ThemeControls.tsx); the back link keeps its name */}
     <header className="live-header"><div className="live-header-actions"><h1>Mesh Avatar Studio</h1>
-      <ModeSwitch language={language} current="live" edit={<a href="/" aria-label={t.back}>{themeLabel(language)}</a>} /></div>
+      {/* fork: the desktop app (src-tauri) has no editor; both choose the project here */}
+      {import.meta.env.MODE !== 'desktop' && <ModeSwitch language={language} current="live" edit={<a href="/" aria-label={t.back}>{themeLabel(language)}</a>} />}
+      <LiveProjectPicker current={settings.project} language={language} /></div>
       <div className="live-header-actions"><ThemeToggle language={language} />
       <div className="live-languages">{(['es', 'en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ es: 'Español', en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div></div>
     </header>

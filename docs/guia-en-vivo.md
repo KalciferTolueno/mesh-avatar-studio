@@ -3,7 +3,20 @@
 Guía de uso de la página **En vivo** de esta versión. Los detalles técnicos y lo que cambió
 respecto al original están en [FORK.md](../FORK.md).
 
-## Antes de empezar
+## La app de escritorio (recomendada para transmitir)
+
+Haz doble clic en **Mesh Avatar Studio** en el escritorio. Se abre una ventana con En vivo y,
+dentro, el servidor que alimenta a OBS: no necesitas `npm run dev` ni Chrome, y usa unos 1.000 MB
+menos de RAM. La URL de OBS es la misma (`http://127.0.0.1:5191/stream.html…`).
+
+- Elige tu proyecto en la lista de la cabecera (la próxima vez se abre solo).
+- La primera vez Windows pide permiso para la cámara y el micrófono, y los ajustes (calibración
+  de vocales, posición, teclas…) se configuran una vez porque la app guarda los suyos.
+- Déjala abierta (puede quedar detrás de OBS); si la minimizas el rastreo puede ir más lento.
+- Para **editar** el avatar sigue usando `npm run dev` y el Editor en el navegador. Si cambias la
+  app, recompílala con `npm run desktop`.
+
+## Antes de empezar (modo navegador)
 
 1. Abre la aplicación (`npm run dev`) y entra al proyecto desde el **Editor** al menos una vez.
 2. Pulsa **En vivo** arriba. Deja esta pestaña abierta mientras transmites: es la que mira la

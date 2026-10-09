@@ -1,6 +1,7 @@
 // Fork addition (see FORK.md): live physics adjustments, shared by the Live page, the OBS URL
 // and the stream view. Built like src/lighting/settings.ts: a strict format, URL parameters and
 // per-project browser storage.
+import { busOn, busSend } from '../live/bus';
 
 // drag: how much the pieces swing when the avatar is dragged across the frame (src/live/frame.ts)
 export interface PhysicsTuning { strength: number; stiffness: number; wind: number; drag: number; groups: number[] }
@@ -53,10 +54,9 @@ export function physicsMessage(input: unknown): PhysicsMessage | null {
 }
 export function sendPhysics(project: string, value: PhysicsTuning) {
   const message = physicsMessage({ project, physics: value });
-  if (message) import.meta.hot?.send(PHYSICS_EVENT, message);
+  if (message) busSend(PHYSICS_EVENT, message);
 }
 export function receivePhysics(project: string, callback: (value: PhysicsTuning) => void) {
   const receive = (data: unknown) => { const message = physicsMessage(data); if (message?.project === project) callback(message.physics); };
-  import.meta.hot?.on(PHYSICS_EVENT, receive);
-  return () => import.meta.hot?.off(PHYSICS_EVENT, receive);
+  return busOn(PHYSICS_EVENT, receive);
 }

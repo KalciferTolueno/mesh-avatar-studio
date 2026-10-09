@@ -9,3 +9,7 @@ __pycache__/
 projects/
 work/
 samples/**/review/
+# fork: desktop app (src-tauri)
+dist-desktop/
+src-tauri/target/
+src-tauri/gen/

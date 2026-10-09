@@ -1,6 +1,7 @@
 // Fork addition (see FORK.md): where the avatar sits in the frame and how big it is, like
 // dragging and scrolling the model in VTube Studio. Shared by the Live page, the OBS URL and the
 // stream view; built like src/physics/settings.ts (strict format, URL, browser storage, relay).
+import { busOn, busSend } from './bus';
 
 /** x / y: shift in shares of the canvas width / height; scale about the canvas centre. */
 export interface AvatarFrame { x: number; y: number; scale: number }
@@ -65,10 +66,9 @@ export function frameMessage(input: unknown): FrameMessage | null {
 }
 export function sendFrame(project: string, frame: AvatarFrame) {
   const message = frameMessage({ project, frame });
-  if (message) import.meta.hot?.send(FRAME_EVENT, message);
+  if (message) busSend(FRAME_EVENT, message);
 }
 export function receiveFrame(project: string, callback: (frame: AvatarFrame) => void) {
   const receive = (data: unknown) => { const message = frameMessage(data); if (message?.project === project) callback(message.frame); };
-  import.meta.hot?.on(FRAME_EVENT, receive);
-  return () => import.meta.hot?.off(FRAME_EVENT, receive);
+  return busOn(FRAME_EVENT, receive);
 }

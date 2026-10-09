@@ -494,6 +494,46 @@ git checkout mi-version && git merge main
   fork: `src/live/LiveFrame.tsx`, `src/expressions/HotkeyPanel.tsx` (sin `open`),
   `src/theme/theme.css`.
 
+### 25. App de escritorio para el directo (Tauri)
+
+- **Antes:** para transmitir había que tener `npm run dev` (Node + Vite) y una pestaña de Chrome
+  con En vivo. Medido en este portátil con la cámara apagada: **1.693 MB** de RAM (Node 437 MB +
+  Chrome limpio 1.256 MB) y ~71 % de un núcleo.
+- **Ahora:** `src-tauri/` construye `mesh-avatar-desktop.exe`: una ventana (WebView2) con En vivo
+  y un servidor local en Rust (`src-tauri/src/server.rs`, axum) en `127.0.0.1:5191`, la misma
+  dirección que usa OBS. Medido igual: **~670 MB** (app 27 MB + WebView2 ~640 MB) y la misma CPU
+  (~66–71 %): el rastreo y el dibujo cuestan lo mismo, se ahorra Node y el Chrome aparte.
+- **El servidor hace para el directo lo que los plugins de Vite:** `/__bus` (relé WebSocket de
+  movimientos, luz, física, encuadre, accesorios y fondo; filtra eventos desconocidos, máx. 60 por
+  segundo y evento), `/__studio/projects` y sus archivos en **solo lectura**, `/__items/…`
+  (accesorios y fondos, mismas comprobaciones) y las páginas compiladas de `dist-desktop/`.
+  Solo acepta peticiones locales (Host y Origin). Si el puerto ya está ocupado (p. ej. con
+  `npm run dev` abierto), la ventana usa ese servidor.
+- **El editor no está en la app:** crear o retocar el avatar sigue con `npm run dev`. En la app
+  no aparece el botón Editar y el proyecto se elige en la cabecera de En vivo.
+- **Cambios en la web para que funcione igual en los dos modos:**
+  - `src/live/bus.ts` (nuevo): envía y recibe por `import.meta.hot` con `npm run dev` (como el
+    original) o por `/__bus` en la app. `src/live/relay.ts`, `src/physics/settings.ts`,
+    `src/live/frame.ts`, `src/live/items.ts` y `src/live/background.ts` usan el bus.
+  - `src/editor/project.ts`: `localProjects()` también consulta en el modo `desktop`
+    (`vite build --mode desktop`).
+  - `src/live/LiveProjectPicker.tsx` (nuevo): selector de proyecto en la cabecera de En vivo y
+    reapertura del último proyecto si se abre sin `?project=` (`src/live/main.tsx`).
+- **Construir:** `npm run desktop` (compila las páginas en `dist-desktop/` y luego Rust; ~4 min la
+  primera vez). El exe busca `projects/`, `samples/` y `dist-desktop/` en la carpeta del
+  repositorio (o en `MESH_AVATAR_ROOT`). Tras cambiar la web, volver a ejecutar `npm run desktop`.
+  Pruebas del servidor: `cargo test --release` en `src-tauri/`. Icono genérico propio
+  (`src-tauri/icons/`), no la ilustración del usuario.
+- **Notas:** los ajustes guardados en el navegador (calibración de vocales, posición, teclas…)
+  son de cada navegador: en la app se configuran una vez. WebView2 pide permiso para la cámara y
+  el micrófono la primera vez. Como en Chrome, si la ventana se minimiza el rastreo puede ir más
+  lento (aparece el aviso); mejor dejarla abierta detrás de OBS.
+- **Archivos nuevos:** `src-tauri/` (Cargo.toml, Cargo.lock, build.rs, tauri.conf.json,
+  capabilities/, icons/, shell/, src/main.rs, src/server.rs), `src/live/bus.ts`,
+  `src/live/LiveProjectPicker.tsx`. **Del original tocados:** `package.json` (scripts
+  `desktop:web` y `desktop`, `@tauri-apps/cli`), `.gitignore`, `src/live/relay.ts`,
+  `src/editor/project.ts`, `src/live/main.tsx`, `src/live/LiveApp.tsx`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

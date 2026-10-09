@@ -1,0 +1,27 @@
+# Fork addition (see FORK.md 25): desktop streaming app. A Tauri window shows the Live page and a
+# small local server replaces the Vite dev server for streaming: it serves the built pages, the
+# local projects (read-only), accessories and backgrounds, and relays live values to OBS.
+[package]
+name = "mesh-avatar-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+axum = { version = "0.8", features = ["ws"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "fs", "sync", "time"] }
+tower-http = { version = "0.6", features = ["fs"] }
+serde_json = "1"
+futures-util = "0.3"
+regex = "1"
+rand = "0.9"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

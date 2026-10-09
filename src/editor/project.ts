@@ -48,7 +48,8 @@ export async function openProjectFolder(files: File[]): Promise<ProjectAssets> {
 }
 
 export async function localProjects(): Promise<LocalProjectEntry[] | null> {
-  if (!import.meta.env.DEV) return null;
+  // fork: the desktop app (vite build --mode desktop, src-tauri) also serves local projects
+  if (!import.meta.env.DEV && import.meta.env.MODE !== 'desktop') return null;
   try {
     const response = await fetch('/__studio/projects');
     if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) return null;

@@ -1,6 +1,7 @@
 // Fork addition (see FORK.md): accessories (glasses, hats, …) placed on the avatar in the Live
 // page, like VTube Studio's items. The pictures and this list live in the project folder
 // (projects/<name>/items/), so the OBS stream view shows them too; changes are relayed live.
+import { busOn, busSend } from './bus';
 import type { AvatarItemLayer } from '../engine';
 
 export interface AvatarItem {
@@ -68,10 +69,9 @@ export function itemsMessage(input: unknown): ItemsMessage | null {
 }
 export function sendItems(project: string, items: AvatarItem[]) {
   const message = itemsMessage({ project, items });
-  if (message) import.meta.hot?.send(ITEMS_EVENT, message);
+  if (message) busSend(ITEMS_EVENT, message);
 }
 export function receiveItems(project: string, callback: (items: AvatarItem[]) => void) {
   const receive = (data: unknown) => { const message = itemsMessage(data); if (message?.project === project) callback(message.items); };
-  import.meta.hot?.on(ITEMS_EVENT, receive);
-  return () => import.meta.hot?.off(ITEMS_EVENT, receive);
+  return busOn(ITEMS_EVENT, receive);
 }
