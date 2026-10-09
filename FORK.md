@@ -615,6 +615,19 @@ git checkout mi-version && git merge main
   `e2e/live-streaming.spec.ts`. Del fork: `src/server/frame-relay.ts`, `src-tauri/src/server.rs`,
   `src/theme/theme.css`.
 
+### 30. Idiomas en un solo botón (En vivo)
+
+- **Antes:** cuatro botones de idioma en la barra superior.
+- **Ahora:** un botón con un globo y el código del idioma actual (`LanguageMenu` en
+  `src/live/LiveShell.tsx`). Abre un menú (`role="menu"`, opciones `menuitemradio` con el código y
+  el nombre, y una marca en el actual) que se cierra al elegir, al pulsar fuera o con Esc, y se
+  recorre con las flechas. El editor conserva su selector compacto.
+- **Pruebas e2e:** `e2e/live-streaming.spec.ts` cambia de idioma con `pickLanguage` (abre el menú
+  y elige). Nota: la prueba de la línea 95 pasa entera con más tiempo (`--timeout=90000`, 47 s);
+  en este equipo solo le faltan segundos con el límite de 30 s.
+- **Archivos:** `src/live/LiveShell.tsx`, `src/live/shell.css`, `src/live/LiveApp.tsx`,
+  `e2e/live-streaming.spec.ts`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

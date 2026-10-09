@@ -1,7 +1,7 @@
 // Fork addition (see FORK.md 29): the Live page as a desktop app. A rail of five groups opens
 // one settings panel at a time, the stream controls sit on a toolbar over the avatar, and a
 // status bar shows tracking, the microphone level, frame rate and the connected OBS views.
-import { useEffect, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
 import { useStreamViews } from './streamViews';
 import './shell.css';
 
@@ -88,4 +88,41 @@ export function useFpsCounter() {
     if (now - s.since >= 1000) { fps.current = s.frames * 1000 / (now - s.since); s.frames = 0; s.since = now; }
   };
   return [fps, tick] as const;
+}
+
+const LANGUAGES = [['es', 'Español', 'ES'], ['en', 'English', 'EN'], ['ja', '日本語', 'JA'], ['zh', '简体中文', '中文']] as const;
+const languageLabel = { es: 'Idioma', en: 'Language', ja: '言語', zh: '语言' };
+/** One button that opens the language list (instead of four buttons in the top bar). */
+export function LanguageMenu({ language, onChange }: { language: Lang; onChange: (language: Lang) => void }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null), menuId = useId();
+  const current = LANGUAGES.find(([id]) => id === language) ?? LANGUAGES[0];
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: Event) => { if (!(event.target instanceof Node && root.current?.contains(event.target))) setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setOpen(false); root.current?.querySelector('button')?.focus(); } };
+    document.addEventListener('pointerdown', close); document.addEventListener('keydown', escape);
+    root.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape); };
+  }, [open]);
+  const move = (event: React.KeyboardEvent) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const items = [...(root.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [])];
+    const i = items.indexOf(document.activeElement as HTMLElement);
+    items[(i + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+  };
+  return <div className="app-language" ref={root}>
+    <button type="button" className="app-language-button" data-testid="language-menu" aria-haspopup="menu" aria-expanded={open} aria-controls={menuId}
+      aria-label={`${languageLabel[language]}: ${current[1]}`} title={languageLabel[language]} onClick={() => setOpen(value => !value)}>
+      <svg viewBox="0 0 24 24" {...stroke}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.7 5.6 3.7 9s-1.2 6.4-3.7 9c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3z" /></svg>
+      <span>{current[2]}</span>
+      <svg className="app-language-chevron" viewBox="0 0 24 24" {...stroke}><path d="M6 9l6 6 6-6" /></svg>
+    </button>
+    {open && <div className="app-language-menu" id={menuId} role="menu" aria-label={languageLabel[language]} onKeyDown={move}>
+      {LANGUAGES.map(([id, name, code]) => <button key={id} type="button" role="menuitemradio" aria-checked={id === language} lang={id}
+        onClick={() => { onChange(id); setOpen(false); }}><span className="app-language-code">{code}</span>{name}
+        {id === language && <svg className="app-language-check" viewBox="0 0 24 24" {...stroke}><path d="M5 12l5 5 9-10" /></svg>}</button>)}
+    </div>}
+  </div>;
 }

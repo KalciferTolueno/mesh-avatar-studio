@@ -27,7 +27,7 @@ import { LiveItems } from './LiveItems';
 import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
 import { LiveBackground } from './LiveBackground';
 import { LiveProjectPicker } from './LiveProjectPicker';
-import { ShellRail, StatusMeters, shellIcons, shellText, useFpsCounter, useShellGroup, type ShellGroup } from './LiveShell';
+import { LanguageMenu, ShellRail, StatusMeters, shellIcons, shellText, useFpsCounter, useShellGroup, type ShellGroup } from './LiveShell';
 import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
 import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
@@ -259,7 +259,7 @@ export function LiveApp() {
       {import.meta.env.MODE !== 'desktop' && <ModeSwitch language={language} current="live" edit={<a href="/" aria-label={t.back}>{themeLabel(language)}</a>} />}
       <LiveProjectPicker current={settings.project} language={language} /></div>
       <div className="live-header-actions"><ThemeToggle language={language} />
-      <div className="live-languages">{(['es', 'en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ es: 'Español', en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div></div>
+      <LanguageMenu language={language} onChange={setLanguage} /></div>
     </header>
     <div className="live-layout app-main"><section className="live-view app-stage"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
       <canvas ref={canvas} data-testid="live-avatar" className={frame.locked ? undefined : 'live-movable'} />

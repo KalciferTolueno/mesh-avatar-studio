@@ -2,6 +2,12 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PNG } from 'pngjs';
 import { samplePresent, sampleSkipReason } from './sample';
 
+// fork (FORK.md 30): the Live page groups the languages behind one button
+async function pickLanguage(page: import('@playwright/test').Page, name: string) {
+  await page.getByTestId('language-menu').click();
+  await page.getByRole('menuitemradio', { name }).click();
+}
+
 test.beforeEach(() => { test.skip(!samplePresent, sampleSkipReason); });
 
 async function guardNetwork(context: BrowserContext) {
@@ -118,9 +124,9 @@ test('live controls calibrate, mirror, compose mic mouth, localize and relay wit
   await page.getByRole('button', { name: 'Scene', exact: true }).click();
   await page.getByLabel('Background', { exact: true }).selectOption('#00ff00');
   expect(await page.getByRole('textbox', { name: 'Copy OBS URL' }).inputValue()).toContain('bg=%2300ff00');
-  await page.getByRole('button', { name: '日本語', exact: true }).click();
+  await pickLanguage(page, '日本語');
   await expect(page.getByRole('button', { name: '正面の姿勢を登録', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '简体中文', exact: true }).click();
+  await pickLanguage(page, '简体中文');
   await expect(page.getByRole('button', { name: '校准', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止摄像头', exact: true }).click();
   await expect(stream.locator('#avatar')).toHaveAttribute('data-live', 'idle', { timeout: 2500 });
@@ -197,9 +203,9 @@ test('hidden tracking stall warns in all languages and clears when fresh frames 
   await hideControls(page);
   await page.evaluate(() => { (window as Window & { freezeVideo?: boolean }).freezeVideo = true; });
   await expect(page.getByTestId('background-status')).toContainText('Tracking has stopped', { timeout: 5000 });
-  await page.getByRole('button', { name: '日本語', exact: true }).click();
+  await pickLanguage(page, '日本語');
   await expect(page.getByTestId('background-status')).toContainText('この画面が隠れているため追跡が止まっています');
-  await page.getByRole('button', { name: '简体中文', exact: true }).click();
+  await pickLanguage(page, '简体中文');
   await expect(page.getByTestId('background-status')).toContainText('面部追踪已停止');
   await page.evaluate(() => { (window as Window & { freezeVideo?: boolean }).freezeVideo = false; });
   await expect(page.getByTestId('background-status')).toHaveCount(0, { timeout: 5000 });
