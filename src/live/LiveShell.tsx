@@ -9,19 +9,19 @@ export const SHELL_GROUPS = ['capture', 'scene', 'expression', 'motion', 'light'
 export type ShellGroup = typeof SHELL_GROUPS[number];
 
 export const shellText = {
-  es: { capture: 'Cámara y voz', scene: 'Escena', expression: 'Expresión', motion: 'Movimiento', light: 'Luz y física', groups: 'Ajustes',
+  es: { center: 'Centrar personaje', capture: 'Cámara y voz', scene: 'Escena', expression: 'Expresión', motion: 'Movimiento', light: 'Luz y física', groups: 'Ajustes',
     lock: 'Bloquear posición', light_: 'Iluminación', copy: 'Copiar URL de OBS', copied: 'URL de OBS copiada', copyError: 'No se pudo copiar la URL',
     hint: 'Arrastra para mover · rueda para escalar', mic: 'Nivel del micrófono', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS sin conectar' : n === 1 ? 'OBS: 1 vista conectada' : `OBS: ${n} vistas conectadas`, tools: 'Herramientas del directo' },
-  en: { capture: 'Camera and voice', scene: 'Scene', expression: 'Expression', motion: 'Movement', light: 'Light and physics', groups: 'Settings',
+  en: { center: 'Center the avatar', capture: 'Camera and voice', scene: 'Scene', expression: 'Expression', motion: 'Movement', light: 'Light and physics', groups: 'Settings',
     lock: 'Lock position', light_: 'Lighting', copy: 'Copy OBS link', copied: 'OBS link copied', copyError: 'Could not copy the link',
     hint: 'Drag to move · scroll to resize', mic: 'Microphone level', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS not connected' : n === 1 ? 'OBS: 1 view connected' : `OBS: ${n} views connected`, tools: 'Stream tools' },
-  ja: { capture: 'カメラと声', scene: 'シーン', expression: '表情', motion: '動き', light: 'ライトと物理', groups: '設定',
+  ja: { center: 'アバターを中央に', capture: 'カメラと声', scene: 'シーン', expression: '表情', motion: '動き', light: 'ライトと物理', groups: '設定',
     lock: '位置を固定', light_: 'ライティング', copy: 'OBS の URL をコピー', copied: 'OBS の URL をコピーしました', copyError: 'URL をコピーできませんでした',
     hint: 'ドラッグで移動・ホイールで拡大縮小', mic: 'マイクの音量', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS 未接続' : `OBS: ${n} 画面接続中`, tools: '配信ツール' },
-  zh: { capture: '摄像头和声音', scene: '场景', expression: '表情', motion: '动作', light: '光照和物理', groups: '设置',
+  zh: { center: '形象居中', capture: '摄像头和声音', scene: '场景', expression: '表情', motion: '动作', light: '光照和物理', groups: '设置',
     lock: '锁定位置', light_: '光照', copy: '复制 OBS 链接', copied: '已复制 OBS 链接', copyError: '无法复制链接',
     hint: '拖动移动 · 滚轮缩放', mic: '麦克风音量', fps: 'fps',
     obs: (n: number) => n === 0 ? 'OBS 未连接' : `OBS：已连接 ${n} 个画面`, tools: '直播工具' },
@@ -29,7 +29,7 @@ export const shellText = {
 type Lang = keyof typeof shellText;
 
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-export const shellIcons: Record<ShellGroup | 'lock' | 'unlock' | 'light' | 'copy' | 'mic' | 'camera', ReactNode> = {
+export const shellIcons: Record<ShellGroup | 'lock' | 'unlock' | 'light' | 'copy' | 'mic' | 'camera' | 'center', ReactNode> = {
   capture: <svg viewBox="0 0 24 24" {...stroke}><rect x="3" y="6" width="13" height="12" /><path d="M16 10l5-3v10l-5-3" /></svg>,
   scene: <svg viewBox="0 0 24 24" {...stroke}><rect x="3" y="4" width="18" height="16" /><path d="M3 16l5-5 4 4 3-3 6 6" /><circle cx="16" cy="9" r="1.5" /></svg>,
   expression: <svg viewBox="0 0 24 24" {...stroke}><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5c1 1.3 2.1 2 3.5 2s2.5-.7 3.5-2M9 9.5h.01M15 9.5h.01" /></svg>,
@@ -38,6 +38,7 @@ export const shellIcons: Record<ShellGroup | 'lock' | 'unlock' | 'light' | 'copy
   lock: <svg viewBox="0 0 24 24" {...stroke}><rect x="5" y="11" width="14" height="10" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>,
   unlock: <svg viewBox="0 0 24 24" {...stroke}><rect x="5" y="11" width="14" height="10" /><path d="M8 11V8a4 4 0 0 1 7.5-2" /></svg>,
   copy: <svg viewBox="0 0 24 24" {...stroke}><rect x="8" y="8" width="13" height="13" /><path d="M16 8V3H3v13h5" /></svg>,
+  center: <svg viewBox="0 0 24 24" {...stroke}><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4" /><circle cx="12" cy="12" r="3" /></svg>,
   mic: <svg viewBox="0 0 24 24" {...stroke}><rect x="9" y="3" width="6" height="11" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>,
   camera: <svg viewBox="0 0 24 24" {...stroke}><rect x="3" y="6" width="13" height="12" /><path d="M16 10l5-3v10l-5-3" /></svg>,
 };

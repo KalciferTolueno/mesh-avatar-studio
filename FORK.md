@@ -696,6 +696,14 @@ git checkout mi-version && git merge main
   `src-tauri/src/server.rs`, `src/live/frame.ts` (`obs`), `src/live/LiveFrame.tsx`,
   `src/live/LiveApp.tsx`, `src/live/shell.css`.
 
+### 34. Botón «Centrar personaje»
+
+- En la barra de herramientas sobre el avatar, un botón que devuelve el avatar a su sitio si se
+  movió demasiado: lo coloca y escala dentro del recuadro con la zona segura (`fitNow`, el mismo
+  cálculo que el encuadre automático de la sección 32), aunque la posición esté bloqueada o el
+  automático apagado; no cambia esas opciones. Llega a OBS como cualquier cambio de encuadre.
+- **Archivos:** `src/live/LiveShell.tsx` (texto e icono), `src/live/LiveApp.tsx`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

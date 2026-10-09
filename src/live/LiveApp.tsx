@@ -320,6 +320,7 @@ export function LiveApp() {
         <button className="app-tool" disabled={!tracking} title={t.calibrateHint} onClick={() => setCalibrated(pose.current.calibrate(performance.now()))}>{t.calibrate}</button>
         <label className="app-tool app-icon-tool" title={t.microphone} data-on={micActive}><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{shellIcons.mic}<span className="app-sr">{t.microphone}</span></label>
         <span className="app-toolbar-gap" aria-hidden="true" />
+        <button className="app-tool app-icon-tool" aria-label={shell.center} title={shell.center} disabled={viewState !== 'ready'} onClick={fitNow}>{shellIcons.center}</button>
         <button className="app-tool app-icon-tool" aria-pressed={frame.locked} aria-label={shell.lock} title={shell.lock} onClick={() => setFrame(current => ({ ...current, locked: !current.locked }))}>{frame.locked ? shellIcons.lock : shellIcons.unlock}</button>
         <button className="app-tool app-icon-tool" aria-pressed={settings.lighting.enabled} aria-label={shell.light_} title={shell.light_} onClick={() => changeLighting({ ...settings.lighting, enabled: !settings.lighting.enabled })}>{shellIcons.light}</button>
         <button className="app-tool app-icon-tool" aria-label={shell.copy} title={shell.copy} onClick={copyObs}>{shellIcons.copy}</button>
