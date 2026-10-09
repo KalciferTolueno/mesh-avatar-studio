@@ -5,6 +5,7 @@ import { createRig } from './rig.js';
 import { createRenderer } from './renderer.js';
 import { createPhysics } from './physics.js';
 import { createGroupPhysics } from './groups.js';
+import { createItems } from './items.js';
 import { createSpriteModule } from './sprites.js';
 import { Motion } from './motion.js';
 import { MOTIONS, IDLE_MOTIONS } from './motions.js';
@@ -155,6 +156,8 @@ export async function createMeshAvatarImpl(canvas, options) {
   const handW = [];
   for (let i = 0; i < handMesh.rest.length / 2; i++) handW.push(handWeights(handMesh.rest[i * 2], handMesh.rest[i * 2 + 1]));
   if (rig.hand) R.addLayer('hand', imgs.hand, handMesh);
+  // fork: accessories that follow the head or body (src/engine/items.js)
+  const items = createItems(R, engine, loadImage);
 
   const physics = new Physics();
   const motion = new Motion(rig.view.gazeCenter ?? [rig.head.cx, rig.head.cy]);
@@ -236,6 +239,7 @@ export async function createMeshAvatarImpl(canvas, options) {
       hp[i * 2] = tmp[0]; hp[i * 2 + 1] = tmp[1];
     }
     physics.chains.forEach((ch, k) => deformTassel(ch, tassels[k].mesh));
+    items.update(P, phys);
 
     const ball = 7; // px of iris travel
     R.draw({
@@ -292,6 +296,13 @@ export async function createMeshAvatarImpl(canvas, options) {
     getLipSyncState() { return motion.getLipSyncState(); },
     setAutoIdle(on) { motion.autoIdle = !!on; },
     setLighting(value) { R.setLighting(value); },
+    // fork: accessories (src/engine/items.js): [{ id, src, x, y, scale, rotation, flip, attach, layer, visible }]
+    setItems(list) { return items.set(list); },
+    /** Item id under a canvas point (CSS px), or null. */
+    itemAt(cx, cy) { const p = R.toImageDrawn(cx, cy); return p ? items.hit(p[0], p[1]) : null; },
+    /** Canvas CSS px -> source image px, as last drawn.
+     * @returns {[number, number] | null} */
+    canvasToImage(cx, cy) { const p = R.toImageDrawn(cx, cy); return p ? [p[0], p[1]] : null; },
     // fork: avatar position and size in the frame (src/live/frame.ts)
     setFrame({ x = 0, y = 0, scale = 1 } = {}) { R.frame = { x, y, scale }; },
     getLightingStats() { return { ...R.lightingStats }; },

@@ -17,9 +17,16 @@ const text = {
 type Lang = keyof typeof text;
 const RATIO: Record<Exclude<FrameAspect, 'free'>, number> = { '16:9': 16 / 9, '9:16': 9 / 16, '4:3': 4 / 3, '1:1': 1 };
 
+/** Accessories under the pointer take the drag and the wheel instead of the avatar (src/live/LiveItems.tsx). */
+export interface FrameItemHandler {
+  at(x: number, y: number): string | null;
+  move(id: string, from: [number, number], to: [number, number]): void;
+  scale(id: string, factor: number): void;
+  rotate(id: string, degrees: number): void;
+}
 /** Sizes the preview canvas to the chosen shape and lets the avatar be dragged and scrolled. */
-export function useFrameCanvas(canvas: RefObject<HTMLCanvasElement | null>, value: FrameSettings, onChange: (value: FrameSettings) => void) {
-  const latest = useRef({ value, onChange }); latest.current = { value, onChange };
+export function useFrameCanvas(canvas: RefObject<HTMLCanvasElement | null>, value: FrameSettings, onChange: (value: FrameSettings) => void, items?: FrameItemHandler) {
+  const latest = useRef({ value, onChange, items }); latest.current = { value, onChange, items };
   useLayoutEffect(() => {
     const element = canvas.current, box = element?.parentElement;
     if (!element || !box) return;
@@ -34,16 +41,22 @@ export function useFrameCanvas(canvas: RefObject<HTMLCanvasElement | null>, valu
   useEffect(() => {
     const element = canvas.current;
     if (!element) return;
-    let drag: { id: number; x: number; y: number } | null = null;
+    let drag: { id: number; x: number; y: number; item: string | null } | null = null;
+    const local = (event: MouseEvent): [number, number] => { const b = element.getBoundingClientRect(); return [event.clientX - b.left, event.clientY - b.top]; };
     const change = (frame: FrameSettings['frame']) => latest.current.onChange({ ...latest.current.value, frame });
     const down = (event: PointerEvent) => {
       if (latest.current.value.locked || event.button !== 0) return;
-      drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, item: latest.current.items?.at(...local(event)) ?? null };
       element.setPointerCapture(event.pointerId); element.dataset.dragging = 'true';
     };
     const move = (event: PointerEvent) => {
       if (!drag || drag.id !== event.pointerId) return;
       const bounds = element.getBoundingClientRect(), frame = latest.current.value.frame;
+      if (drag.item) {
+        latest.current.items?.move(drag.item, [drag.x - bounds.left, drag.y - bounds.top], local(event));
+        drag.x = event.clientX; drag.y = event.clientY;
+        return;
+      }
       const next = parseFrame({ ...frame, x: frame.x + (event.clientX - drag.x) / bounds.width, y: frame.y + (event.clientY - drag.y) / bounds.height });
       drag.x = event.clientX; drag.y = event.clientY;
       if (next) change(next);
@@ -58,6 +71,12 @@ export function useFrameCanvas(canvas: RefObject<HTMLCanvasElement | null>, valu
       event.preventDefault();
       const bounds = element.getBoundingClientRect();
       const steps = event.deltaMode === 1 ? event.deltaY * 33 : event.deltaMode === 2 ? event.deltaY * 400 : event.deltaY;
+      const item = latest.current.items?.at(...local(event));
+      if (item) {
+        if (event.shiftKey) latest.current.items!.rotate(item, (steps || event.deltaX) * 0.05);
+        else latest.current.items!.scale(item, Math.exp(-steps * 0.001));
+        return;
+      }
       change(zoomFrameAt(latest.current.value.frame, Math.exp(-steps * 0.001),
         (event.clientX - bounds.left) / bounds.width - 0.5, (event.clientY - bounds.top) / bounds.height - 0.5));
     };

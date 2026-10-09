@@ -3,6 +3,8 @@ import type { Rig } from '../rig/types';
 import { parseRig } from '../rig/validate';
 import { createMeshAvatarImpl } from './createMeshAvatar.js';
 
+/** Fork: an accessory drawn on the avatar (src/engine/items.js); x / y / scale in source-image px. */
+export interface AvatarItemLayer { id: string; src: string; x: number; y: number; scale: number; rotation: number; flip: boolean; attach: 'head' | 'body' | 'none'; layer: 'front' | 'behind'; visible: boolean }
 export interface MeshAvatarOptions {
   rig: Rig;
   assetsBase?: string;
@@ -35,6 +37,9 @@ export interface MeshAvatar {
   getPhysicsGroups(): string[];
   setMouthBlend(seconds: number): void;
   setFrame(frame: { x?: number; y?: number; scale?: number }): void;
+  setItems(items: AvatarItemLayer[]): Promise<void>;
+  itemAt(x: number, y: number): string | null;
+  canvasToImage(x: number, y: number): [number, number] | null;
   setVoiceVowel(vowel: 'a' | 'i' | 'u' | 'e' | 'o' | null): void;
   onMotion(listener: (id: string | null) => void): () => void;
   advance(seconds: number, fps?: number): void;

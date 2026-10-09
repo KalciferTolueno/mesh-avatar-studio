@@ -52,6 +52,17 @@ respecto al original están en [FORK.md](../FORK.md).
 - Asentir, Negar, Saludar, Reír, Sorprenderse, Ladear cabeza, Pensar, Timidez y Guiño. Se
   reproducen una vez encima de tu movimiento, con o sin cámara.
 
+### Accesorios
+- **Añadir imagen…**: elige un PNG con fondo transparente (gafas, gorro, orejeras…). Aparece
+  sobre la cabeza; **arrástralo** a su sitio en la vista previa, **rueda** encima para el tamaño
+  y **Mayús + rueda** para girarlo.
+- **Sigue a**: la cabeza (gafas, gorros), el cuerpo (collares, insignias) o nada (fijo).
+  **Capa**: delante o detrás del avatar. También tamaño, giro, voltear y orden.
+- Cada accesorio tiene botón y **tecla** para ponértelo o quitártelo en directo.
+- Se guardan en la carpeta del proyecto y salen también en OBS.
+- Para imágenes: dibújalas en Affinity o pide a ChatGPT "gafas redondas, PNG con fondo
+  transparente, vista frontal"; luego colócalas aquí.
+
 ### Posición y tamaño
 - **Arrastra el avatar** con el ratón para moverlo y usa **la rueda** sobre él para cambiar su
   tamaño (se acerca hacia donde apunta el ratón).

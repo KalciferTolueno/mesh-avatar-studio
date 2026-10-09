@@ -304,19 +304,54 @@ export function createRenderer(engine, rig) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineBuf);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.lines, gl.STATIC_DRAW);
       const layer = { name, image: img, mesh, tex: this.texture(img), vao, posBuf, uvBuf, triBuf, lineBuf, visible: true, face: !!opts.face, eyeBall: opts.eyeBall, color: opts.color || [1, 1, 1, 1] };
-      this.layers.push(layer);
+      // fork (src/engine/items.js): accessories are lit as flat pictures and can go behind the avatar
+      if (opts.item) { layer.item = true; if (this.lighting.enabled) layer.normal = this.flatNormal(); }
+      if (opts.first) this.layers.unshift(layer); else this.layers.push(layer);
       return layer;
+    }
+
+    applyFrame() {
+      const f = this.frame;
+      if (f.scale !== 1 || f.x !== 0 || f.y !== 0) {
+        this.scale = [this.scale[0] * f.scale, this.scale[1] * f.scale];
+        this.offset = [this.offset[0] * f.scale + 2 * f.x, this.offset[1] * f.scale - 2 * f.y];
+      }
+    }
+    // fork: accessories (src/engine/items.js)
+    flatNormal() {
+      if (this.flat) return this.flat;
+      const gl = this.gl;
+      this.flat = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.flat);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128, 128, 255, 255]));
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      return this.flat;
+    }
+    removeLayer(layer) {
+      const i = this.layers.indexOf(layer);
+      if (i < 0) return;
+      this.layers.splice(i, 1);
+      const gl = this.gl;
+      gl.deleteTexture(layer.tex);
+      gl.deleteVertexArray(layer.vao);
+      for (const buffer of [layer.posBuf, layer.uvBuf, layer.triBuf, layer.lineBuf]) gl.deleteBuffer(buffer);
+    }
+    /** Behind items first (in order), then the avatar, then front items (in order). */
+    orderItems(behind, front) {
+      const rest = this.layers.filter(l => !l.item);
+      this.layers.splice(0, this.layers.length, ...behind, ...rest, ...front);
     }
 
     destroy() {
       const gl = this.gl;
       for (const layer of this.layers) {
         gl.deleteTexture(layer.tex);
-        if (layer.normal) gl.deleteTexture(layer.normal);
+        if (layer.normal && !layer.item) gl.deleteTexture(layer.normal);
         if (layer.headBuf) gl.deleteBuffer(layer.headBuf);
         gl.deleteVertexArray(layer.vao);
         for (const buffer of [layer.posBuf, layer.uvBuf, layer.triBuf, layer.lineBuf]) gl.deleteBuffer(buffer);
       }
+      if (this.flat) gl.deleteTexture(this.flat);
       gl.deleteProgram(this.main.prog);
       gl.deleteProgram(this.line.prog);
       if (this.lit) gl.deleteProgram(this.lit.prog);
@@ -330,6 +365,7 @@ export function createRenderer(engine, rig) {
       const gl = this.gl;
       if (!this.lit) this.lit = compile(gl, LIGHT_VS, LIGHT_FS);
       for (const layer of this.layers) {
+        if (layer.item && !layer.normal) layer.normal = this.flatNormal();
         if (layer.normal || layer.overlay) continue;
         const data = layerNormals(layer.image, layer.mesh.rect, rig, !/^(eye|mouth)/.test(layer.name));
         this.lightingStats.normalMs += data.ms;
@@ -377,11 +413,7 @@ export function createRenderer(engine, rig) {
         this.offset[0] += cx * this.scale[0] * (1 - zoom); this.offset[1] += cy * this.scale[1] * (1 - zoom);
         this.scale = [this.scale[0] * zoom, this.scale[1] * zoom];
       }
-      const f = this.frame;
-      if (f.scale !== 1 || f.x !== 0 || f.y !== 0) {
-        this.scale = [this.scale[0] * f.scale, this.scale[1] * f.scale];
-        this.offset = [this.offset[0] * f.scale + 2 * f.x, this.offset[1] * f.scale - 2 * f.y];
-      }
+      this.applyFrame();
       gl.viewport(0, 0, this.canvas.width, this.canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -475,6 +507,14 @@ export function createRenderer(engine, rig) {
       if (!this.pxOff) return null;   // pointer moved before the first frame was drawn
       const dpr = this.canvas.width / this.canvas.clientWidth;
       return [(cx * dpr - this.pxOff[0]) / this.pxScale, (cy * dpr - this.pxOff[1]) / this.pxScale];
+    }
+    // fork: canvas CSS px -> source image px as last drawn (screen movement and framing included)
+    toImageDrawn(cx, cy) {
+      if (!this.canvas.clientWidth) return null;
+      // nothing drawn yet (e.g. a hidden tab): the view without screen movement
+      if (!this.pxOff) { this.resize(); this.applyFrame(); }
+      const nx = cx / this.canvas.clientWidth * 2 - 1, ny = 1 - cy / this.canvas.clientHeight * 2;
+      return [(nx - this.offset[0]) / this.scale[0], (ny - this.offset[1]) / this.scale[1]];
     }
   }
   return { Renderer, buildGrid };

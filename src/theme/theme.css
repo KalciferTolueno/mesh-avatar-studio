@@ -163,3 +163,7 @@
 .live-preview canvas[style*="width"] { outline: 1px dashed var(--accent, #3977d8); outline-offset: -1px; }
 .live-preview canvas.live-movable { cursor: grab; touch-action: none; }
 .live-preview canvas.live-movable[data-dragging] { cursor: grabbing; }
+
+/* fork: accessories editor (src/live/LiveItems.tsx) */
+.item-editor { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 8px; }
+.item-editor input[type="text"] { min-width: 0; flex: 1; padding: 6px 8px; border: 1px solid var(--line, #c8d3e2); border-radius: 7px; background: transparent; color: inherit; }

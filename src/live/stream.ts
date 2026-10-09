@@ -4,6 +4,7 @@ import { LivePose } from './protocol';
 import { receiveLighting, receiveLiveParameters } from './relay';
 import { receivePhysics } from '../physics/settings';
 import { receiveFrame } from './frame';
+import { itemLayers, loadItems, receiveItems, type AvatarItem } from './items';
 import './stream.css';
 
 const settings = viewSettings(location.search);
@@ -16,6 +17,10 @@ const unsubscribeLighting = receiveLighting(settings.project, value => { setting
 const unsubscribePhysics = receivePhysics(settings.project, value => { settings.physics = value; avatarInstance?.setPhysicsTuning(value); });
 // fork: dragging / scrolling the avatar on the Live page moves it here too (src/live/frame.ts)
 const unsubscribeFrame = receiveFrame(settings.project, value => { settings.frame = value; avatarInstance?.setFrame(value); });
+// fork: accessories from the project folder, then live changes from the Live page (src/live/items.ts)
+let items: AvatarItem[] | null = null;
+const unsubscribeItems = receiveItems(settings.project, value => { items = value; void avatarInstance?.setItems(itemLayers(settings.project, value)); });
+void loadItems(settings.project).then(value => { if (items) return; items = value; void avatarInstance?.setItems(itemLayers(settings.project, value)); });
 const unsubscribe = receiveLiveParameters(data => pose.receive(data, performance.now()));
 void createAvatarView(canvas, settings, (avatar, now, dt) => {
   const sampled = pose.sample(now, dt);
@@ -30,8 +35,9 @@ void createAvatarView(canvas, settings, (avatar, now, dt) => {
 }).then(view => {
   avatarInstance = view.avatar;
   if (settings.frame) view.avatar.setFrame(settings.frame);
+  if (items) void view.avatar.setItems(itemLayers(settings.project, items));
   if (settings.lighting) view.avatar.setLighting(settings.lighting);
-  const destroy = () => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); avatarInstance = undefined; view.destroy(); };
+  const destroy = () => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); unsubscribeItems(); avatarInstance = undefined; view.destroy(); };
   window.addEventListener('pagehide', destroy, { once: true });
   import.meta.hot?.dispose(destroy);
-}).catch(() => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); canvas.dataset.state = 'error'; });
+}).catch(() => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); unsubscribeItems(); canvas.dataset.state = 'error'; });

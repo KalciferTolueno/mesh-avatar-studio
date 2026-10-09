@@ -23,6 +23,8 @@ import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
 import { LiveFrame, useFrameCanvas } from './LiveFrame';
 import { LiveLost, LOST_DEFAULTS } from './LiveLost';
+import { LiveItems } from './LiveItems';
+import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
 import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
@@ -62,7 +64,22 @@ export function LiveApp() {
   const camera = useRef<CameraCapture | null>(null), microphone = useRef<MicrophoneCapture | null>(null);
   const avatarRef = useRef<MeshAvatar | null>(null);
   const lightRef = useRef(settings.lighting); lightRef.current = settings.lighting;
-  useFrameCanvas(canvas, frame, setFrame);
+  // fork: accessories (src/live/LiveItems.tsx), stored in the project folder for OBS too
+  const [items, setItems] = useState<AvatarItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const itemsLoaded = useRef<string | null>(null);
+  const changeItem = (id: string, change: (item: AvatarItem) => Partial<AvatarItem>) =>
+    setItems(current => current.map(item => item.id === id ? { ...item, ...change(item) } : item));
+  useFrameCanvas(canvas, frame, setFrame, {
+    at: (x, y) => avatarRef.current?.itemAt(x, y) ?? null,
+    move: (id, from, to) => {
+      const a = avatarRef.current?.canvasToImage(...from), b = avatarRef.current?.canvasToImage(...to);
+      setSelectedItem(id);
+      if (a && b) changeItem(id, item => ({ x: item.x + b[0] - a[0], y: item.y + b[1] - a[1] }));
+    },
+    scale: (id, factor) => { setSelectedItem(id); changeItem(id, item => ({ scale: Math.max(0.02, Math.min(8, item.scale * factor)) })); },
+    rotate: (id, degrees) => { setSelectedItem(id); changeItem(id, item => ({ rotation: ((item.rotation + degrees + 540) % 360) - 180 })); },
+  });
   const pose = useRef(new FacePose());
   const expressions = useRef(new ExpressionMixer());
   const animations = useRef(new AnimationPlayer());
@@ -168,6 +185,30 @@ export function LiveApp() {
     }, 34);
     return () => clearInterval(timer);
   }, [settings.project]);
+  useEffect(() => {
+    let cancelled = false;
+    itemsLoaded.current = null;
+    void loadItems(settings.project).then(list => { if (cancelled) return; itemsLoaded.current = settings.project; setItems(list); setSelectedItem(list[0]?.id ?? null); });
+    return () => { cancelled = true; };
+  }, [settings.project]);
+  useEffect(() => { if (viewState === 'ready') void avatarRef.current?.setItems(itemLayers(settings.project, items)); }, [settings.project, items, viewState]);
+  useEffect(() => {
+    if (itemsLoaded.current !== settings.project) return;
+    sendItems(settings.project, items);
+    // saved shortly after the last change, so dragging does not write on every frame
+    const timer = setTimeout(() => { void saveItems(settings.project, items).catch(() => undefined); }, 400);
+    return () => clearTimeout(timer);
+  }, [settings.project, items]);
+  /** A new picture goes on the head, about as wide as a quarter of the visible height. */
+  const placeItem = (width: number) => {
+    const view = canvas.current, avatar = avatarRef.current;
+    if (!view || !avatar) return null;
+    const top = avatar.canvasToImage(view.clientWidth / 2, 0), bottom = avatar.canvasToImage(view.clientWidth / 2, view.clientHeight);
+    const centre = avatar.canvasToImage(view.clientWidth / 2, view.clientHeight * 0.3);
+    if (!top || !bottom || !centre) return null;
+    return { x: centre[0], y: centre[1], scale: Math.abs(bottom[1] - top[1]) / 4 / width };
+  };
+  const removeItemFile = (file: string) => { void fetch(`/__items/${encodeURIComponent(settings.project)}/file/${encodeURIComponent(file)}`, { method: 'DELETE' }).catch(() => undefined); };
   const changeLighting = (lighting: typeof settings.lighting) => setSettings(current => ({ ...current, lighting }));
   const cameraActive = cameraState === 'starting' || cameraState === 'running';
   const micActive = micState === 'micStarting' || micState === 'micOn';
@@ -219,6 +260,7 @@ export function LiveApp() {
       {/* fork: expressions on keys, like VTube Studio's hotkeys (FORK.md 14) */}
       <LiveExpressions mixer={expressions} language={language} />
       <LiveAnimations player={animations} language={language} />
+      <LiveItems project={settings.project} items={items} onChange={setItems} selected={selectedItem} onSelect={setSelectedItem} place={placeItem} onRemoveFile={removeItemFile} language={language} />
       <LiveFrame value={frame} onChange={setFrame} language={language} />
       <LiveLost options={options} onChange={patch => setOptions(current => ({ ...current, ...patch }))} language={language} />
       {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}

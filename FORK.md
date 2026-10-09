@@ -426,6 +426,36 @@ git checkout mi-version && git merge main
   `src/expressions/LiveExpressions.tsx` (exporta `expressionText`), `tests/live-tracking.test.ts`,
   `tests/expressions.test.ts`.
 
+### 22. Accesorios que siguen la cabeza (como los objetos de VTube Studio)
+
+- **Antes:** no había forma de añadir gafas, gorros u otros objetos sin editar la ilustración.
+- **Ahora:** sección **Accesorios** en En vivo (`src/live/LiveItems.tsx`): **Añadir imagen…**
+  (PNG, WebP o JPEG de hasta 10 MB, máx. 16), cada uno con su botón y **tecla** para mostrarlo u
+  ocultarlo (`HotkeyPanel`, teclas por proyecto en `mesh-avatar-item-keys:<proyecto>`), y para el
+  seleccionado: nombre, **Sigue a** (cabeza, cuerpo o nada), **Capa** (delante o detrás del
+  avatar), tamaño, giro, voltear, orden y quitar. En la vista previa se **arrastra** un accesorio
+  para colocarlo, la **rueda** encima cambia su tamaño y **Mayús + rueda** lo gira (fuera de un
+  accesorio, arrastrar y la rueda siguen moviendo el avatar, sección 19).
+- **Motor** (`src/engine/items.js`, nuevo): cada accesorio es una imagen rígida en px de la
+  imagen original. Para que siga a la cabeza sin doblarse, se deforman su ancla y dos puntos
+  vecinos con los pesos de la cara en ese punto (giro con profundidad, cabeceo, inclinación,
+  cuerpo; sin cejas, mandíbula, ni mechones) y el accesorio toma la posición, rotación,
+  compresión y cizalla resultantes. API: `setItems`, `itemAt`, `canvasToImage`. Con iluminación
+  se sombrea como superficie plana. Sin accesorios no cambia nada (regresión 0 px).
+- **Renderizador:** `addLayer` acepta `{ item, first }`, nuevos `removeLayer`, `orderItems`,
+  `flatNormal`, `applyFrame` (extraído de `draw`, mismo cálculo) y `toImageDrawn` (punto del
+  lienzo a px de la imagen tal como se dibujó, con movimiento y encuadre).
+- **Guardado:** las imágenes y `items.json` van en `projects/<proyecto>/items/` (ignorado por git)
+  a través de un plugin nuevo del servidor (`src/server/project-items.ts`, rutas `/__items/…`:
+  solo origen local, nombres seguros, sin salir de la carpeta del proyecto, imágenes
+  comprobadas por sus bytes). OBS las carga al abrir y recibe los cambios en vivo (evento
+  `studio:items`). Quitar un accesorio borra su copia de la carpeta del proyecto.
+- **Archivos nuevos:** `src/engine/items.js`, `src/live/items.ts`, `src/live/LiveItems.tsx`,
+  `src/server/project-items.ts`, `tests/live-items.test.ts`.
+- **Archivos del original tocados:** `src/engine/renderer.js`, `src/engine/createMeshAvatar.js`,
+  `src/engine/index.ts`, `src/live/LiveApp.tsx`, `src/live/stream.ts`, `vite.config.ts`. Del fork:
+  `src/live/LiveFrame.tsx` (arrastre y rueda sobre accesorios), `src/theme/theme.css`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |
