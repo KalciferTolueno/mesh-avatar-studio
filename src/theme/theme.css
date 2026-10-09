@@ -167,3 +167,12 @@
 /* fork: accessories editor (src/live/LiveItems.tsx) */
 .item-editor { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 8px; }
 .item-editor input[type="text"] { min-width: 0; flex: 1; padding: 6px 8px; border: 1px solid var(--line, #c8d3e2); border-radius: 7px; background: transparent; color: inherit; }
+
+/* fork: folding Live sections (FORK.md 24) keep the upstream column layout of their fields */
+.live-controls .live-fold .live-fold-body { padding: 0 16px 16px; }
+.live-controls .live-lighting.live-fold label { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 7px; margin: 12px 0; }
+.live-controls .live-lighting.live-fold label.live-check { flex-direction: row; align-items: center; }
+.live-controls .live-lighting.live-fold select { width: 100%; max-width: none; }
+.live-controls .live-quick p { margin: 10px 0 4px; }
+.live-controls .live-quick .live-check { margin: 10px 0 2px; }
+.live-controls .live-quick .camera-preview { margin-top: 10px; }

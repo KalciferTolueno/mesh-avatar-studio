@@ -54,7 +54,7 @@ export function HotkeyPanel({ testId, title, icon, hint, language, storageKey, i
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-  return <details className="live-lighting live-hotkeys" data-testid={testId} open>
+  return <details className="live-lighting live-hotkeys" data-testid={testId}>
     <summary>{icon}{title}{badge}</summary>
     <div className="lighting-controls">
       <div className="expression-grid">

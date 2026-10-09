@@ -98,7 +98,7 @@ export function LiveFrame({ value, onChange, language }: { value: FrameSettings;
       onChange={event => onChange({ ...value, frame: parseFrame({ ...frame, [key]: Number(event.target.value) }) ?? frame })} />
     <output>{show(frame[key])}</output></label>;
   const moved = frame.x !== 0 || frame.y !== 0 || frame.scale !== 1;
-  return <details className="live-lighting live-frame" data-testid="frame-section" open>
+  return <details className="live-lighting live-frame" data-testid="frame-section">
     <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" /><circle cx="12" cy="10" r="2.5" /><path d="M7.5 17c.8-2 2.5-3 4.5-3s3.7 1 4.5 3" /></svg>{t.title}{moved && <span className="lighting-on">{Math.round(frame.scale * 100)} %</span>}</summary>
     <div className="lighting-controls">
       <label>{t.aspect}<select aria-label={t.aspect} value={value.aspect} onChange={event => onChange({ ...value, aspect: event.target.value as FrameAspect })}>

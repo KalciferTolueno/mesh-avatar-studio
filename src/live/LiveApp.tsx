@@ -29,6 +29,8 @@ import { LiveBackground } from './LiveBackground';
 import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
 import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
+// fork: name of the folding background section, which also holds the OBS link
+const FOLD_TEXT = { es: { background: 'Fondo y OBS' }, en: { background: 'Background and OBS' }, ja: { background: '背景と OBS' }, zh: { background: '背景和 OBS' } };
 const OPTIONS_KEY = 'mesh-avatar-live-tracking';
 // like VTube Studio's sample models: pitch ±20° -> ±30°, livelier brows, blush and wide eyes on
 const EXPRESSION_DEFAULTS = { pitchBoost: 1.4, eyeWideGain: 1, browGain: 1.3, blushGain: 0.5, smileEyes: 1, breathing: 0.8, blinkMode: 'both' as const, voiceVowels: true, vowelSmooth: 0.5, vowelStrength: 0.85 };
@@ -244,7 +246,8 @@ export function LiveApp() {
       {lightingOpen && <LightHandle value={settings.lighting} onChange={changeLighting} language={language} />}
     </div><p role="status" className={viewState === 'projectError' ? 'live-error' : ''}>{t[viewState]} · {settings.project}</p></section>
     <aside className="live-controls">
-      <section><h2>{t.camera}</h2><label>{t.device}<select aria-label={t.camera} value={cameraId} disabled={cameraActive} onChange={event => setCameraId(event.target.value)}><option value="">{t.defaultDevice}</option>{devices.filter(device => device.kind === 'videoinput' && device.deviceId).map((device, i) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${t.camera} ${i + 1}`}</option>)}</select></label>
+      {/* fork (FORK.md 24): what every stream needs stays visible; every setting folds away */}
+      <section className="live-quick" data-testid="live-quick">
         <div className="live-buttons"><button className="live-primary" disabled={!cameraActive && viewState !== 'ready'} onClick={() => {
           setCalibrated(false); pose.current.reset();
           if (cameraActive) camera.current?.stop(); else void camera.current?.start(cameraId).then(refreshDevices);
@@ -252,30 +255,46 @@ export function LiveApp() {
         <p role="status" data-testid="tracking-status" data-state={status}>{t[status]}</p>
         {backgroundStatus && <p role="alert" className="live-error" data-testid="background-status">{t[backgroundStatus]}</p>}
         <small>{calibrated ? t.calibrated : t.calibrateHint}</small>
+        <label className="live-check"><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{t.microphone}</label>
+        <small role="status">{t[micState]}</small>
+        {/* kept out of the folding sections: a hidden video stops feeding the face tracker */}
+        <video ref={video} autoPlay muted playsInline className={showCamera && cameraActive ? 'camera-preview' : 'camera-preview camera-hidden'} style={{ transform: options.mirror ? 'scaleX(-1)' : undefined }} aria-label={t.cameraPreview} />
+      </section>
+      <details className="live-lighting live-fold" data-testid="camera-section">
+        <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3" /></svg>{t.camera}</summary>
+        <div className="live-fold-body">
+        <label>{t.device}<select aria-label={t.camera} value={cameraId} disabled={cameraActive} onChange={event => setCameraId(event.target.value)}><option value="">{t.defaultDevice}</option>{devices.filter(device => device.kind === 'videoinput' && device.deviceId).map((device, i) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${t.camera} ${i + 1}`}</option>)}</select></label>
         <label className="live-check"><input type="checkbox" checked={options.mirror} onChange={event => setOptions(current => ({ ...current, mirror: event.target.checked }))} />{t.mirror}</label>
         <label>{t.sensitivity}<input type="range" min="0.25" max="2" step="0.05" value={options.sensitivity} onChange={event => setOptions(current => ({ ...current, sensitivity: Number(event.target.value) }))} /></label>
         <label>{t.mouthSensitivity}<input type="range" min="0.5" max="3" step="0.05" value={options.mouthSensitivity} onChange={event => setOptions(current => ({ ...current, mouthSensitivity: Number(event.target.value) }))} /></label>
         <label className="live-check"><input type="checkbox" checked={options.linkEyes} onChange={event => setOptions(current => ({ ...current, linkEyes: event.target.checked }))} />{t.linkEyes}</label>
         <label>{t.smoothing}<input type="range" min="0" max="1" step="0.05" value={options.smoothing} onChange={event => setOptions(current => ({ ...current, smoothing: Number(event.target.value) }))} /></label>
         <label className="live-check"><input type="checkbox" checked={showCamera} onChange={event => setShowCamera(event.target.checked)} />{t.cameraPreview}</label>
-        <video ref={video} autoPlay muted playsInline className={showCamera ? 'camera-preview' : 'camera-preview camera-hidden'} style={{ transform: options.mirror ? 'scaleX(-1)' : undefined }} aria-label={t.cameraPreview} />
-      </section>
-      <section><h2>{t.microphone}</h2><label className="live-check"><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{t.microphone}</label>
-        <select aria-label={t.microphone} value={micId} disabled={micActive} onChange={event => setMicId(event.target.value)}><option value="">{t.defaultDevice}</option>{devices.filter(device => device.kind === 'audioinput' && device.deviceId).map((device, i) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${t.microphone} ${i + 1}`}</option>)}</select>
+        </div>
+      </details>
+      <details className="live-lighting live-fold" data-testid="microphone-section">
+        <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>{t.microphone}{micState === 'micOn' && <span className="lighting-on">ON</span>}</summary>
+        <div className="live-fold-body">
+        <label>{t.device}<select aria-label={t.microphone} value={micId} disabled={micActive} onChange={event => setMicId(event.target.value)}><option value="">{t.defaultDevice}</option>{devices.filter(device => device.kind === 'audioinput' && device.deviceId).map((device, i) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${t.microphone} ${i + 1}`}</option>)}</select></label>
         <label className="live-check"><input type="checkbox" checked={options.voiceVowels} onChange={event => setOptions(current => ({ ...current, voiceVowels: event.target.checked }))} />{t.voiceVowels}</label>
         {options.voiceVowels && <VowelCalibrationPanel detector={vowels} calibration={vowelCalibration} micOn={micState === 'micOn'} language={language} />}
         {(['vowelSmooth', 'vowelStrength'] as const).map(key => <label key={key}>{t[key]}<input type="range" min="0" max="1" step="0.05" value={options[key]} disabled={!options.voiceVowels} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} /></label>)}
-        <label>{t.gain}<input type="range" min="0.25" max="5" step="0.05" value={gain} onChange={event => setGain(Number(event.target.value))} /></label><small role="status">{t[micState]}</small>
-      </section>
-      <section><h2>{t.background}</h2><select aria-label={t.background} value={settings.background} onChange={event => setSettings(current => ({ ...current, background: backgroundColor(event.target.value) }))}>
+        <label>{t.gain}<input type="range" min="0.25" max="5" step="0.05" value={gain} onChange={event => setGain(Number(event.target.value))} /></label>
+        </div>
+      </details>
+      <details className="live-lighting live-fold" data-testid="background-section">
+        <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 16l5-5 4 4 3-3 6 6" /><circle cx="16" cy="9" r="1.5" /></svg>{FOLD_TEXT[language].background}</summary>
+        <div className="live-fold-body">
+        <label>{t.background}<select aria-label={t.background} value={settings.background} onChange={event => setSettings(current => ({ ...current, background: backgroundColor(event.target.value) }))}>
         <option value="transparent">{t.transparent}</option><option value="#00ff00">{t.green}</option><option value="#0000ff">{t.blue}</option>{!['transparent', '#00ff00', '#0000ff'].includes(settings.background) && <option value={settings.background}>{t.custom}</option>}
-      </select><label>{t.custom}<input type="color" value={settings.background === 'transparent' ? '#ffffff' : settings.background} onChange={event => setSettings(current => ({ ...current, background: event.target.value }))} /></label>
+      </select></label><label>{t.custom}<input type="color" value={settings.background === 'transparent' ? '#ffffff' : settings.background} onChange={event => setSettings(current => ({ ...current, background: event.target.value }))} /></label>
         <LiveBackground project={settings.project} value={settings.backgroundImage} onChange={backgroundImage => setSettings(current => ({ ...current, backgroundImage }))} language={language} />
         <label>{t.fit}<select value={settings.fit} onChange={event => setSettings(current => ({ ...current, fit: event.target.value as 'contain' | 'cover' }))}><option value="contain">{t.contain}</option><option value="cover">{t.cover}</option></select></label>
         <div className="live-buttons"><button className="live-primary" onClick={() => { void navigator.clipboard.writeText(url).then(() => setCopyState('copied')).catch(() => setCopyState('copyError')); }}>{t.obs}</button>
         <a className="live-open" href={url} target="_blank" rel="noreferrer">{t.openStream}</a></div>
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
-      </section>
+        </div>
+      </details>
       {/* fork: expressions on keys, like VTube Studio's hotkeys (FORK.md 14) */}
       <LiveExpressions mixer={expressions} language={language} />
       <LiveAnimations player={animations} language={language} />
@@ -283,7 +302,7 @@ export function LiveApp() {
       <LiveFrame value={frame} onChange={setFrame} language={language} />
       <LiveLost options={options} onChange={patch => setOptions(current => ({ ...current, ...patch }))} language={language} />
       {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
-      <details className="live-lighting live-movement" data-testid="movement-section" open>
+      <details className="live-lighting live-movement" data-testid="movement-section">
         <summary><Icon name="live" />{t.movement}</summary>
         <div className="lighting-controls">
           {(['screenMove', 'bodySensitivity'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}

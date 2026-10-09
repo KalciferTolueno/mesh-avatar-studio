@@ -476,6 +476,24 @@ git checkout mi-version && git merge main
 - **Archivos del original tocados:** `src/live/settings.ts`, `src/live/stream.ts`,
   `src/live/LiveApp.tsx`. Del fork: `src/server/project-items.ts`, `tests/live-items.test.ts`.
 
+### 24. Barra derecha de En vivo plegada
+
+- **Antes:** Cámara, Micrófono y Fondo eran bloques fijos siempre abiertos, y varias secciones
+  del fork (expresiones, animaciones, accesorios, posición, movimiento) empezaban abiertas.
+- **Ahora:** arriba queda un bloque fijo con lo de cada directo (**Iniciar / Detener cámara**,
+  **Calibrar**, estado, avisos, casilla del **micrófono** y la imagen de la cámara). Todo lo
+  demás son secciones `<details>` que **empiezan cerradas**: Cámara (dispositivo, espejo,
+  sensibilidades, suavizado, mostrar cámara), Micrófono (dispositivo, vocales, calibración,
+  ganancia), **Fondo y OBS** (color, imagen o video, encuadre, URL de OBS) y todas las del fork.
+  El `<video>` de la cámara está fuera de las secciones plegables a propósito: dentro de un
+  `<details>` cerrado deja de dibujarse y el rastreo se para. La imagen de la cámara solo se ve
+  con la cámara encendida y "Mostrar la cámara" activado.
+- **Prueba e2e tocada:** `e2e/live-streaming.spec.ts:89` abre las secciones Cámara y Fondo antes
+  de usar sus controles (sigue fallando en este equipo en el mismo punto que en el original).
+- **Archivos del original tocados:** `src/live/LiveApp.tsx`, `e2e/live-streaming.spec.ts`. Del
+  fork: `src/live/LiveFrame.tsx`, `src/expressions/HotkeyPanel.tsx` (sin `open`),
+  `src/theme/theme.css`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

@@ -24,6 +24,11 @@ respecto al original están en [FORK.md](../FORK.md).
 
 ## Cada sección de la barra derecha
 
+Arriba, siempre a la vista, está lo de cada directo: **Iniciar cámara**, **Calibrar**, el estado,
+el **micrófono** y tu imagen de la cámara. Todo lo demás son secciones **plegadas**: haz clic en
+su título para abrirlas o cerrarlas. Las teclas de expresiones, animaciones y accesorios
+funcionan aunque su sección esté cerrada.
+
 ### Cámara
 - **Iniciar cámara**, mira de frente con la cara relajada y pulsa **Calibrar**. Repite la
   calibración si cambias de silla o de posición.

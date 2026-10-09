@@ -103,6 +103,8 @@ test('live controls calibrate, mirror, compose mic mouth, localize and relay wit
     });
   });
   expect((await nextParams()).angleX).toBeLessThan(-10);
+  // fork (FORK.md 24): settings sit in folding sections
+  await page.getByTestId('camera-section').locator('summary').click();
   await page.getByRole('checkbox', { name: 'Mirror', exact: true }).uncheck();
   await expect.poll(async () => (await nextParams()).angleX).toBeGreaterThan(15);
   await mic.check();
@@ -114,6 +116,7 @@ test('live controls calibrate, mirror, compose mic mouth, localize and relay wit
   await expect.poll(async () => Math.abs((await nextParams()).angleX)).toBeLessThan(0.5);
   await page.getByRole('checkbox', { name: 'Show camera preview' }).uncheck();
   await expect(page.locator('video')).toHaveClass(/camera-hidden/);
+  await page.getByTestId('background-section').locator('summary').click();
   await page.getByLabel('Background', { exact: true }).selectOption('#00ff00');
   expect(await page.getByRole('textbox', { name: 'Copy OBS URL' }).inputValue()).toContain('bg=%2300ff00');
   await page.getByRole('button', { name: '日本語', exact: true }).click();
