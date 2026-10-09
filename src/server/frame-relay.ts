@@ -14,6 +14,11 @@ export function frameRelay(): Plugin {
         last.set(client.socket, now);
         server.ws.send(FRAME_EVENT, message);
       });
+      // fork (FORK.md 29): stream views say hello so the Live status bar can count them
+      server.ws.on('studio:stream-hello', data => {
+        const { project, id } = (data ?? {}) as Record<string, unknown>;
+        if (typeof project === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(project) && typeof id === 'string' && /^[a-z0-9]{6,32}$/.test(id)) server.ws.send('studio:stream-hello', { project, id });
+      });
     },
   };
 }

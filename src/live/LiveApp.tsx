@@ -27,6 +27,7 @@ import { LiveItems } from './LiveItems';
 import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
 import { LiveBackground } from './LiveBackground';
 import { LiveProjectPicker } from './LiveProjectPicker';
+import { ShellRail, StatusMeters, shellIcons, shellText, useFpsCounter, useShellGroup, type ShellGroup } from './LiveShell';
 import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
 import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
 
@@ -52,6 +53,15 @@ export function LiveApp() {
   const { language, setLanguage } = useI18n(), t = liveText[language];
   const [settings, setSettings] = useState(() => { const view = viewSettings(location.search); return { ...view, lighting: view.lighting ?? loadLighting(view.project), physics: view.physics ?? loadPhysics(view.project), backgroundImage: view.backgroundImage ?? loadBackground(view.project) }; });
   const [lightingOpen, setLightingOpen] = useState(false);
+  // fork (FORK.md 29): open settings group, status bar meters and short notices
+  const [shellGroup, setShellGroup] = useShellGroup();
+  const micLevel = useRef(0);
+  const [fps, countFrame] = useFpsCounter();
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flash = (message: string) => { setToast(message); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 2500); };
+  // every settings section starts open inside its group panel (they still fold on a click)
+  useEffect(() => { document.querySelectorAll<HTMLDetailsElement>('.app-panel details').forEach(details => { details.open = true; }); }, []);
   // fork: avatar position and size in the frame (src/live/LiveFrame.tsx)
   const [frame, setFrame] = useState(() => loadFrameSettings(settings.project));
   const frameRef = useRef(frame.frame); frameRef.current = frame.frame;
@@ -156,6 +166,7 @@ export function LiveApp() {
         avatar.setParameters({ ...Object.fromEntries([...new Set([...mixer.touched(), ...player.touched()])].map(key => [key, all[key]])), ...voice }, 1);
       }
       avatar.setSpeaking(micOn); avatar.setVoiceLevel(level);
+      micLevel.current = level; countFrame();
     }, (avatar, now) => {
       if (controls.current.cameraState === 'running' || controls.current.micState === 'micOn' || expressions.current.any() || animations.current.any()) send(avatar.getParameters(), now);
     }).then(value => { if (cancelled) value.destroy(); else { view = value; avatarRef.current = value.avatar; value.avatar.setLighting(lightRef.current); value.avatar.setFrame(frameRef.current); setViewState('ready'); } }).catch(() => { if (!cancelled) setViewState('projectError'); });
@@ -235,34 +246,43 @@ export function LiveApp() {
   const micActive = micState === 'micStarting' || micState === 'micOn';
   const url = streamUrl({ ...settings, frame: frame.frame }, location.origin);
   const status = cameraState === 'running' ? tracking ? 'tracking' : 'lost' : cameraState;
-  return <main className="live-app">
+  // fork (FORK.md 29): the Live page as a desktop app (src/live/LiveShell.tsx)
+  const shell = shellText[language];
+  const copyObs = () => { void navigator.clipboard.writeText(url).then(() => flash(shell.copied)).catch(() => flash(shell.copyError)); };
+  const group = (id: ShellGroup, children: React.ReactNode) => <div className="app-group" data-group={id} hidden={shellGroup !== id}>{children}</div>;
+  return <main className="live-app app-shell">
     {/* fork: Edit / Live switch and theme toggle (src/theme/ThemeControls.tsx); the back link keeps its name */}
-    <header className="live-header"><div className="live-header-actions"><h1>Mesh Avatar Studio</h1>
+    <header className="live-header app-bar"><div className="live-header-actions">
+      <span className="app-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 10L7 4l4 3M18 10l-1-6-4 3" /><circle cx="12" cy="13" r="7" /><path d="M9.5 15.5c.7.6 1.5.9 2.5.9s1.8-.3 2.5-.9" /></svg></span>
+      <h1>Mesh Avatar Studio</h1>
       {/* fork: the desktop app (src-tauri) has no editor; both choose the project here */}
       {import.meta.env.MODE !== 'desktop' && <ModeSwitch language={language} current="live" edit={<a href="/" aria-label={t.back}>{themeLabel(language)}</a>} />}
       <LiveProjectPicker current={settings.project} language={language} /></div>
       <div className="live-header-actions"><ThemeToggle language={language} />
       <div className="live-languages">{(['es', 'en', 'ja', 'zh'] as const).map(lang => <button key={lang} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{({ es: 'Español', en: 'English', ja: '日本語', zh: '简体中文' })[lang]}</button>)}</div></div>
     </header>
-    <div className="live-layout"><section className="live-view"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
+    <div className="live-layout app-main"><section className="live-view app-stage"><div className="live-preview checkerboard lighting-preview" style={{ backgroundColor: settings.background, backgroundImage: settings.background === 'transparent' ? undefined : 'none' }}>
       <canvas ref={canvas} data-testid="live-avatar" className={frame.locked ? undefined : 'live-movable'} />
-      {lightingOpen && <LightHandle value={settings.lighting} onChange={changeLighting} language={language} />}
-    </div><p role="status" className={viewState === 'projectError' ? 'live-error' : ''}>{t[viewState]} · {settings.project}</p></section>
-    <aside className="live-controls">
-      {/* fork (FORK.md 24): what every stream needs stays visible; every setting folds away */}
-      <section className="live-quick" data-testid="live-quick">
-        <div className="live-buttons"><button className="live-primary" disabled={!cameraActive && viewState !== 'ready'} onClick={() => {
-          setCalibrated(false); pose.current.reset();
-          if (cameraActive) camera.current?.stop(); else void camera.current?.start(cameraId).then(refreshDevices);
-        }}>{cameraActive ? t.stop : t.start}</button><button disabled={!tracking} onClick={() => setCalibrated(pose.current.calibrate(performance.now()))}>{t.calibrate}</button></div>
-        <p role="status" data-testid="tracking-status" data-state={status}>{t[status]}</p>
-        {backgroundStatus && <p role="alert" className="live-error" data-testid="background-status">{t[backgroundStatus]}</p>}
-        <small>{calibrated ? t.calibrated : t.calibrateHint}</small>
-        <label className="live-check"><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{t.microphone}</label>
-        <small role="status">{t[micState]}</small>
-        {/* kept out of the folding sections: a hidden video stops feeding the face tracker */}
-        <video ref={video} autoPlay muted playsInline className={showCamera && cameraActive ? 'camera-preview' : 'camera-preview camera-hidden'} style={{ transform: options.mirror ? 'scaleX(-1)' : undefined }} aria-label={t.cameraPreview} />
-      </section>
+      {lightingOpen && shellGroup === 'light' && <LightHandle value={settings.lighting} onChange={changeLighting} language={language} />}
+      <div className="app-toolbar" role="toolbar" aria-label={shell.tools}>
+        <button className={cameraActive ? 'app-tool' : 'app-tool live-primary'} disabled={!cameraActive && viewState !== 'ready'} onClick={() => {
+            setCalibrated(false); pose.current.reset();
+            if (cameraActive) camera.current?.stop(); else void camera.current?.start(cameraId).then(refreshDevices);
+          }}>{shellIcons.camera}{cameraActive ? t.stop : t.start}</button>
+        <button className="app-tool" disabled={!tracking} title={t.calibrateHint} onClick={() => setCalibrated(pose.current.calibrate(performance.now()))}>{t.calibrate}</button>
+        <label className="app-tool app-icon-tool" title={t.microphone} data-on={micActive}><input type="checkbox" checked={micActive} disabled={!micActive && viewState !== 'ready'} onChange={event => { if (event.target.checked) void microphone.current?.start(micId).then(refreshDevices); else microphone.current?.stop(); }} />{shellIcons.mic}<span className="app-sr">{t.microphone}</span></label>
+        <span className="app-toolbar-gap" aria-hidden="true" />
+        <button className="app-tool app-icon-tool" aria-pressed={frame.locked} aria-label={shell.lock} title={shell.lock} onClick={() => setFrame(current => ({ ...current, locked: !current.locked }))}>{frame.locked ? shellIcons.lock : shellIcons.unlock}</button>
+        <button className="app-tool app-icon-tool" aria-pressed={settings.lighting.enabled} aria-label={shell.light_} title={shell.light_} onClick={() => changeLighting({ ...settings.lighting, enabled: !settings.lighting.enabled })}>{shellIcons.light}</button>
+        <button className="app-tool app-icon-tool" aria-label={shell.copy} title={shell.copy} onClick={copyObs}>{shellIcons.copy}</button>
+      </div>
+      {/* kept out of the settings panels: a hidden video stops feeding the face tracker */}
+      <video ref={video} autoPlay muted playsInline className={showCamera && cameraActive ? 'camera-preview app-pip' : 'camera-preview camera-hidden'} style={{ transform: options.mirror ? 'scaleX(-1)' : undefined }} aria-label={t.cameraPreview} />
+      {!frame.locked && <span className="app-stage-hint" aria-hidden="true">{shell.hint}</span>}
+    </div></section>
+    <aside className="live-controls app-panel" aria-label={shell[shellGroup]}>
+      <h2 className="app-panel-title">{shell[shellGroup]}</h2>
+      {group('capture', <>
       <details className="live-lighting live-fold" data-testid="camera-section">
         <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3" /></svg>{t.camera}</summary>
         <div className="live-fold-body">
@@ -285,6 +305,9 @@ export function LiveApp() {
         <label>{t.gain}<input type="range" min="0.25" max="5" step="0.05" value={gain} onChange={event => setGain(Number(event.target.value))} /></label>
         </div>
       </details>
+      <p className="live-privacy">{t.privacy}</p>
+      </>)}
+      {group('scene', <>
       <details className="live-lighting live-fold" data-testid="background-section">
         <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 16l5-5 4 4 3-3 6 6" /><circle cx="16" cy="9" r="1.5" /></svg>{FOLD_TEXT[language].background}</summary>
         <div className="live-fold-body">
@@ -298,28 +321,15 @@ export function LiveApp() {
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
         </div>
       </details>
+      <LiveFrame value={frame} onChange={setFrame} language={language} />
+
+      <LiveItems project={settings.project} items={items} onChange={setItems} selected={selectedItem} onSelect={setSelectedItem} place={placeItem} onRemoveFile={removeItemFile} language={language} />
+
+      </>)}
+      {group('expression', <>
       {/* fork: expressions on keys, like VTube Studio's hotkeys (FORK.md 14) */}
       <LiveExpressions mixer={expressions} language={language} />
       <LiveAnimations player={animations} language={language} />
-      <LiveItems project={settings.project} items={items} onChange={setItems} selected={selectedItem} onSelect={setSelectedItem} place={placeItem} onRemoveFile={removeItemFile} language={language} />
-      <LiveFrame value={frame} onChange={setFrame} language={language} />
-      <LiveLost options={options} onChange={patch => setOptions(current => ({ ...current, ...patch }))} language={language} />
-      {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
-      <details className="live-lighting live-movement" data-testid="movement-section">
-        <summary><Icon name="live" />{t.movement}</summary>
-        <div className="lighting-controls">
-          {(['screenMove', 'bodySensitivity'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
-            <input aria-label={t[key]} type="range" min="0" max="3" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
-            <output>{(options[key] ?? 1).toFixed(2)}</output></label>)}
-          <fieldset><legend>{t.limits}</legend>
-            {(['limitSide', 'limitUp', 'limitDown', 'limitIn', 'limitOut', 'limitLeanForward', 'limitLeanBack'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
-              <input aria-label={t[key]} type="range" min="0" max="1" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
-              <output>{Math.round((options[key] ?? 1) * 100)} %</output></label>)}
-          </fieldset>
-          <button type="button" onClick={() => setOptions(current => ({ ...current, ...MOVEMENT_DEFAULTS }))}>{t.resetMovement}</button>
-          <p className="lighting-hint">{t.movementHint}</p>
-        </div>
-      </details>
       {/* fork: expression ranges, like VTube Studio's amplified mappings (FORK.md 13) */}
       <details className="live-lighting live-expression" data-testid="expression-section">
         <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5c1 1.3 2.1 2 3.5 2s2.5-.7 3.5-2" /><path d="M9 9.5h.01M15 9.5h.01" /></svg>{t.expression}</summary>
@@ -336,6 +346,28 @@ export function LiveApp() {
           <p className="lighting-hint">{t.expressionHint}</p>
         </div>
       </details>
+      </>)}
+      {group('motion', <>
+      {/* fork: everything that moves the avatar on screen, with its limits (FORK.md 11, 12) */}
+      <details className="live-lighting live-movement" data-testid="movement-section">
+        <summary><Icon name="live" />{t.movement}</summary>
+        <div className="lighting-controls">
+          {(['screenMove', 'bodySensitivity'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
+            <input aria-label={t[key]} type="range" min="0" max="3" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
+            <output>{(options[key] ?? 1).toFixed(2)}</output></label>)}
+          <fieldset><legend>{t.limits}</legend>
+            {(['limitSide', 'limitUp', 'limitDown', 'limitIn', 'limitOut', 'limitLeanForward', 'limitLeanBack'] as const).map(key => <label className="lighting-slider" key={key}>{t[key]}
+              <input aria-label={t[key]} type="range" min="0" max="1" step="0.05" value={options[key]} onChange={event => setOptions(current => ({ ...current, [key]: Number(event.target.value) }))} />
+              <output>{Math.round((options[key] ?? 1) * 100)} %</output></label>)}
+          </fieldset>
+          <button type="button" onClick={() => setOptions(current => ({ ...current, ...MOVEMENT_DEFAULTS }))}>{t.resetMovement}</button>
+          <p className="lighting-hint">{t.movementHint}</p>
+        </div>
+      </details>
+      <LiveLost options={options} onChange={patch => setOptions(current => ({ ...current, ...patch }))} language={language} />
+
+      </>)}
+      {group('light', <>
       <details className="live-lighting" data-testid="lighting-section" onToggle={event => setLightingOpen(event.currentTarget.open)}>
         <summary><Icon name="light" />{lightingText[language].title}{settings.lighting.enabled && <span className="lighting-on">ON</span>}</summary>
         <LightingControls value={settings.lighting} onChange={changeLighting} language={language} />
@@ -343,7 +375,17 @@ export function LiveApp() {
       {/* fork: physics adjustments (src/physics), also carried by the OBS URL */}
       <LivePhysics project={settings.project} value={settings.physics} onChange={physics => setSettings(current => ({ ...current, physics }))}
         avatar={avatarRef} ready={viewState === 'ready'} language={language} />
-      <p className="live-privacy">{t.privacy}</p>
-    </aside></div>
+      </>)}
+    </aside>
+    <ShellRail group={shellGroup} onChange={setShellGroup} language={language} /></div>
+    <footer className="app-status">
+      <p role="status" data-testid="tracking-status" data-state={status}>{t[status]}</p>
+      {backgroundStatus && <p role="alert" className="live-error" data-testid="background-status">{t[backgroundStatus]}</p>}
+      {calibrated && <span className="app-status-note">{t.calibrated}</span>}
+      {toast && <span className="app-status-note" role="status">{toast}</span>}
+      <span className="app-status-fill" />
+      <StatusMeters micLevel={micLevel} fps={fps} micOn={micState === 'micOn'} project={settings.project} language={language} />
+      <span role="status" className={viewState === 'projectError' ? 'live-error' : 'app-status-project'}>{t[viewState]} · {settings.project}</span>
+    </footer>
   </main>;
 }

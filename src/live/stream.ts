@@ -6,6 +6,7 @@ import { receivePhysics } from '../physics/settings';
 import { receiveFrame } from './frame';
 import { itemLayers, loadItems, receiveItems, type AvatarItem } from './items';
 import { receiveBackground, showBackground, NO_BACKGROUND, type BackgroundImage } from './background';
+import { announceStreamView } from './streamViews';
 import './stream.css';
 
 const settings = viewSettings(location.search);
@@ -29,6 +30,8 @@ const setBackground = (value: BackgroundImage) => {
 };
 if (settings.backgroundImage) setBackground(settings.backgroundImage);
 const unsubscribeBackground = receiveBackground(settings.project, setBackground);
+// fork: tells the Live page this OBS view is open (its status bar counts them)
+const stopAnnouncing = announceStreamView(settings.project);
 void loadItems(settings.project).then(value => { if (items) return; items = value; void avatarInstance?.setItems(itemLayers(settings.project, value)); });
 const unsubscribe = receiveLiveParameters(data => pose.receive(data, performance.now()));
 void createAvatarView(canvas, settings, (avatar, now, dt) => {
@@ -46,7 +49,7 @@ void createAvatarView(canvas, settings, (avatar, now, dt) => {
   if (settings.frame) view.avatar.setFrame(settings.frame);
   if (items) void view.avatar.setItems(itemLayers(settings.project, items));
   if (settings.lighting) view.avatar.setLighting(settings.lighting);
-  const destroy = () => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); unsubscribeItems(); unsubscribeBackground(); hideBackground(); avatarInstance = undefined; view.destroy(); };
+  const destroy = () => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); unsubscribeItems(); unsubscribeBackground(); hideBackground(); stopAnnouncing(); avatarInstance = undefined; view.destroy(); };
   window.addEventListener('pagehide', destroy, { once: true });
   import.meta.hot?.dispose(destroy);
-}).catch(() => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); unsubscribeItems(); unsubscribeBackground(); canvas.dataset.state = 'error'; });
+}).catch(() => { unsubscribe(); unsubscribeLighting(); unsubscribePhysics(); unsubscribeFrame(); unsubscribeItems(); unsubscribeBackground(); stopAnnouncing(); canvas.dataset.state = 'error'; });

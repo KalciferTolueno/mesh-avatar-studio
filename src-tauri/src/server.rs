@@ -42,7 +42,7 @@ const MAX_ITEMS: usize = 16;
 const MAX_PICTURE: usize = 10 * 1024 * 1024;
 const MAX_BACKGROUND: usize = 60 * 1024 * 1024;
 const MAX_MESSAGE: usize = 256 * 1024;
-const BUS_EVENTS: [&str; 6] = ["studio:live-params", "studio:lighting", "studio:physics", "studio:frame", "studio:items", "studio:background"];
+const BUS_EVENTS: [&str; 7] = ["studio:live-params", "studio:lighting", "studio:physics", "studio:frame", "studio:items", "studio:background", "studio:stream-hello"];
 
 pub struct Paths {
     pub root: PathBuf,

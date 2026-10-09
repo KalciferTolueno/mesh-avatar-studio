@@ -582,6 +582,39 @@ git checkout mi-version && git merge main
   En pantallas estrechas se mantiene el scroll normal de la página.
 - **Archivos:** solo `src/theme/theme.css` (del fork).
 
+### 29. En vivo como app de escritorio (carcasa)
+
+- **Antes:** una cabecera, la vista del avatar y una columna larga con 12 secciones plegables
+  (sección 24), más un bloque fijo arriba con cámara, calibrar y micrófono.
+- **Ahora** (`src/live/LiveShell.tsx` y `src/live/shell.css`, criterios de las skills Impeccable
+  y Taste: separación por líneas en vez de cajas, un solo acento, estados claros):
+  - **Barra superior** compacta: marca, nombre, proyecto, Editar/En vivo (solo con
+    `npm run dev`), tema e idiomas.
+  - **Escenario** de borde a borde con una **barra de herramientas flotante**: iniciar o detener
+    la cámara, calibrar (la ayuda va en su descripción emergente), micrófono, bloquear la
+    posición, encender o apagar la luz y copiar la URL de OBS. La imagen de la cámara es una
+    miniatura en una esquina; está fuera de los paneles para que el rastreo no se pare.
+  - **Barra de iconos** a la derecha con 5 grupos (Cámara y voz · Escena · Expresión ·
+    Movimiento · Luz y física), de los que se ve **un panel** a la vez (`hidden`, así los
+    componentes y sus teclas siguen vivos). El grupo abierto se recuerda
+    (`mesh-avatar:live-group`). Dentro del panel, las secciones empiezan abiertas y se separan
+    por líneas; se pueden plegar. El tirador de la luz solo aparece en el grupo Luz y física.
+  - **Barra de estado:** estado del rastreo, avisos, "Pose neutra guardada", confirmación de
+    URL copiada, nivel del micrófono, fps, **vistas de OBS conectadas** y estado del avatar.
+- **Vistas de OBS:** cada vista de stream envía `studio:stream-hello` cada 2 s
+  (`src/live/streamViews.ts`). En vivo cuenta las que ha oído en los últimos 5 s. Lo reenvían
+  `src/server/frame-relay.ts` (Vite) y `src-tauri/src/server.rs` (evento añadido a la lista).
+- Sustituye el bloque fijo de la sección 24 y la disposición de la 28 (sus reglas se borraron
+  de `theme.css`). En pantallas estrechas todo se apila, la barra de iconos se vuelve una fila
+  de pestañas y la página tiene scroll.
+- **Pruebas e2e tocadas:** `e2e/live-streaming.spec.ts:89` y `e2e/lighting.spec.ts:127` abren el
+  grupo correspondiente (Escena, Luz y física) en lugar de una sección. Siguen fallando en este
+  equipo en el mismo punto que en el original.
+- **Archivos nuevos:** `src/live/LiveShell.tsx`, `src/live/shell.css`, `src/live/streamViews.ts`.
+  **Del original tocados:** `src/live/LiveApp.tsx`, `src/live/stream.ts`, `e2e/lighting.spec.ts`,
+  `e2e/live-streaming.spec.ts`. Del fork: `src/server/frame-relay.ts`, `src-tauri/src/server.rs`,
+  `src/theme/theme.css`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

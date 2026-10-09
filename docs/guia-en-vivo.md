@@ -35,12 +35,21 @@ menos de RAM. La URL de OBS es la misma (`http://127.0.0.1:5191/stream.html…`)
    copiada también los guarda, por si reinicias OBS sin la página abierta: si cambias algo
    importante, vuelve a copiarla.
 
-## Cada sección de la barra derecha
+## Cómo está organizada la ventana
 
-Arriba, siempre a la vista, está lo de cada directo: **Iniciar cámara**, **Calibrar**, el estado,
-el **micrófono** y tu imagen de la cámara. Todo lo demás son secciones **plegadas**: haz clic en
-su título para abrirlas o cerrarlas. Las teclas de expresiones, animaciones y accesorios
-funcionan aunque su sección esté cerrada.
+- **Arriba:** proyecto, tema e idioma.
+- **Sobre el avatar**, la barra de herramientas del directo: **Iniciar cámara**, **Calibrar**,
+  **micrófono**, **bloquear posición**, **luz** y **copiar la URL de OBS**. Tu imagen de la cámara
+  aparece en una esquina mientras la cámara está encendida.
+- **A la derecha**, cinco iconos abren cada uno su panel de ajustes: **Cámara y voz**,
+  **Escena** (fondo y OBS, posición y tamaño, accesorios), **Expresión** (expresiones,
+  animaciones, gestos), **Movimiento** (movimiento, cara perdida) y **Luz y física**. Solo ese
+  panel tiene scroll; el resto de la ventana queda fijo.
+- **Abajo**, la barra de estado: si te está rastreando, el nivel del micrófono, los fps y
+  **cuántas vistas de OBS están conectadas** (si dice «OBS sin conectar», OBS no está recibiendo).
+- Las teclas de expresiones, animaciones y accesorios funcionan con cualquier panel abierto.
+
+## Cada ajuste
 
 ### Cámara
 - **Iniciar cámara**, mira de frente con la cara relajada y pulsa **Calibrar**. Repite la

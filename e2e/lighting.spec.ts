@@ -136,7 +136,8 @@ test('live drag updates matching streams without a camera, and OBS URLs carry ev
   });
   const before = hash(await image(stream, 'canvas'));
   await expect(page.getByRole('button', { name: 'Light position', exact: true })).toHaveCount(0);
-  await page.getByTestId('lighting-section').locator('summary').click();
+  // fork (FORK.md 29): lighting lives in the light and physics group panel
+  await page.getByRole('button', { name: 'Light and physics', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Enable lighting' }).check();
   const handle = page.getByRole('button', { name: 'Light position', exact: true }), bounds = await page.locator('canvas').boundingBox();
   await handle.hover(); await page.mouse.down();
@@ -146,6 +147,7 @@ test('live drag updates matching streams without a camera, and OBS URLs carry ev
   await expect.poll(() => stream.evaluate(() => (window as unknown as { latestLighting: unknown }).latestLighting)).toMatchObject({ enabled: true, mode: 'cel', shadow: true });
   await expect.poll(async () => hash(await image(stream, 'canvas'))).not.toBe(before);
   expect(await stream.evaluate(() => (window as unknown as { wrongProject: boolean }).wrongProject)).toBe(false);
+  await page.getByRole('button', { name: 'Scene', exact: true }).click();
   const url = new URL(await page.getByRole('textbox', { name: 'Copy OBS URL' }).inputValue());
   expect(url.searchParams.get('light')).toBe('1'); expect(Number(url.searchParams.get('lx'))).toBeCloseTo(0.9, 2); expect(url.searchParams.get('lm')).toBe('cel'); expect(url.searchParams.get('shadow')).toBe('1');
   expect(await page.getByRole('link', { name: 'Open stream view' }).getAttribute('href')).toBe(url.href);
