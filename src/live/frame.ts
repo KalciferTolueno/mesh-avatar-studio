@@ -8,7 +8,8 @@ export interface AvatarFrame { x: number; y: number; scale: number }
 /** The Live preview's shape, so it matches the OBS browser source ('custom': width x height). */
 export type FrameAspect = '16:9' | '9:16' | '4:3' | '3:4' | '1:1' | 'custom' | 'free';
 /** Fork (FORK.md 32): `auto` fits the avatar into the box with `safe` margins (share of the box). */
-export interface FrameSettings { frame: AvatarFrame; aspect: FrameAspect; locked: boolean; custom: { w: number; h: number }; auto: boolean; safe: number }
+/** `obs`: resize the OBS browser source to the box (desktop app, FORK.md 33). */
+export interface FrameSettings { frame: AvatarFrame; aspect: FrameAspect; locked: boolean; custom: { w: number; h: number }; auto: boolean; safe: number; obs: boolean }
 export const DEFAULT_FRAME: Readonly<AvatarFrame> = Object.freeze({ x: 0, y: 0, scale: 1 });
 export const FRAME_RANGES = { x: [-1, 1], y: [-1, 1], scale: [0.2, 4] } as const;
 export const ASPECTS: FrameAspect[] = ['16:9', '9:16', '4:3', '3:4', '1:1', 'custom', 'free'];
@@ -50,7 +51,7 @@ export function writeFrameQuery(query: URLSearchParams, frame: AvatarFrame) {
 
 const storageKey = (project: string) => `mesh-avatar:frame:${project}`;
 export function loadFrameSettings(project: string): FrameSettings {
-  const fallback: FrameSettings = { frame: { ...DEFAULT_FRAME }, aspect: '16:9', locked: false, custom: { w: 1080, h: 1080 }, auto: true, safe: 0.05 };
+  const fallback: FrameSettings = { frame: { ...DEFAULT_FRAME }, aspect: '16:9', locked: false, custom: { w: 1080, h: 1080 }, auto: true, safe: 0.05, obs: true };
   try {
     const stored = JSON.parse(localStorage.getItem(storageKey(project)) ?? 'null');
     if (!stored || typeof stored !== 'object') return fallback;
@@ -60,7 +61,7 @@ export function loadFrameSettings(project: string): FrameSettings {
     return { frame, aspect: ASPECTS.includes(stored.aspect) ? stored.aspect : fallback.aspect, locked: stored.locked === true, custom,
       // saved before automatic framing existed: automatic only if the avatar was never moved
       auto: typeof stored.auto === 'boolean' ? stored.auto : isDefaultFrame(frame),
-      safe: finite(stored.safe) ? clampTo(stored.safe, SAFE_RANGE) : fallback.safe };
+      safe: finite(stored.safe) ? clampTo(stored.safe, SAFE_RANGE) : fallback.safe, obs: stored.obs !== false };
   } catch { return fallback; }
 }
 export function saveFrameSettings(project: string, value: FrameSettings) {

@@ -21,7 +21,9 @@ import { CameraCapture, MicrophoneCapture, type CameraState, type MicState, type
 import { liveText } from './i18n';
 import { Icon } from '../editor/Icon';
 import { createLiveSender, sendLighting } from './relay';
-import { LiveFrame, SafeZoneGuide, useFrameCanvas } from './LiveFrame';
+import { LiveFrame, SafeZoneGuide, boxSize, useFrameCanvas } from './LiveFrame';
+import { applyObsSize, type ObsLink } from './obsLink';
+import { useStreamViews } from './streamViews';
 import { LiveLost, LOST_DEFAULTS } from './LiveLost';
 import { LiveItems } from './LiveItems';
 import { itemLayers, loadItems, saveItems, sendItems, type AvatarItem } from './items';
@@ -261,6 +263,21 @@ export function LiveApp() {
     if (next) setFrame(current => ({ ...current, frame: next }));
   };
   const fitRef = useRef(fitNow); fitRef.current = fitNow;
+  // fork (FORK.md 33): the OBS browser source takes the box size (desktop app server)
+  const [obsLink, setObsLink] = useState<ObsLink>({ state: 'idle' });
+  const box = boxSize(frame), obsViews = useStreamViews(settings.project);
+  const resizeObs = () => {
+    if (!box) return;
+    setObsLink({ state: 'working' });
+    void applyObsSize(settings.project, box[0], box[1]).then(setObsLink);
+  };
+  const resizeObsRef = useRef(resizeObs); resizeObsRef.current = resizeObs;
+  useEffect(() => {
+    if (!frame.obs || !box || viewState !== 'ready') return;
+    setObsLink({ state: 'working' });
+    const timer = setTimeout(() => resizeObsRef.current(), 600);
+    return () => clearTimeout(timer);
+  }, [frame.obs, box?.[0], box?.[1], viewState, obsViews > 0]);
   useEffect(() => {
     if (!frame.auto || viewState !== 'ready') return;
     // after the canvas took the box shape
@@ -352,7 +369,7 @@ export function LiveApp() {
         {copyState && <p role="status">{t[copyState]}</p>}<input className="obs-url" aria-label={t.obs} readOnly value={url} onFocus={event => event.target.select()} /><small>{t.obsHelp}</small>
         </div>
       </details>
-      <LiveFrame value={frame} onChange={setFrame} onFit={fitNow} language={language} />
+      <LiveFrame value={frame} onChange={setFrame} onFit={fitNow} obs={obsLink} onObsApply={resizeObs} language={language} />
 
       <LiveItems project={settings.project} items={items} onChange={setItems} selected={selectedItem} onSelect={setSelectedItem} place={placeItem} onRemoveFile={removeItemFile} language={language} />
 

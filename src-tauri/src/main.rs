@@ -4,6 +4,7 @@
 // is running), the window uses that server instead.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod obs;
 mod server;
 
 use std::{net::TcpListener, path::PathBuf, sync::Arc};

@@ -1836,13 +1836,16 @@ name = "mesh-avatar-desktop"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "base64 0.22.1",
  "futures-util",
  "rand",
  "regex",
  "serde_json",
+ "sha2",
  "tauri",
  "tauri-build",
  "tokio",
+ "tokio-tungstenite",
  "tower-http",
 ]
 

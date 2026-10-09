@@ -671,6 +671,31 @@ git checkout mi-version && git merge main
 - **Archivos:** `src/engine/createMeshAvatar.js`, `src/engine/index.ts`, `src/live/frame.ts`,
   `src/live/LiveFrame.tsx`, `src/live/LiveApp.tsx`, `src/live/shell.css`.
 
+### 33. La fuente de OBS sigue el formato del recuadro (app de escritorio)
+
+- **Antes:** al cambiar el formato del recuadro en En vivo había que cambiar a mano el ancho y el
+  alto de la fuente de navegador en OBS.
+- **Ahora:** con **Ajustar la fuente de OBS a este tamaño** (activado por defecto), al cambiar
+  el formato o el tamaño personalizado, y cuando OBS conecta una vista, la app pide al servidor
+  de escritorio que cambie las fuentes de navegador de OBS que muestran la vista de stream de
+  este proyecto (URL `http://127.0.0.1:5191/stream.html` o `localhost` con `project=<proyecto>`)
+  al tamaño del recuadro. La sección muestra el resultado: fuente ajustada, OBS cerrado, servidor
+  WebSocket de OBS apagado, o ninguna fuente de este avatar. Si está desactivado, aparece
+  **Ajustar en OBS ahora**.
+- **Cómo:** `src-tauri/src/obs.rs` es un cliente del WebSocket de OBS (obs-websocket v5,
+  integrado en OBS 28+). Lee el puerto y la contraseña del archivo de configuración de OBS
+  (`%APPDATA%/obs-studio/plugin_config/obs-websocket/config.json`), así que nadie escribe la
+  contraseña y nunca llega a una página. Usa `GetInputList`, `GetInputSettings` y
+  `SetInputSettings` (`width`, `height`), con un límite de 4 s. Rutas en `server.rs`:
+  `GET /__obs/<proyecto>` (cuántas fuentes) y `POST /__obs/<proyecto>` (`{ width, height }`,
+  de 200 a 4096 px), solo locales. Con `npm run dev` no existe y la sección lo indica.
+- **Comprobado** con OBS 32.2.2: elegir 9:16 en En vivo deja la fuente en 1080 × 1920 y volver
+  a 16:9, en 1920 × 1080, con el aviso correcto en la app.
+- **Archivos nuevos:** `src-tauri/src/obs.rs`, `src/live/obsLink.ts`. **Tocados del fork:**
+  `src-tauri/Cargo.toml` (`tokio-tungstenite`, `sha2`, `base64`), `src-tauri/src/main.rs`,
+  `src-tauri/src/server.rs`, `src/live/frame.ts` (`obs`), `src/live/LiveFrame.tsx`,
+  `src/live/LiveApp.tsx`, `src/live/shell.css`.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

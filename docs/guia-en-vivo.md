@@ -100,6 +100,10 @@ menos de RAM. La URL de OBS es la misma (`http://127.0.0.1:5191/stream.html…`)
 - **Formato del recuadro:** elige la forma de tu avatar en la escena (16:9, 9:16, 4:3, 3:4, 1:1 o
   personalizado) y pon **la fuente de navegador de OBS con el tamaño que indica** (p. ej. 1080 ×
   1080 para 1:1). Un recuadro ajustado al personaje es más fácil de colocar en OBS.
+- **Con la app de escritorio, OBS se ajusta solo:** al cambiar el formato, la fuente de tu avatar
+  en OBS toma ese tamaño («Ajustar la fuente de OBS a este tamaño»). Necesita OBS abierto y su
+  **servidor WebSocket activado** (Herramientas → Ajustes del servidor WebSocket); la app lee la
+  contraseña de la configuración de OBS, no tienes que escribirla.
 - **Encuadre automático con zona segura:** coloca y escala el avatar solo, con un margen, para
   que no se salga ni se corte aunque te muevas al máximo. La línea discontinua verde de la vista
   previa es la zona segura. Si lo mueves a mano se apaga; **Encajar ahora** lo vuelve a aplicar.

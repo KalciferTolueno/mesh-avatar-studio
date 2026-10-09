@@ -152,6 +152,7 @@ pub fn router(paths: Arc<Paths>) -> Router {
         .route("/__items/{name}/backgrounds", get(backgrounds_list))
         .route("/__items/{name}/upload-background", axum::routing::post(background_upload))
         .route("/__items/{name}/background/{file}", get(background_get).delete(background_delete))
+        .route("/__obs/{name}", get(obs_status).post(obs_apply))
         .fallback_service(ServeDir::new(&paths.dist))
         .layer(DefaultBodyLimit::max(MAX_BACKGROUND + 1024 * 1024))
         .layer(middleware::from_fn(local_only))
@@ -195,6 +196,27 @@ async fn bus_client(socket: WebSocket, state: AppState) {
         let _ = state.bus.send((id, Arc::from(text.as_str())));
     }
     forward.abort();
+}
+
+// ---- OBS (src-tauri/src/obs.rs): the browser source follows the box chosen on Live ----
+
+async fn obs_status(UrlPath(name): UrlPath<String>) -> Response {
+    if !project_name(&name) { return error(StatusCode::BAD_REQUEST, "Invalid project name."); }
+    match crate::obs::count_sources(&name).await {
+        Ok(sources) => json_ok(json!({ "available": true, "sources": sources })),
+        Err(reason) => json_ok(json!({ "available": false, "reason": reason })),
+    }
+}
+async fn obs_apply(UrlPath(name): UrlPath<String>, headers: HeaderMap, body: Bytes) -> Response {
+    if !project_name(&name) { return error(StatusCode::BAD_REQUEST, "Invalid project name."); }
+    if !is_type(&headers, "application/json") { return error(StatusCode::BAD_REQUEST, "Send application/json."); }
+    let Ok(value) = serde_json::from_slice::<Value>(&body) else { return error(StatusCode::BAD_REQUEST, "Invalid JSON.") };
+    let size = |key: &str| value.get(key).and_then(Value::as_u64).filter(|n| (200..=4096).contains(n)).map(|n| n as u32);
+    let (Some(width), Some(height)) = (size("width"), size("height")) else { return error(StatusCode::BAD_REQUEST, "Width and height must be 200 to 4096 px.") };
+    match crate::obs::apply_size(&name, width, height).await {
+        Ok(sources) => json_ok(json!({ "available": true, "sources": sources, "width": width, "height": height })),
+        Err(reason) => json_ok(json!({ "available": false, "reason": reason })),
+    }
 }
 
 // ---- projects (read-only) ------------------------------------------------------------------
