@@ -56,19 +56,31 @@ export function saveFrameSettings(project: string, value: FrameSettings) {
 
 // Live relay: Live page -> dev server -> stream view (see src/server/frame-relay.ts)
 export const FRAME_EVENT = 'studio:frame';
-export interface FrameMessage { project: string; frame: AvatarFrame }
+/** `at`: when the sending Live page last changed it (Date.now()); a stream view follows the most
+ * recent change, so a second Live page left open cannot pull the avatar back every second. */
+export interface FrameMessage { project: string; frame: AvatarFrame; at?: number }
 export function frameMessage(input: unknown): FrameMessage | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   const data = input as Record<string, unknown>;
-  if (Object.keys(data).length !== 2 || typeof data.project !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(data.project)) return null;
+  const keys = Object.keys(data).length;
+  if ((keys !== 2 && !(keys === 3 && 'at' in data)) || typeof data.project !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(data.project)) return null;
+  if ('at' in data && !(typeof data.at === 'number' && Number.isFinite(data.at) && data.at >= 0)) return null;
   const frame = parseFrame(data.frame);
-  return frame ? { project: data.project, frame } : null;
+  return frame ? { project: data.project, frame, ...(typeof data.at === 'number' ? { at: data.at } : {}) } : null;
 }
-export function sendFrame(project: string, frame: AvatarFrame) {
-  const message = frameMessage({ project, frame });
+export function sendFrame(project: string, frame: AvatarFrame, at?: number) {
+  const message = frameMessage({ project, frame, ...(at === undefined ? {} : { at }) });
   if (message) busSend(FRAME_EVENT, message);
 }
-export function receiveFrame(project: string, callback: (frame: AvatarFrame) => void) {
-  const receive = (data: unknown) => { const message = frameMessage(data); if (message?.project === project) callback(message.frame); };
+export function receiveFrame(project: string, callback: (frame: AvatarFrame, at: number) => void) {
+  const receive = (data: unknown) => { const message = frameMessage(data); if (message?.project === project) callback(message.frame, message.at ?? 0); };
   return busOn(FRAME_EVENT, receive);
+}
+
+/** When this browser last changed a relayed setting (`frame`, `background`) for a project. */
+export function loadChangedAt(kind: string, project: string): number {
+  try { const value = Number(localStorage.getItem(`mesh-avatar:changed:${kind}:${project}`)); return Number.isFinite(value) && value > 0 ? value : 0; } catch { return 0; }
+}
+export function saveChangedAt(kind: string, project: string, at: number) {
+  try { localStorage.setItem(`mesh-avatar:changed:${kind}:${project}`, String(at)); } catch { /* optional */ }
 }

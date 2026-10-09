@@ -628,6 +628,25 @@ git checkout mi-version && git merge main
 - **Archivos:** `src/live/LiveShell.tsx`, `src/live/shell.css`, `src/live/LiveApp.tsx`,
   `e2e/live-streaming.spec.ts`.
 
+### 31. OBS sigue al último cambio (varias páginas En vivo abiertas)
+
+- **Problema:** En vivo reenvía su encuadre y su fondo cada segundo (secciones 19 y 23), para que
+  una vista de OBS abierta después se sincronice. Con **dos páginas En vivo** abiertas a la vez
+  (p. ej. la app de escritorio y una pestaña del navegador), cada una reenviaba sus valores y el
+  avatar de OBS **saltaba** de una posición a otra cada segundo.
+- **Ahora:** los mensajes de encuadre y fondo llevan `at`, el momento (`Date.now()`) en que esa
+  página cambió el valor por última vez. Se guarda por proyecto
+  (`mesh-avatar:changed:<frame|background>:<proyecto>`). La vista de stream ignora los que son
+  más antiguos que el último aplicado, así que manda la página donde se tocó por última vez. Los
+  mensajes sin `at` cuentan como 0 (compatibles). Comprobado con dos emisores alternando valores
+  cada 350 ms: el avatar queda quieto en el más reciente (8 de 8 muestras).
+- **Archivos:** `src/live/frame.ts` (`at`, `loadChangedAt`, `saveChangedAt`),
+  `src/live/background.ts`, `src/live/stream.ts`, `src/live/LiveApp.tsx`,
+  `tests/live-frame.test.ts`.
+- **Nota de pruebas:** con OBS y la app abiertos a la vez, las pruebas e2e de velocidad del relé
+  (`live-streaming.spec.ts:173`) bajan a ~14 fps (mínimo 15) por la carga de la GPU; con OBS
+  cerrado pasan.
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |

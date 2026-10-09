@@ -18,7 +18,9 @@ const unsubscribeLighting = receiveLighting(settings.project, value => { setting
 // fork: live physics adjustments from the Live page (src/physics)
 const unsubscribePhysics = receivePhysics(settings.project, value => { settings.physics = value; avatarInstance?.setPhysicsTuning(value); });
 // fork: dragging / scrolling the avatar on the Live page moves it here too (src/live/frame.ts)
-const unsubscribeFrame = receiveFrame(settings.project, value => { settings.frame = value; avatarInstance?.setFrame(value); });
+// the most recent change wins: a second Live page left open only repeats an older value
+let frameAt = -1, backgroundAt = -1;
+const unsubscribeFrame = receiveFrame(settings.project, (value, at) => { if (at < frameAt) return; frameAt = at; settings.frame = value; avatarInstance?.setFrame(value); });
 // fork: accessories from the project folder, then live changes from the Live page (src/live/items.ts)
 let items: AvatarItem[] | null = null;
 const unsubscribeItems = receiveItems(settings.project, value => { items = value; void avatarInstance?.setItems(itemLayers(settings.project, value)); });
@@ -29,7 +31,7 @@ const setBackground = (value: BackgroundImage) => {
   hideBackground(); shownBackground = value; hideBackground = showBackground(canvas, settings.project, value);
 };
 if (settings.backgroundImage) setBackground(settings.backgroundImage);
-const unsubscribeBackground = receiveBackground(settings.project, setBackground);
+const unsubscribeBackground = receiveBackground(settings.project, (value, at) => { if (at < backgroundAt) return; backgroundAt = at; setBackground(value); });
 // fork: tells the Live page this OBS view is open (its status bar counts them)
 const stopAnnouncing = announceStreamView(settings.project);
 void loadItems(settings.project).then(value => { if (items) return; items = value; void avatarInstance?.setItems(itemLayers(settings.project, value)); });

@@ -29,7 +29,7 @@ import { LiveBackground } from './LiveBackground';
 import { LiveProjectPicker } from './LiveProjectPicker';
 import { LanguageMenu, ShellRail, StatusMeters, shellIcons, shellText, useFpsCounter, useShellGroup, type ShellGroup } from './LiveShell';
 import { loadBackground, saveBackground, sendBackground, showBackground } from './background';
-import { loadFrameSettings, saveFrameSettings, sendFrame } from './frame';
+import { loadChangedAt, loadFrameSettings, saveChangedAt, saveFrameSettings, sendFrame } from './frame';
 
 // fork: name of the folding background section, which also holds the OBS link
 const FOLD_TEXT = { es: { background: 'Fondo y OBS' }, en: { background: 'Background and OBS' }, ja: { background: '背景と OBS' }, zh: { background: '背景和 OBS' } };
@@ -65,6 +65,13 @@ export function LiveApp() {
   // fork: avatar position and size in the frame (src/live/LiveFrame.tsx)
   const [frame, setFrame] = useState(() => loadFrameSettings(settings.project));
   const frameRef = useRef(frame.frame); frameRef.current = frame.frame;
+  // when this page last changed the framing / background (sent along so OBS follows the newest)
+  const changedAt = useRef({ frame: loadChangedAt('frame', settings.project), background: loadChangedAt('background', settings.project), loaded: { frame: false, background: false } });
+  const markChanged = (kind: 'frame' | 'background') => {
+    const state = changedAt.current;
+    if (!state.loaded[kind]) { state.loaded[kind] = true; return; }
+    state[kind] = Date.now(); saveChangedAt(kind, settings.project, state[kind]);
+  };
   const [options, setOptions] = useState<TrackingOptions>(loadTrackingOptions);
   useEffect(() => { try { localStorage.setItem(OPTIONS_KEY, JSON.stringify(options)); } catch { /* storage unavailable */ } }, [options]);
   const [cameraState, setCameraState] = useState<CameraState>('stopped');
@@ -186,7 +193,7 @@ export function LiveApp() {
     return () => clearInterval(timer);
   }, [settings.project]);
   useEffect(() => {
-    saveFrameSettings(settings.project, frame);
+    saveFrameSettings(settings.project, frame); markChanged('frame');
     avatarRef.current?.setFrame(frame.frame);
   }, [settings.project, frame]);
   useEffect(() => {
@@ -197,7 +204,7 @@ export function LiveApp() {
     const timer = setInterval(() => {
       const now = performance.now();
       if (sent === frameRef.current && now - at < 1000) return;
-      sent = frameRef.current; at = now; sendFrame(settings.project, sent);
+      sent = frameRef.current; at = now; sendFrame(settings.project, sent, changedAt.current.frame);
     }, 34);
     return () => clearInterval(timer);
   }, [settings.project]);
@@ -228,7 +235,7 @@ export function LiveApp() {
   // canvas, saved per project and relayed to the stream views (repeated every second)
   const backgroundRef = useRef(settings.backgroundImage); backgroundRef.current = settings.backgroundImage;
   useEffect(() => {
-    saveBackground(settings.project, settings.backgroundImage);
+    saveBackground(settings.project, settings.backgroundImage); markChanged('background');
     return canvas.current ? showBackground(canvas.current, settings.project, settings.backgroundImage) : undefined;
   }, [settings.project, settings.backgroundImage]);
   useEffect(() => {
@@ -236,7 +243,7 @@ export function LiveApp() {
     const timer = setInterval(() => {
       const now = performance.now();
       if (sent === backgroundRef.current && now - at < 1000) return;
-      sent = backgroundRef.current; at = now; sendBackground(settings.project, sent);
+      sent = backgroundRef.current; at = now; sendBackground(settings.project, sent, changedAt.current.background);
     }, 100);
     return () => clearInterval(timer);
   }, [settings.project]);

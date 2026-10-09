@@ -36,3 +36,14 @@ describe('avatar framing', () => {
     expect(frameMessage({ project: 'tigre', frame: { x: 0, y: 0, scale: 1 }, more: 1 })).toBeNull();
   });
 });
+
+describe('several Live pages', () => {
+  it('carries when the framing last changed, so a stream view can follow the newest', () => {
+    const frame = { x: 0.1, y: 0, scale: 1 };
+    expect(frameMessage({ project: 'tigre', frame, at: 1760000000000 })).toEqual({ project: 'tigre', frame, at: 1760000000000 });
+    expect(frameMessage({ project: 'tigre', frame })).toEqual({ project: 'tigre', frame });
+    expect(frameMessage({ project: 'tigre', frame, at: -1 })).toBeNull();
+    expect(frameMessage({ project: 'tigre', frame, at: 'now' })).toBeNull();
+    expect(frameMessage({ project: 'tigre', frame, when: 1 })).toBeNull();
+  });
+});

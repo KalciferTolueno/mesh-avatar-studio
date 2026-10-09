@@ -91,19 +91,22 @@ export function showBackground(canvas: HTMLCanvasElement, project: string, value
 
 // Live relay: Live page -> dev server -> stream view (see src/server/project-items.ts)
 export const BACKGROUND_EVENT = 'studio:background';
-export interface BackgroundMessage { project: string; background: BackgroundImage }
+export interface BackgroundMessage { project: string; background: BackgroundImage; at?: number }
 export function backgroundMessage(input: unknown): BackgroundMessage | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   const data = input as Record<string, unknown>;
-  if (Object.keys(data).length !== 2 || typeof data.project !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(data.project)) return null;
+  const keys = Object.keys(data).length;
+  if ((keys !== 2 && !(keys === 3 && 'at' in data)) || typeof data.project !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(data.project)) return null;
+  if ('at' in data && !(typeof data.at === 'number' && Number.isFinite(data.at) && data.at >= 0)) return null;
   const background = parseBackground(data.background);
-  return background ? { project: data.project, background } : null;
+  return background ? { project: data.project, background, ...(typeof data.at === 'number' ? { at: data.at } : {}) } : null;
 }
-export function sendBackground(project: string, background: BackgroundImage) {
-  const message = backgroundMessage({ project, background });
+/** `at` as in src/live/frame.ts: the stream view follows the most recently changed background. */
+export function sendBackground(project: string, background: BackgroundImage, at?: number) {
+  const message = backgroundMessage({ project, background, ...(at === undefined ? {} : { at }) });
   if (message) busSend(BACKGROUND_EVENT, message);
 }
-export function receiveBackground(project: string, callback: (value: BackgroundImage) => void) {
-  const receive = (data: unknown) => { const message = backgroundMessage(data); if (message?.project === project) callback(message.background); };
+export function receiveBackground(project: string, callback: (value: BackgroundImage, at: number) => void) {
+  const receive = (data: unknown) => { const message = backgroundMessage(data); if (message?.project === project) callback(message.background, message.at ?? 0); };
   return busOn(BACKGROUND_EVENT, receive);
 }
