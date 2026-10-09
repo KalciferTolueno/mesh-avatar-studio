@@ -6,6 +6,8 @@ Este documento registra **cada diferencia con el original**: cómo funcionaba an
 funciona ahora, qué archivos toca y dónde puede chocar con actualizaciones del autor. Se
 actualiza en el mismo commit que cada cambio.
 
+Cómo usar la página En vivo y configurar OBS: [docs/guia-en-vivo.md](docs/guia-en-vivo.md).
+
 ## Remotos y ramas
 
 | Nombre | Qué es |

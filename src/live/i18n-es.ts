@@ -9,7 +9,7 @@ export const liveEs: typeof liveEn = {
   microphone: 'Boca con el micrófono', voiceVowels: 'Detectar vocales (a e i o u)', vowelSmooth: 'Suavidad del cambio de vocal', vowelStrength: 'Fuerza de las vocales', gain: 'Ganancia del micrófono', privacy: 'El video de la cámara y el audio del micrófono no salen de este equipo. La vista de stream solo recibe los valores de movimiento del avatar.',
   background: 'Fondo', transparent: 'Transparente', green: 'Verde', blue: 'Azul', custom: 'Color personalizado',
   fit: 'Encuadre', contain: 'Avatar completo', cover: 'Llenar el marco', obs: 'Copiar URL de OBS', openStream: 'Abrir la vista de stream en otra pestaña', copied: 'URL copiada', copyError: 'No se pudo copiar. Selecciona y copia la URL de abajo.',
-  obsHelp: 'Deja esta página abierta. Añade la URL en OBS como fuente de navegador, por ejemplo a 1080 × 1080.',
+  obsHelp: 'Deja esta página abierta. Añade la URL en OBS como fuente de navegador con el formato elegido en Posición y tamaño (16:9: 1920 × 1080).',
   loading: 'Cargando avatar…', ready: 'Avatar listo', projectError: 'No se pudo cargar este proyecto. Ábrelo primero en el editor desde la lista local.',
   stopped: 'Cámara detenida', starting: 'Iniciando cámara…', running: 'Cámara lista', tracking: 'Rastreando la cara', lost: 'Cara perdida · volviendo al reposo',
   backgroundStopped: 'El rastreo se detuvo mientras esta página está oculta. Trae esta ventana al frente.',
