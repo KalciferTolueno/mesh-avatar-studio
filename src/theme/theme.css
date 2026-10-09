@@ -217,3 +217,16 @@
    text fields and links styled as buttons. Upstream sheets give them their own corners, so this
    one rule overrides them all; checkboxes and slider thumbs keep the browser's shapes. */
 :root[data-theme] :is(button, select, textarea, input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), .live-open, .live-link, .mode-switch > a, .mode-switch > .mode-item) { border-radius: 0 !important; }
+
+/* fork (FORK.md 28): on desktop the Live page fits the window. The header and the avatar stay
+   put; only the settings column scrolls. Narrow screens keep the normal page scroll. */
+@media (min-width: 801px) {
+  html:has(.live-app), body:has(.live-app) { height: 100%; overflow: hidden; }
+  :root[data-theme] .live-app { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  :root[data-theme] .live-header { flex: 0 0 auto; }
+  :root[data-theme] .live-layout { flex: 1 1 auto; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  :root[data-theme] .live-view { position: static; display: flex; flex-direction: column; min-height: 0; }
+  :root[data-theme] .live-preview { flex: 1 1 auto; height: auto; min-height: 0; }
+  :root[data-theme] .live-view > [role="status"] { flex: 0 0 auto; margin: 10px 0 0; }
+  :root[data-theme] .live-controls { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-gutter: stable; }
+}

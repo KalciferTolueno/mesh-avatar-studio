@@ -572,6 +572,16 @@ git checkout mi-version && git merge main
 - **Archivos del original tocados:** `src/lighting/Controls.tsx`. Del fork:
   `src/theme/theme.css`, `docs/auditoria-diseno.md`.
 
+### 28. En vivo ocupa la ventana; solo la barra de ajustes tiene scroll
+
+- **Antes:** la página entera tenía scroll: al bajar por los ajustes también se desplazaban la
+  cabecera y la vista del avatar (que era `position: sticky`).
+- **Ahora:** en pantallas de más de 800 px, En vivo mide exactamente la ventana (`100dvh`, sin
+  scroll de página). La cabecera y la vista quedan fijas, la vista ocupa toda la altura disponible
+  y solo `.live-controls` se desplaza (`overflow-y: auto`, `overscroll-behavior: contain`).
+  En pantallas estrechas se mantiene el scroll normal de la página.
+- **Archivos:** solo `src/theme/theme.css` (del fork).
+
 ## Registro de fusiones con el original
 
 | Fecha | Commit del original | Notas |
