@@ -25,9 +25,9 @@ export function useTheme() {
 }
 
 type Lang = 'es' | 'en' | 'ja' | 'zh';
-export const themeText: Record<Lang, { toLight: string; toDark: string; edit: string; live: string; modes: string }> = {
-  es: { toLight: 'Tema claro', toDark: 'Tema oscuro', edit: 'Editar', live: 'En vivo', modes: 'Modo' },
-  en: { toLight: 'Light theme', toDark: 'Dark theme', edit: 'Edit', live: 'Live', modes: 'Mode' },
-  ja: { toLight: 'ライトテーマ', toDark: 'ダークテーマ', edit: '編集', live: '配信', modes: 'モード' },
-  zh: { toLight: '浅色主题', toDark: '深色主题', edit: '编辑', live: '直播', modes: '模式' },
+export const themeText: Record<Lang, { toLight: string; toDark: string }> = {
+  es: { toLight: 'Tema claro', toDark: 'Tema oscuro' },
+  en: { toLight: 'Light theme', toDark: 'Dark theme' },
+  ja: { toLight: 'ライトテーマ', toDark: 'ダークテーマ' },
+  zh: { toLight: '浅色主题', toDark: '深色主题' },
 };

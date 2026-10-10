@@ -11,9 +11,7 @@ import { loadPhysics } from '../physics/settings';
 import type { MeshAvatar } from '../engine';
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../editor/i18n';
-import { ModeSwitch, ThemeToggle } from '../theme/ThemeControls';
-import { themeText } from '../theme/theme';
-const themeLabel = (language: keyof typeof themeText) => themeText[language].edit;
+import { ThemeToggle } from '../theme/ThemeControls';
 import { createAvatarView, neutralParameters } from './avatar-view';
 import { viewSettings, streamUrl, backgroundColor } from './settings';
 import { FacePose, type TrackingOptions } from './tracking';
@@ -299,12 +297,10 @@ export function LiveApp() {
   const copyObs = () => { void navigator.clipboard.writeText(url).then(() => flash(shell.copied)).catch(() => flash(shell.copyError)); };
   const group = (id: ShellGroup, children: React.ReactNode) => <div className="app-group" data-group={id} hidden={shellGroup !== id}>{children}</div>;
   return <main className="live-app app-shell">
-    {/* fork: Edit / Live switch and theme toggle (src/theme/ThemeControls.tsx); the back link keeps its name */}
+    {/* fork (FORK.md 37): no Edit / Live switch; the editor and Live are kept apart */}
     <header className="live-header app-bar" data-tauri-drag-region data-frameless={hasWindowControls()}><div className="live-header-actions" data-tauri-drag-region>
       <span className="app-mark" aria-hidden="true" data-tauri-drag-region><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 10L7 4l4 3M18 10l-1-6-4 3" /><circle cx="12" cy="13" r="7" /><path d="M9.5 15.5c.7.6 1.5.9 2.5.9s1.8-.3 2.5-.9" /></svg></span>
       <h1 data-tauri-drag-region>Mesh Avatar Studio</h1>
-      {/* fork: in the desktop app (src-tauri) this link opens the editor window (FORK.md 36) */}
-      <ModeSwitch language={language} current="live" edit={<a href="/" aria-label={t.back}>{themeLabel(language)}</a>} />
       <LiveProjectPicker current={settings.project} language={language} /></div>
       <div className="live-header-actions" data-tauri-drag-region><ThemeToggle language={language} />
       <LanguageMenu language={language} onChange={setLanguage} /><WindowControls language={language} /></div>

@@ -23,8 +23,7 @@ import { CopyButton } from './CopyButton';
 import { readRecent, addRecent, saveRecent, REOPEN_KEY, pickDirectory, hasDirectoryPicker, directoryFiles,
   keepDirectory, restoreDirectory, forgetDirectory, clearDirectories, type RecentProject, type ProjectDirectory } from './recent-projects';
 import './style.css';
-import { ModeSwitch, ThemeToggle } from '../theme/ThemeControls';
-import { liveText } from '../live/i18n';
+import { ThemeToggle } from '../theme/ThemeControls';
 
 type EditorError = { kind: 'invalidRig' | 'invalidFolder' | 'missingFolderFiles' | 'unreadableFolder' | 'unreadableProject' | 'invalidValue' | 'saveError' | 'revealError' | 'copyError' | 'continueError'; paths: string[] };
 function errorPaths(value: string) { return [...new Set(value.match(/rig(?:\.[\w]+|\[\d+\])+/g) ?? [])]; }
@@ -359,10 +358,7 @@ function Workspace() {
         <button className="icon-button" aria-label={t.undo} title={`${t.undo} · ⌘Z`} disabled={!history.canUndo || job !== null || opening} onClick={() => setRig(history.undo())}><Icon name="undo" /></button>
         <button className="icon-button" aria-label={t.redo} title={`${t.redo} · ⇧⌘Z`} disabled={!history.canRedo || job !== null || opening} onClick={() => setRig(history.redo())}><Icon name="redo" /></button>
         <span className="toolbar-divider" />
-        {/* fork: the Live link sits in an Edit / Live switch (src/theme/ThemeControls.tsx) */}
-        <ModeSwitch language={language} current="edit" live={<a className="live-link" href={localProject || listedProject || !pickedName ? `/live.html?project=${encodeURIComponent(localProject?.name ?? listedProject?.name ?? 'sample-miko-qipao')}` : undefined}
-          target="_blank" rel="noreferrer" aria-disabled={!!pickedName && !localProject && !listedProject}
-          title={pickedName && !localProject && !listedProject ? liveText[language].liveUnavailable : liveText[language].title}><Icon name="live" />{liveText[language].title}</a>} />
+        {/* fork (FORK.md 37): no Live link here; the editor and Live are kept apart */}
         <ThemeToggle language={language} />
         <button className="icon-button" aria-label={t.help} title={t.help} aria-expanded={help} onClick={() => setHelp(current => !current)}><Icon name="help" /></button>
         <div className="language-toggle" role="group" aria-label={t.language}>

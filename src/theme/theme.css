@@ -46,17 +46,7 @@
 :root[data-theme] button.primary:hover:not(:disabled), :root[data-theme] .live-primary:hover:not(:disabled) { color: var(--on-accent); background: var(--accent-strong); border-color: var(--accent-strong); }
 :root[data-theme] a { color: var(--accent-ink); }
 
-/* ---- header: mode switch and theme toggle ---- */
-:root[data-theme] .mode-switch { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-:root[data-theme] .mode-switch > a, :root[data-theme] .mode-switch > .mode-item {
-  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 7px; font-weight: 500; font-size: 13px;
-  color: var(--muted); background: transparent; text-decoration: none; white-space: nowrap; filter: none;
-}
-:root[data-theme] .mode-switch > a:hover { color: var(--ink); background: var(--surface-3); }
-:root[data-theme] .mode-switch > [aria-current="page"] { color: var(--accent-ink); background: var(--accent-soft); }
-:root[data-theme] .mode-switch > a[aria-disabled="true"] { opacity: .5; background: transparent; }
-:root[data-theme] .mode-switch svg { width: 16px; height: 16px; }
-:root[data-theme] .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5f6d; box-shadow: 0 0 0 3px rgba(255, 95, 109, .18); }
+/* ---- header: theme toggle ---- */
 :root[data-theme] .theme-toggle { color: var(--muted); }
 
 /* ---- editor ---- */
@@ -180,8 +170,8 @@
 
 /* fork (FORK.md 26): square corners on every container (panels, sections, previews, boxes,
    menus, notices, badges). Buttons and form fields keep their own corners; true circles (the
-   live dot, colour swatches, numbered guide steps, the light handle) stay round. */
-:root[data-theme] :is(div, section, details, summary, aside, main, header, nav, article, p, ul, ol, li, label, video, canvas, figure, span, small, output):not(.live-dot):not(.part-swatch):not(.guide-steps li > span) { border-radius: 0; }
+   colour swatches, numbered guide steps, the light handle) stay round. */
+:root[data-theme] :is(div, section, details, summary, aside, main, header, nav, article, p, ul, ol, li, label, video, canvas, figure, span, small, output):not(.part-swatch):not(.guide-steps li > span) { border-radius: 0; }
 
 /* fork (FORK.md 27): design audit fixes (docs/auditoria-diseno.md). Badges, the vowel
    calibration and the section chevrons join the theme; small text and controls grow to a
@@ -196,7 +186,7 @@
 :root[data-theme] input[type="checkbox"] { width: 16px; height: 16px; margin: 0; flex: 0 0 auto; }
 :root[data-theme] input[type="range"] { min-height: 24px; margin: 0; }
 :root[data-theme] .live-app button, :root[data-theme] .live-app select { min-height: 32px; }
-:root[data-theme] .live-languages button, :root[data-theme] .mode-switch > a, :root[data-theme] .mode-switch > .mode-item { min-height: 30px; }
+:root[data-theme] .live-languages button { min-height: 30px; }
 /* drawn chevrons instead of the ▸ / ▾ characters, turning when a section opens */
 :root[data-theme] .live-lighting > summary::before, :root[data-theme] .lighting-section > summary::before {
   content: ''; flex: 0 0 auto; width: 6px; height: 6px; margin: 0 4px 0 2px; border-right: 1.75px solid currentColor; border-bottom: 1.75px solid currentColor;
@@ -213,5 +203,5 @@
 /* fork (FORK.md 26): controls are square too: buttons (the light handle included), selects,
    text fields and links styled as buttons. Upstream sheets give them their own corners, so this
    one rule overrides them all; checkboxes and slider thumbs keep the browser's shapes. */
-:root[data-theme] :is(button, select, textarea, input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), .live-open, .live-link, .mode-switch > a, .mode-switch > .mode-item) { border-radius: 0 !important; }
+:root[data-theme] :is(button, select, textarea, input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), .live-open) { border-radius: 0 !important; }
 

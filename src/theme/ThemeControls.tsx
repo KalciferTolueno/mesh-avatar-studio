@@ -1,5 +1,4 @@
-// Fork addition (see FORK.md): theme toggle and the Edit / Live mode switch.
-import type { ReactNode } from 'react';
+// Fork addition (see FORK.md): theme toggle.
 import { themeText, useTheme } from './theme';
 
 type Lang = keyof typeof themeText;
@@ -15,11 +14,3 @@ export function ThemeToggle({ language }: { language: Lang }) {
   </button>;
 }
 
-/** Edit / Live segmented switch. `live` is the existing Live link (or a label on the Live page). */
-export function ModeSwitch({ language, current, edit, live }: { language: Lang; current: 'edit' | 'live'; edit?: ReactNode; live?: ReactNode }) {
-  const t = themeText[language];
-  return <nav className="mode-switch" aria-label={t.modes}>
-    {current === 'edit' ? <span className="mode-item" aria-current="page">{t.edit}</span> : edit}
-    {current === 'live' ? <span className="mode-item" aria-current="page"><span className="live-dot" aria-hidden="true" />{t.live}</span> : live}
-  </nav>;
-}

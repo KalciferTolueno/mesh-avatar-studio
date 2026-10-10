@@ -155,7 +155,7 @@ git checkout mi-version && git merge main
   registro de `es`, idioma inicial), `src/editor/App.tsx` (un botón ES), `src/live/LiveApp.tsx`
   (`es` en la lista de idiomas), `src/live/i18n.ts`, `src/lighting/Controls.tsx`.
 
-### 8. Tema oscuro y claro, selector Editar / En vivo
+### 8. Tema oscuro y claro, selector Editar / En vivo (el selector se quita en la 37)
 
 - **Antes:** un único tema claro con colores fijos en `style.css`, `live.css` y `lighting.css`; el
   editor tenía un botón azul "Live" y la página Live un enlace "Volver al editor".
@@ -730,7 +730,7 @@ git checkout mi-version && git merge main
   `src-tauri/capabilities/default.json`, `src/live/LiveShell.tsx`, `src/live/LiveApp.tsx`,
   `src/live/shell.css`.
 
-### 36. El editor también se abre desde la app de escritorio
+### 36. El editor también se abre desde la app de escritorio (retirado en la 37)
 
 - **Antes:** la app de escritorio ocultaba el botón **Editar** (sección 25): el editor necesita el
   servidor de Node (guardar el rig y reconstruir capas con las herramientas de Python), que la
@@ -752,6 +752,20 @@ git checkout mi-version && git merge main
   en frío) y sin consola; En vivo en el editor lo cierra y vuelve; Cerrar en En vivo termina la
   app y libera el puerto 5192.
 - **Archivos:** `src-tauri/src/main.rs`, `src/live/LiveApp.tsx`.
+
+### 37. Editor y En vivo separados: sin botón para pasar de uno a otro
+
+- **Antes:** un selector **Editar / En vivo** en la cabecera de las dos páginas (sección 8) y, en
+  la app de escritorio, **Editar** abría el editor en una ventana propia arrancando Vite en el
+  puerto 5192 (sección 36).
+- **Ahora:** son dos apps independientes. El editor (`npm run dev`, `http://localhost:5191/`) no
+  tiene enlace a En vivo y En vivo (navegador o app de escritorio) no tiene enlace al editor; En
+  vivo se abre en `/live.html`. Se quita `ModeSwitch` y sus estilos, y de la app de escritorio
+  todo lo de la sección 36 (servidor del editor, ventana del editor, vuelta a En vivo). Se
+  mantiene que los enlaces que piden pestaña nueva se abran en el navegador.
+- **Archivos:** `src/editor/App.tsx` (sin enlace Live), `src/live/LiveApp.tsx` (sin enlace al
+  editor), `src/theme/ThemeControls.tsx`, `src/theme/theme.ts`, `src/theme/theme.css`,
+  `src-tauri/src/main.rs`, `docs/guia-en-vivo.md`.
 
 ## Registro de fusiones con el original
 
