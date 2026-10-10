@@ -758,7 +758,7 @@ git checkout mi-version && git merge main
 - **Antes:** un selector **Editar / En vivo** en la cabecera de las dos páginas (sección 8) y, en
   la app de escritorio, **Editar** abría el editor en una ventana propia arrancando Vite en el
   puerto 5192 (sección 36).
-- **Ahora:** son dos apps independientes. El editor (`npm run dev`, `http://localhost:5191/`) no
+- **Ahora:** son dos apps independientes. El editor (`npm run dev`, en la dirección que imprime la terminal) no
   tiene enlace a En vivo y En vivo (navegador o app de escritorio) no tiene enlace al editor; En
   vivo se abre en `/live.html`. Se quita `ModeSwitch` y sus estilos, y de la app de escritorio
   todo lo de la sección 36 (servidor del editor, ventana del editor, vuelta a En vivo). Se

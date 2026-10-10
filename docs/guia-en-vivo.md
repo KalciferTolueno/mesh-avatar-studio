@@ -13,16 +13,18 @@ menos de RAM. La URL de OBS es la misma (`http://127.0.0.1:5191/stream.html…`)
 - La primera vez Windows pide permiso para la cámara y el micrófono, y los ajustes (calibración
   de vocales, posición, teclas…) se configuran una vez porque la app guarda los suyos.
 - Déjala abierta (puede quedar detrás de OBS); si la minimizas el rastreo puede ir más lento.
-- El **editor es otra app**: para crear o retocar el avatar usa `npm run dev` y abre
-  `http://localhost:5191/` en el navegador (cierra antes la app de escritorio, que usa el mismo
-  puerto). Al volver a abrir la app de escritorio ya verás los cambios guardados. Si cambias el
-  código de la app, recompílala con `npm run desktop`.
+- El **editor es otra app**: para crear o retocar el avatar usa `npm run dev` y abre en el
+  navegador la dirección que imprime la terminal (por ejemplo `http://127.0.0.1:5173/`). Puede
+  estar abierto a la vez que la app de escritorio; para ver en ella los cambios guardados, vuelve
+  a elegir el proyecto o reábrela. Si cambias el código de la app, recompílala con
+  `npm run desktop`.
 
 ## Antes de empezar (modo navegador)
 
 1. Abre la aplicación (`npm run dev`) y entra al proyecto desde el **Editor** al menos una vez.
-2. Abre `http://localhost:5191/live.html` en otra pestaña (el editor y En vivo van por separado,
-   sin botón para pasar de uno a otro). Deja esta pestaña abierta mientras transmites: es la que mira la
+2. Abre En vivo en otra pestaña: la misma dirección del editor terminada en `/live.html` (por
+   ejemplo `http://127.0.0.1:5173/live.html`); el editor y En vivo van por separado, sin botón
+   para pasar de uno a otro. Deja esta pestaña abierta mientras transmites: es la que mira la
    cámara y escucha el micrófono. El video y el audio no salen de tu equipo; la vista de OBS
    solo recibe los movimientos del avatar.
 3. Si la pestaña queda oculta detrás de otras ventanas el navegador puede frenar el rastreo;
